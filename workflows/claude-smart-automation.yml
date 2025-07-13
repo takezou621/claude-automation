@@ -45,9 +45,10 @@ jobs:
             
             console.log(`Found ${issues.data.length} open issues`);
             
-            // claude-processedラベルがあるIssueを検索
+            // Enhanced label detection with multiple patterns
+            const targetLabels = ['claude-processed', 'claude-ready', 'automation-ready'];
             const processedIssues = issues.data.filter(issue => 
-              issue.labels.some(label => label.name === 'claude-processed')
+              issue.labels.some(label => targetLabels.includes(label.name))
             );
             
             console.log(`Found ${processedIssues.length} Claude-processed issues`);
@@ -61,16 +62,25 @@ jobs:
               console.log(`\\n🔍 Processing Issue #${issue.number}: ${issue.title}`);
               
               try {
-                // 関連ブランチを検索
+                // Enhanced branch detection with multiple patterns
                 const branches = await github.rest.repos.listBranches({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  per_page: 100
+                  per_page: 200
                 });
                 
+                // Advanced branch matching patterns (inspired by RepairGPT)
+                const branchPatterns = [
+                  `issue-${issue.number}`,
+                  `claude-${issue.number}`,
+                  `feature/issue-${issue.number}`,
+                  `fix/issue-${issue.number}`,
+                  `claude/issue-${issue.number}`,
+                  `automation-${issue.number}`
+                ];
+                
                 const claudeBranches = branches.data.filter(branch => 
-                  branch.name.includes(`issue-${issue.number}`) ||
-                  branch.name.includes(`claude`) && branch.name.includes(`${issue.number}`)
+                  branchPatterns.some(pattern => branch.name.includes(pattern))
                 );
                 
                 if (claudeBranches.length === 0) {

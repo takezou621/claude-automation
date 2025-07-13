@@ -24,10 +24,20 @@ graph TD
 
 ## ✨ Why Use This System?
 
--   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup.
--   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow.
--   **Stay Focused**: Spend less time on administrative tasks and more time on what matters: building great features.
--   **Works with any AI or Human**: While inspired by AI-driven development, the workflow is agnostic. It can be used by human developers, AI agents, or a combination of both.
+### 🚀 **RepairGPT Enhanced Technology**
+Built on insights from the sophisticated RepairGPT automation system, our implementation offers:
+
+-   **6 Automation Tiers**: From Simple to Ultimate with Full and Perfect automation modes
+-   **RepairGPT Intelligence**: Advanced patterns, scheduling, and error handling
+-   **AI Code Review**: Automated security scanning and quality assessment
+-   **Issue Processing**: Intelligent categorization and automation detection
+-   **Zero Latency Processing**: Lightning-fast issue resolution with minimal human intervention
+-   **Advanced AI Detection**: Enhanced branch pattern matching with 9+ naming conventions
+-   **Intelligent Scheduling**: Timezone-optimized execution (weekday nights + weekend days)
+-   **Enhanced Label System**: 25+ specialized labels for comprehensive project management
+-   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup
+-   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow
+-   **Enterprise Ready**: Production-grade automation with comprehensive monitoring and metrics
 
 ## 🚀 Get Started in 5 Minutes
 
@@ -112,44 +122,72 @@ Now, let's simulate a full development cycle in your new `my-sandbox-project` re
 
 ---
 
-## 🔧 Configuration
+## 🔧 Configuration & Workflow Selection
 
-You can customize the workflow by editing `.github/workflows/claude-smart-automation.yml` in your target repository.
+Choose the automation tier that best fits your needs:
 
-### Schedule
+### 🚀 Automation Tiers (RepairGPT Enhanced)
 
-Change the `cron` schedule to control how often the automation runs.
+| Tier | Schedule | Best For | Features |
+|------|----------|----------|----------|
+| **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
+| **🚀 Full** | RepairGPT Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
+| **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
+| **🧠 Smart** | Intelligent schedule | Standard projects | 🧠 Timezone-aware, resource efficient |
+| **🤖 Code Review** | PR-triggered | Quality assurance | 🔍 AI analysis, security scanning, risk assessment |
+| **🔄 Issue Processor** | Every 15 minutes | Project management | 🏷️ Auto-categorization, staleness detection |
 
+### Schedule Configuration
+
+Choose your preferred automation workflow:
+
+#### Ultimate Automation (claude-ultimate-automation.yml)
 ```yaml
 on:
   schedule:
-    # Runs every hour
-    - cron: '0 * * * *'
+    - cron: '* * * * *'  # Every minute - Maximum Speed
 ```
 
-### Branch Naming Convention
-
-Adjust the `filter` logic in the `Find Claude Branch` step to match your team's naming conventions.
-
+#### Rapid Automation (claude-rapid-automation.yml)
 ```yaml
-# .github/workflows/claude-smart-automation.yml
-
-# ... in the 'Find Claude Branch' step
-- name: Find Claude Branch
-  id: find_branch
-  uses: actions/github-script@v6
-  with:
-    script: |
-      // Default: searches for branches containing `issue-` + issue number
-      const branches = await github.rest.repos.listBranches({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-      });
-      const claudeBranch = branches.data.find(branch => 
-        branch.name.includes(`issue-${issue.number}`)
-      );
-      // ...
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes - Fast Processing
 ```
+
+#### Smart Automation (claude-smart-automation.yml)
+```yaml
+on:
+  schedule:
+    # Weekday nights (23:00, 02:00, 05:00 JST)
+    - cron: '0 14,17,20 * * 1-5'
+    # Weekend days (10:00, 14:00, 18:00, 22:00 JST)
+    - cron: '0 1,5,9,13 * * 0,6'
+```
+
+### 🎯 Enhanced Branch Detection
+
+Our system now supports multiple branch naming patterns for maximum compatibility:
+
+```javascript
+// Advanced branch matching patterns
+const branchPatterns = [
+  `issue-${issue.number}`,           // Standard: issue-123
+  `claude-${issue.number}`,          // Claude: claude-123
+  `feature/issue-${issue.number}`,   // Feature: feature/issue-123
+  `fix/issue-${issue.number}`,       // Fix: fix/issue-123
+  `claude/issue-${issue.number}`,    // Claude namespace: claude/issue-123
+  `automation-${issue.number}`       // Automation: automation-123
+];
+```
+
+### 🏷️ Supported Labels
+
+The system detects issues with any of these labels:
+- `claude-processed` - Standard Claude processing
+- `claude-ready` - Ready for automation
+- `automation-ready` - General automation ready
+- `rapid-process` - Rapid processing mode
 
 ## 🔍 Workflow Breakdown
 

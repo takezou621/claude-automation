@@ -1,6 +1,14 @@
 # 使用方法
 
-Claude Smart Automationの基本的な使用方法を説明します。
+**Claude Automation System** の3つの自動化ティア（Ultimate、Rapid、Smart）の使用方法を説明します。
+
+## 🚀 自動化ティア概要
+
+| ティア | スケジュール | 応答時間 | 最適用途 |
+|--------|--------------|----------|----------|
+| **🔥 Ultimate** | 毎分実行 | < 1分 | 重要プロジェクト |
+| **⚡ Rapid** | 5分間隔 | < 5分 | 高速開発 |
+| **🧠 Smart** | スケジュール実行 | 数時間 | 標準プロジェクト |
 
 ## 📋 基本的なワークフロー
 
@@ -9,9 +17,9 @@ sequenceDiagram
     participant User as 開発者
     participant GH as GitHub
     participant Claude as Claude Code
-    participant Auto as Smart Automation
+    participant Auto as Automation
     
-    User->>GH: Issue作成 (claude-processedラベル)
+    User->>GH: Issue作成 (対応ラベル付き)
     User->>Claude: Claude Codeで実装
     Claude->>GH: ブランチ作成・プッシュ
     Auto->>GH: Issue検知
@@ -34,14 +42,17 @@ gh issue create \
   --label "claude-processed,priority:high"
 ```
 
-### ラベルの意味
+### 対応ラベル
 
-| ラベル | 説明 | 必須 |
-|--------|------|------|
-| `claude-processed` | Claude Codeで処理対象 | ✅ |
-| `priority:high` | 高優先度 | |
-| `priority:medium` | 中優先度 | |
-| `priority:low` | 低優先度 | |
+| ラベル | 説明 | ティア対応 |
+|--------|------|-----------|
+| `claude-processed` | Claude Code標準処理 | 全ティア |
+| `claude-ready` | 自動化準備完了 | 全ティア |
+| `automation-ready` | 一般自動化準備完了 | 全ティア |
+| `rapid-process` | Rapid処理専用 | Rapid |
+| `priority:high` | 高優先度 | 全ティア |
+| `priority:medium` | 中優先度 | 全ティア |
+| `priority:low` | 低優先度 | 全ティア |
 
 ### Issue テンプレート例
 
@@ -114,10 +125,18 @@ git push -u origin claude/issue-123-20250713_143022
 ### 手動実行
 
 ```bash
-# ワークフローの手動実行
+# Ultimate Automation（最速）
+gh workflow run claude-ultimate-automation.yml
+
+# Rapid Automation（バランス型）
+gh workflow run claude-rapid-automation.yml
+
+# Smart Automation（スケジュール型）
 gh workflow run claude-smart-automation.yml
 
 # 実行状況の確認
+gh run list --workflow="claude-ultimate-automation.yml" --limit 5
+gh run list --workflow="claude-rapid-automation.yml" --limit 5
 gh run list --workflow="claude-smart-automation.yml" --limit 5
 ```
 
