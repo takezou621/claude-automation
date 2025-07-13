@@ -1,0 +1,46 @@
+name: Claude Full Automation
+
+on:
+  schedule:
+    # RepairGPT inspired intelligent scheduling
+    # Weekdays: Night automation (23:00, 02:00, 05:00 JST)
+    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST
+    # Weekends: Day automation (10:00, 14:00, 18:00, 22:00 JST)
+    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+  push:
+    branches:
+      - 'claude/**'
+      - 'feature/issue-*'
+      - 'fix/issue-*'
+      - 'automation/**'
+
+jobs:
+  full-automation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      checks: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        ref: main
+        
+    - name: Full Automation Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          # Full automation script content here
+          # (Same as the workflow file above)

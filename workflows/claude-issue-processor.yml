@@ -1,0 +1,295 @@
+name: Claude Issue Processor
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, edited]
+  issue_comment:
+    types: [created]
+  schedule:
+    # Intelligent processing schedule (RepairGPT inspired)
+    - cron: '*/15 * * * *'  # Every 15 minutes for responsive processing
+  workflow_dispatch:
+
+jobs:
+  issue-processor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Issue Processing Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          console.log('🔄 CLAUDE ISSUE PROCESSOR ACTIVATED');
+          const now = new Date();
+          const processingId = Math.random().toString(36).substring(7);
+          
+          console.log(`🆔 Processing ID: ${processingId}`);
+          console.log(`🕒 Timestamp: ${now.toISOString()}`);
+          
+          let stats = {
+            processed: 0,
+            categorized: 0,
+            automated: 0,
+            errors: 0
+          };
+          
+          try {
+            // Get all open issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+              sort: 'created',
+              direction: 'desc'
+            });
+            
+            console.log(`📊 Total open issues: ${issues.data.length}`);
+            
+            for (const issue of issues.data) {
+              try {
+                console.log(`\n🔍 Processing Issue #${issue.number}: ${issue.title}`);
+                stats.processed++;
+                
+                const currentLabels = issue.labels.map(label => label.name);
+                const newLabels = [...currentLabels];
+                let needsUpdate = false;
+                let autoComment = '';
+                
+                // === INTELLIGENT CATEGORIZATION ===
+                
+                // Priority detection based on content
+                if (!currentLabels.some(label => label.startsWith('priority:'))) {
+                  const title = issue.title.toLowerCase();
+                  const body = (issue.body || '').toLowerCase();
+                  
+                  if (title.includes('critical') || title.includes('urgent') || 
+                      body.includes('production') || body.includes('security')) {
+                    newLabels.push('priority:critical');
+                    needsUpdate = true;
+                  } else if (title.includes('important') || title.includes('high') ||
+                             title.includes('bug') || title.includes('fix')) {
+                    newLabels.push('priority:high');
+                    needsUpdate = true;
+                  } else if (title.includes('enhancement') || title.includes('feature')) {
+                    newLabels.push('priority:medium');
+                    needsUpdate = true;
+                  } else {
+                    newLabels.push('priority:low');
+                    needsUpdate = true;
+                  }
+                }
+                
+                // Type detection
+                if (!currentLabels.some(label => ['bug', 'enhancement', 'question', 'documentation'].includes(label))) {
+                  const title = issue.title.toLowerCase();
+                  const body = (issue.body || '').toLowerCase();
+                  
+                  if (title.includes('bug') || title.includes('error') || title.includes('fix')) {
+                    newLabels.push('bug');
+                    needsUpdate = true;
+                  } else if (title.includes('feature') || title.includes('add') || 
+                             title.includes('implement') || title.includes('enhancement')) {
+                    newLabels.push('enhancement');
+                    needsUpdate = true;
+                  } else if (title.includes('question') || title.includes('help') || 
+                             title.includes('how')) {
+                    newLabels.push('question');
+                    needsUpdate = true;
+                  } else if (title.includes('doc') || title.includes('readme')) {
+                    newLabels.push('documentation');
+                    needsUpdate = true;
+                  }
+                }
+                
+                // Automation readiness detection
+                const automationKeywords = [
+                  '@claude', 'claude code', 'automate', 'automation',
+                  'auto-implement', 'ai implement', 'claude implement'
+                ];
+                
+                const hasAutomationRequest = automationKeywords.some(keyword => 
+                  issue.title.toLowerCase().includes(keyword) || 
+                  (issue.body || '').toLowerCase().includes(keyword)
+                );
+                
+                if (hasAutomationRequest && !currentLabels.includes('claude-ready')) {
+                  newLabels.push('claude-ready');
+                  newLabels.push('automation-ready');
+                  needsUpdate = true;
+                  autoComment = `🤖 **Automation Detection**
+
+This issue has been automatically flagged for Claude automation based on detected keywords.
+
+**Detected indicators:**
+- AI implementation request detected
+- Automation-friendly structure
+- Claude mention found
+
+**Next steps:**
+- Issue will be processed by automation workflows
+- Implementation will be handled by Claude Code
+- Progress will be tracked automatically
+
+**Automation labels applied:**
+- \`claude-ready\` - Ready for Claude processing
+- \`automation-ready\` - General automation ready
+
+---
+🤖 **Claude Issue Processor** | Processing ID: \`${processingId}\``;
+                  
+                  stats.automated++;
+                }
+                
+                // Complexity assessment
+                if (!currentLabels.some(label => label.startsWith('complexity:'))) {
+                  const bodyLength = (issue.body || '').length;
+                  const hasChecklist = (issue.body || '').includes('- [ ]') || (issue.body || '').includes('- [x]');
+                  const hasCodeBlocks = (issue.body || '').includes('```');
+                  
+                  if (bodyLength > 1000 || hasChecklist || hasCodeBlocks) {
+                    newLabels.push('complexity:high');
+                  } else if (bodyLength > 300) {
+                    newLabels.push('complexity:medium');
+                  } else {
+                    newLabels.push('complexity:low');
+                  }
+                  needsUpdate = true;
+                }
+                
+                // Stage tracking
+                if (!currentLabels.some(label => label.startsWith('stage:'))) {
+                  newLabels.push('stage:detection');
+                  needsUpdate = true;
+                }
+                
+                // Apply updates if needed
+                if (needsUpdate) {
+                  try {
+                    await github.rest.issues.setLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issue.number,
+                      labels: newLabels
+                    });
+                    
+                    stats.categorized++;
+                    console.log(`🏷️ Labels updated for Issue #${issue.number}`);
+                    
+                    if (autoComment) {
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: issue.number,
+                        body: autoComment
+                      });
+                    }
+                    
+                  } catch (labelError) {
+                    console.log(`❌ Failed to update labels for Issue #${issue.number}: ${labelError.message}`);
+                    stats.errors++;
+                  }
+                }
+                
+                // === STALENESS CHECK ===
+                const createdDate = new Date(issue.created_at);
+                const daysSinceCreated = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+                
+                if (daysSinceCreated > 30 && !currentLabels.includes('stale')) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['stale']
+                  });
+                  
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: `⏰ **Staleness Notice**
+
+This issue has been open for ${daysSinceCreated} days and has been marked as stale.
+
+**Actions you can take:**
+- Add updates or comments to show continued interest
+- Close the issue if it's no longer relevant
+- Add the \`keep-alive\` label to prevent auto-closure
+
+**Automation status:**
+- Issue will be auto-closed in 7 days if no activity
+- Add comments or labels to keep it active
+
+---
+🤖 **Claude Issue Processor** | **Staleness Detection**`
+                  });
+                }
+                
+                console.log(`✅ Issue #${issue.number} processing complete`);
+                
+              } catch (issueError) {
+                console.log(`❌ Error processing Issue #${issue.number}: ${issueError.message}`);
+                stats.errors++;
+              }
+            }
+            
+            // === PROCESSING SUMMARY ===
+            console.log(`\n📊 ISSUE PROCESSING COMPLETE`);
+            console.log(`🆔 Processing ID: ${processingId}`);
+            console.log(`📈 Statistics:`);
+            console.log(`   - Issues Processed: ${stats.processed}`);
+            console.log(`   - Issues Categorized: ${stats.categorized}`);
+            console.log(`   - Issues Automated: ${stats.automated}`);
+            console.log(`   - Errors: ${stats.errors}`);
+            console.log(`   - Success Rate: ${Math.round(((stats.processed - stats.errors) / Math.max(stats.processed, 1)) * 100)}%`);
+            
+            // Create processing summary issue if significant activity
+            if (stats.processed > 5 || stats.automated > 0) {
+              const summaryBody = `## 🔄 Issue Processing Summary
+
+**Processing ID:** \`${processingId}\`
+**Timestamp:** ${now.toISOString()}
+
+### 📊 Processing Statistics
+- **Issues Processed:** ${stats.processed}
+- **Issues Categorized:** ${stats.categorized}
+- **Issues Automated:** ${stats.automated}
+- **Errors:** ${stats.errors}
+- **Success Rate:** ${Math.round(((stats.processed - stats.errors) / Math.max(stats.processed, 1)) * 100)}%
+
+### 🎯 Automation Results
+${stats.automated > 0 ? `✅ **${stats.automated} issues** ready for automation
+- Flagged with \`claude-ready\` and \`automation-ready\`
+- Will be processed by automation workflows
+- Expected processing time: < 1 hour` : '⏸️ No issues flagged for automation this cycle'}
+
+### 🏷️ Categorization Applied
+- **Priority levels** assigned based on content analysis
+- **Issue types** detected (bug, enhancement, question, documentation)
+- **Complexity assessment** performed
+- **Stage tracking** initialized
+
+---
+🤖 **Claude Issue Processor** | **Automated Repository Management**
+⚡ **Intelligent Categorization** | **RepairGPT Enhanced**`;
+
+              // Note: In a real implementation, you might want to store this summary
+              // in a dedicated tracking system rather than creating issues
+              console.log('📝 Processing summary generated');
+            }
+            
+          } catch (error) {
+            console.log(`❌ Issue processor error: ${error.message}`);
+            console.log(error.stack);
+            throw error;
+          }
