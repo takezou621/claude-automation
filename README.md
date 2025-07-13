@@ -1,122 +1,172 @@
 # Claude Smart Automation System
 
-## 🚀 Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This is a smart automation system that leverages the power of large language models to fully automate the development workflow. It handles everything from issue creation and code implementation to pull request management, merging, and closing issues.
+**Turn your GitHub Issues into Merged Pull Requests, automatically.**
 
-## ✨ Features
+This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Focus on writing code and let the automation handle the rest.
 
-- **100% Fully Automated**: A complete, hands-off workflow from start to finish.
-- **Smart Scheduling**: Executes tasks at optimal times, configurable for your team's needs.
-- **GitHub Actions Integration**: Secure and reliable automation using native GitHub features.
-- **Robust Error Handling**: Comes with solid exception handling and logging.
+---
 
-## 📋 What It Does
+### Workflow Diagram
 
-1.  **Issue Detection**: Automatically detects issues labeled for processing (e.g., `claude-processed`).
-2.  **Branch Discovery**: Finds the corresponding implementation branch for an issue.
-3.  **PR Creation**: Automatically creates a Pull Request.
-4.  **Auto-Merge**: Merges the PR instantly after checks pass.
-5.  **Issue Completion**: Closes the issue and applies relevant labels.
-6.  **Cleanup**: Deletes the branch after merging.
-
-## ⏰ Execution Schedule
-
-The schedule is fully customizable. By default, it runs at regular intervals, but you can configure it to match your team's workflow. Here is a recommended universal schedule using UTC:
-
-```yaml
-schedule:
-  # Every 6 hours
-  - cron: '0 */6 * * *'
+```mermaid
+graph TD
+    A[📝 Issue Created with `claude-processed` label] --> B{🤖 Automation Triggered};
+    B --> C{🔍 Find associated branch, e.g., `feature/issue-123`};
+    C --> D[✅ Create Pull Request];
+    D --> E[🚀 Auto-Merge PR];
+    E --> F[🎉 Close Issue & Apply `claude-completed` label];
+    F --> G[🧹 Delete Branch];
 ```
 
-This ensures the automation runs consistently for a globally distributed team.
+---
 
-## 🛠️ Setup
+## ✨ Why Use This System?
 
-### Quick Setup
+-   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup.
+-   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow.
+-   **Stay Focused**: Spend less time on administrative tasks and more time on what matters: building great features.
+-   **Works with any AI or Human**: While inspired by AI-driven development, the workflow is agnostic. It can be used by human developers, AI agents, or a combination of both.
+
+## 🚀 Get Started in 5 Minutes
+
+Follow this guide to set up the automation in a safe sandbox repository.
+
+### Prerequisites
+
+-   You have a GitHub account.
+-   You have the [**GitHub CLI (`gh`)**](https://cli.github.com/) installed and authenticated (`gh auth login`).
+
+### Step 1: Clone This Repository
+
+This repository contains the setup scripts and workflow templates. Clone it to your local machine.
 
 ```bash
-# Run the setup script
+git clone https://github.com/takezou621/claude-automation.git
+cd claude-automation
+```
+
+### Step 2: Create a Sandbox Repository
+
+Let's create a new, empty repository on your GitHub account to serve as our test environment.
+
+```bash
+# Creates a new public repository under your username
+gh repo create my-sandbox-project --public
+```
+
+### Step 3: Run the Automated Setup
+
+The setup script will configure your new sandbox repository by creating the necessary labels and setting the required `GITHUB_TOKEN` secret.
+
+-   `<owner>`: Your GitHub username (e.g., `takezou621`)
+-   `<repo>`: The name of your sandbox repository (`my-sandbox-project`)
+
+```bash
+# This script is interactive and will guide you
 ./scripts/setup-smart-automation.sh <owner> <repo>
 ```
+The script will ask for a `GITHUB_TOKEN`. You can create one [**here**](https://github.com/settings/tokens/new) with the `repo` and `workflow` scopes.
 
-### Manual Setup
+### Step 4: See the Magic Happen!
 
-For detailed instructions, please refer to our [Setup Guide](docs/smart-automation-setup-guide.md).
+Now, let's simulate a full development cycle in your new `my-sandbox-project` repository.
 
-## 📊 Usage
+1.  **Go to your sandbox project directory.**
+    ```bash
+    cd ../my-sandbox-project
+    # Or clone it if you don't have it locally
+    # gh repo clone <owner>/my-sandbox-project
+    # cd my-sandbox-project
+    ```
 
-### 1. Create an Issue
+2.  **Create a new issue to be automated.**
+    ```bash
+    gh issue create --title "Add a test file" \
+      --body "This is a test issue for the automation." \
+      --label "claude-processed"
+    # Note the issue number that is created (e.g., #1)
+    ```
 
-```bash
-gh issue create --title "Feature: Implement new login flow" \
-  --body "@claude Please implement this feature." \
-  --label "claude-processed,priority:high"
+3.  **Create a branch and push a change.** (Replace `1` with your issue number).
+    ```bash
+    # The branch name MUST contain the issue number
+    git checkout -b feature/issue-1
+    
+    # Create a dummy file
+    echo "Hello, World!" > test.txt
+    
+    # Commit and push the change
+    git add .
+    git commit -m "feat: Add test file for issue #1"
+    git push --set-upstream origin feature/issue-1
+    ```
+
+4.  **Manually trigger the workflow** to see the result instantly.
+    ```bash
+    gh workflow run claude-smart-automation.yml
+    ```
+
+**That's it!** Check your repository. You will see that the system has automatically created a PR, merged it, closed the issue, and deleted the branch.
+
+---
+
+## 🔧 Configuration
+
+You can customize the workflow by editing `.github/workflows/claude-smart-automation.yml` in your target repository.
+
+### Schedule
+
+Change the `cron` schedule to control how often the automation runs.
+
+```yaml
+on:
+  schedule:
+    # Runs every hour
+    - cron: '0 * * * *'
 ```
 
-### 2. AI Implementation
+### Branch Naming Convention
 
-1.  The AI or a developer creates a new branch for the implementation.
-2.  Code the feature.
-3.  Commit and push the changes.
+Adjust the `filter` logic in the `Find Claude Branch` step to match your team's naming conventions.
 
-### 3. Automated Workflow
+```yaml
+# .github/workflows/claude-smart-automation.yml
 
-The system runs on its schedule. You can also trigger it manually:
-
-```bash
-gh workflow run claude-smart-automation.yml
+# ... in the 'Find Claude Branch' step
+- name: Find Claude Branch
+  id: find_branch
+  uses: actions/github-script@v6
+  with:
+    script: |
+      // Default: searches for branches containing `issue-` + issue number
+      const branches = await github.rest.repos.listBranches({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+      });
+      const claudeBranch = branches.data.find(branch => 
+        branch.name.includes(`issue-${issue.number}`)
+      );
+      // ...
 ```
 
-## 📂 File Structure
+## 🔍 Workflow Breakdown
 
-```
-.
-├── .github/workflows/
-│   └── claude-smart-automation.yml    # Main workflow
-├── docs/
-│   └── smart-automation-setup-guide.md # Detailed setup guide
-├── scripts/
-│   └── setup-smart-automation.sh       # Automated setup script
-├── templates/
-│   └── claude-smart-automation.yml     # Workflow template
-└── README.md                           # This file
-```
+The main workflow file `claude-smart-automation.yml` performs the following steps:
 
-## 🔧 Customization
-
-### Changing the Schedule
-
-Edit the `cron` setting in `.github/workflows/claude-smart-automation.yml`.
-
-### Branch Naming Conventions
-
-Adjust the branch search logic in the workflow file to match your team's conventions.
-
-## 🔍 Monitoring & Troubleshooting
-
-### Check Run Logs
-
-```bash
-# List recent workflow runs
-gh run list --workflow="claude-smart-automation.yml" --limit 5
-
-# View a specific run log
-gh run view <run-id> --log
-```
-
-### Common Issues
-
-1.  **Permission Errors**: Check the permissions for GitHub Actions in your repository settings.
-2.  **Branch Not Found**: Ensure your branch naming convention matches the workflow configuration.
-3.  **Missing Labels**: Make sure the required labels exist in your repository.
-
-See the [Troubleshooting Guide](docs/smart-automation-setup-guide.md#troubleshooting) for more details.
+1.  **Triggers**: Runs on a schedule or can be manually triggered.
+2.  **Finds Issues**: Fetches all open issues with the `claude-processed` label.
+3.  **Loops Through Issues**: For each issue, it performs the following actions.
+4.  **Finds Branch**: Searches for a branch whose name contains the issue number.
+5.  **Creates PR**: Creates a pull request from the found branch to `main`.
+6.  **Merges PR**: Merges the pull request using the `automerge` feature.
+7.  **Closes Issue**: Closes the processed issue and adds the `claude-completed` label.
+8.  **Deletes Branch**: Cleans up by deleting the feature branch.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please feel free to submit a Pull Request or open an Issue for bugs, feature requests, or improvements. Check out our [Contributing Guide](CONTRIBUTING.md) for more details.
+Contributions are welcome! Please see our [**Contributing Guide**](CONTRIBUTING.md) for details on how to submit pull requests, report bugs, and suggest features.
 
 ## 📄 License
 
