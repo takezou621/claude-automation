@@ -1,252 +1,48 @@
 # Contributing to Claude Smart Automation
 
-Claude Smart Automationプロジェクトへのコントリビューションに興味を持っていただき、ありがとうございます！
+We welcome contributions from the community! Whether you're fixing a bug, improving documentation, or proposing a new feature, your help is greatly appreciated.
 
-## 🤝 コントリビューション方法
+## How to Contribute
 
-### バグ報告
+### Reporting Bugs
 
-バグを見つけた場合は、以下の情報を含むIssueを作成してください：
+If you find a bug, please open an issue and provide the following information:
+- A clear and descriptive title.
+- A detailed description of the problem, including steps to reproduce it.
+- Any relevant logs or screenshots.
 
-1. **再現手順**: バグを再現するための詳細な手順
-2. **期待される動作**: 本来期待される動作
-3. **実際の動作**: 実際に発生した動作
-4. **環境情報**: OS、ブラウザ、GitHub CLIバージョンなど
-5. **ログ**: 関連するエラーログやワークフローログ
+### Suggesting Enhancements
 
-### 機能提案
+If you have an idea for a new feature or an improvement to an existing one, please open an issue to discuss it. This allows us to coordinate efforts and ensure the proposed change aligns with the project's goals.
 
-新機能の提案は大歓迎です。以下の形式でIssueを作成してください：
+### Submitting Pull Requests
 
-```markdown
-## 機能概要
-提案する機能の概要
+1.  **Fork the repository** and create a new branch from `main`.
+2.  **Make your changes** in your forked repository.
+3.  **Write clear and concise commit messages**.
+4.  **Ensure your code adheres to the existing style**.
+5.  **Update the documentation** if your changes affect it.
+6.  **Open a Pull Request** to the `main` branch of this repository.
 
-## 背景・動機
-なぜこの機能が必要なのか
+In your PR description, please explain the changes you made and link to any relevant issues.
 
-## 提案する解決策
-具体的な実装案
+## Development Setup
 
-## 代替案
-他に考えられる解決策
+To get started with development, you'll need to have the `gh` CLI installed.
 
-## 影響範囲
-既存機能への影響
-```
+1.  Clone your forked repository:
+    ```bash
+    git clone https://github.com/your-username/claude-automation.git
+    cd claude-automation
+    ```
 
-### プルリクエスト
+2.  You can use the provided setup script to configure a test repository:
+    ```bash
+    ./scripts/setup-smart-automation.sh <your-username> <your-test-repo>
+    ```
 
-#### 開発フロー
+## Code of Conduct
 
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+We expect all contributors to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md). Please be respectful and considerate in all your interactions.
 
-#### プルリクエストガイドライン
-
-- **明確なタイトル**: 変更内容が分かりやすいタイトル
-- **詳細な説明**: 変更内容と理由の詳細説明
-- **関連Issue**: 関連するIssueがあれば参照
-- **テスト**: 可能な限りテストを含める
-- **ドキュメント**: 必要に応じてドキュメントを更新
-
-#### プルリクエストテンプレート
-
-```markdown
-## 変更概要
-何を変更したかの概要
-
-## 変更理由
-なぜこの変更が必要なのか
-
-## テスト方法
-どのようにテストしたか
-
-## チェックリスト
-- [ ] コードが動作することを確認
-- [ ] 既存テストが通ることを確認
-- [ ] 必要に応じてドキュメントを更新
-- [ ] 変更ログを更新
-
-## 関連Issue
-Closes #(issue number)
-```
-
-## 📋 開発ガイドライン
-
-### コーディング規約
-
-#### Shell Script (.sh)
-- シェバン: `#!/bin/bash`
-- セットオプション: `set -e`
-- 関数名: スネークケース (`function_name`)
-- 変数名: 大文字スネークケース (`VARIABLE_NAME`)
-- インデント: 2スペース
-
-#### YAML (.yml)
-- インデント: 2スペース
-- 配列表記: ハイフン形式
-- 文字列クォート: 必要な場合のみ
-
-#### Markdown (.md)
-- 見出し: ATX形式 (`# Header`)
-- リスト: ハイフン形式
-- コードブロック: 言語指定付き
-
-### ディレクトリ構成
-
-```
-claude-automation/
-├── README.md              # プロジェクト概要
-├── LICENSE                # ライセンス
-├── CONTRIBUTING.md        # このファイル
-├── docs/                  # ドキュメント
-│   ├── setup.md          # セットアップガイド
-│   ├── usage.md          # 使用方法
-│   ├── customization.md  # カスタマイズ方法
-│   ├── troubleshooting.md # トラブルシューティング
-│   └── faq.md            # FAQ
-├── scripts/               # スクリプト
-│   └── setup.sh          # セットアップスクリプト
-├── workflows/             # ワークフローテンプレート
-│   └── claude-smart-automation.yml
-├── config/                # 設定ファイル
-│   └── labels.json       # ラベル定義
-└── examples/              # 使用例
-    ├── basic-usage/       # 基本使用例
-    └── advanced-usage/    # 高度な使用例
-```
-
-### コミットメッセージ規約
-
-#### フォーマット
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-#### Type
-
-- `feat`: 新機能
-- `fix`: バグ修正
-- `docs`: ドキュメント変更
-- `style`: コードスタイル変更
-- `refactor`: リファクタリング
-- `test`: テスト追加・修正
-- `chore`: その他の変更
-
-#### 例
-
-```
-feat(automation): スケジュール設定のカスタマイズ機能追加
-
-ユーザーが独自のスケジュールを設定できる機能を追加
-- 設定ファイルでcron式をカスタマイズ可能
-- 環境変数による動的設定対応
-- バリデーション機能付き
-
-Closes #42
-```
-
-## 🧪 テストガイドライン
-
-### 手動テスト
-
-新機能や修正を行った場合は、以下をテストしてください：
-
-1. **セットアップテスト**
-   ```bash
-   ./scripts/setup.sh test-owner test-repo --dry-run
-   ```
-
-2. **ワークフローテスト**
-   ```bash
-   # 構文チェック
-   yamllint workflows/claude-smart-automation.yml
-   
-   # GitHub Actions検証
-   gh workflow list
-   ```
-
-3. **統合テスト**
-   - テストリポジトリでの実際の動作確認
-   - Issue作成からクローズまでの全フロー確認
-
-### テスト環境
-
-- **テストリポジトリ**: 本番環境とは別のテスト用リポジトリを使用
-- **バックアップ**: 重要なデータのバックアップを確実に取得
-- **ロールバック**: 問題発生時の迅速なロールバック手順を準備
-
-## 📖 ドキュメント貢献
-
-### ドキュメント更新
-
-以下の場合はドキュメント更新が必要です：
-
-- 新機能追加時
-- 設定変更時
-- トラブルシューティング情報追加時
-- FAQ更新時
-
-### ドキュメント作成ガイドライン
-
-1. **ユーザー視点**: 初心者にも分かりやすく
-2. **具体例**: コード例やコマンド例を含める
-3. **最新性**: 情報の正確性と最新性を保つ
-4. **一貫性**: 他のドキュメントとの一貫性を保つ
-
-## 🚀 リリースプロセス
-
-### バージョニング
-
-[Semantic Versioning](https://semver.org/) に従います：
-
-- **MAJOR**: 破壊的変更
-- **MINOR**: 後方互換性のある機能追加
-- **PATCH**: 後方互換性のあるバグ修正
-
-### リリース手順
-
-1. **変更ログ更新**: `CHANGELOG.md` の更新
-2. **バージョンタグ**: `git tag v1.2.3`
-3. **リリースノート**: GitHub Releasesでリリースノート作成
-4. **告知**: 主要な変更の場合は適切な告知
-
-## 🙏 行動規範
-
-### 期待される行動
-
-- 他の参加者への敬意
-- 建設的なフィードバック
-- 多様性の尊重
-- オープンソース精神の遵守
-
-### 禁止される行動
-
-- 嫌がらせや差別的発言
-- 個人攻撃
-- スパムや宣伝
-- その他の不適切な行動
-
-## 📞 サポート
-
-質問やサポートが必要な場合：
-
-1. **FAQ確認**: [docs/faq.md](docs/faq.md) をまず確認
-2. **Issue検索**: 同様の問題がないか既存Issueを検索
-3. **新しいIssue作成**: 解決しない場合は新しいIssueを作成
-4. **Discussions**: 一般的な質問は GitHub Discussions を利用
-
-## 🎉 謝辞
-
-すべてのコントリビューターに感謝いたします！
-
-[![Contributors](https://contrib.rocks/image?repo=takezou621/claude-automation)](https://github.com/takezou621/claude-automation/graphs/contributors)
+Thank you for your contributions!

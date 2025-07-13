@@ -1,270 +1,64 @@
-# セットアップガイド
+# Setup Guide
 
-このドキュメントでは、Claude Smart Automationを新しいリポジトリに導入する詳細な手順を説明します。
+This guide provides instructions for setting up the Claude Smart Automation System in your own repository.
 
-## 📋 目次
+## Prerequisites
 
-- [前提条件](#前提条件)
-- [自動セットアップ](#自動セットアップ)
-- [手動セットアップ](#手動セットアップ)
-- [設定の確認](#設定の確認)
-- [初回テスト](#初回テスト)
+- A GitHub repository
+- `gh` CLI installed and authenticated
+- Basic knowledge of Git and GitHub Actions
 
-## 前提条件
+## Quick Setup (Recommended)
 
-### 必要なツール
+The easiest way to get started is by using the automated setup script.
 
-| ツール | バージョン | 用途 |
-|--------|-----------|------|
-| [GitHub CLI](https://cli.github.com/) | v2.0+ | GitHubとのAPI通信 |
-| [Git](https://git-scm.com/) | v2.0+ | バージョン管理 |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 最新版 | AI支援開発 |
+1.  **Clone this repository:**
 
-### 必要な権限
+    ```bash
+    git clone https://github.com/your-username/claude-automation.git
+    cd claude-automation
+    ```
 
-- **リポジトリ**: 管理者権限（Admin）が必要
-- **GitHub Actions**: 有効化済み
-- **GitHub CLI**: 認証済み
+2.  **Run the script:**
 
-### 権限確認コマンド
+    Provide your GitHub username (or organization) and the name of the repository where you want to set up the automation.
 
-```bash
-# GitHub CLI認証状況確認
-gh auth status
+    ```bash
+    ./scripts/setup-smart-automation.sh <owner> <repo>
+    ```
 
-# リポジトリアクセス確認
-gh repo view <owner>/<repo>
+    For example:
 
-# GitHub Actions確認
-gh api repos/<owner>/<repo>/actions/permissions
-```
+    ```bash
+    ./scripts/setup-smart-automation.sh my-awesome-org my-project
+    ```
 
-## 自動セットアップ
+    The script will automatically create the necessary labels and copy the workflow file to your repository.
 
-### 1. リポジトリのクローン
+## Manual Setup
 
-```bash
-git clone https://github.com/takezou621/claude-automation.git
-cd claude-automation
-```
+If you prefer to set up the system manually, follow these steps:
 
-### 2. セットアップスクリプト実行
+1.  **Copy the Workflow File:**
 
-```bash
-# 基本的な実行
-./scripts/setup.sh <owner> <repo>
+    Copy the main workflow file from `templates/claude-smart-automation.yml` to the `.github/workflows/` directory in your target repository.
 
-# 詳細ログ付き実行
-./scripts/setup.sh <owner> <repo> --verbose
+2.  **Create Required Labels:**
 
-# 実行内容確認（実際の変更なし）
-./scripts/setup.sh <owner> <repo> --dry-run
-```
+    The automation relies on specific labels to function correctly. Create the following labels in your repository settings (`Settings` > `Labels`):
 
-### 3. セットアップ内容
+    -   `claude-processed`: Used to identify issues ready for automated processing.
+    -   `claude-completed`: Applied to issues that have been successfully processed and closed.
+    -   `claude-failed`: Applied if the automation encounters an error.
+    -   `priority:high`
+    -   `priority:medium`
+    -   `priority:low`
 
-自動セットアップでは以下が実行されます：
+3.  **Configure Repository Settings:**
 
-1. **依存ツール確認**: GitHub CLI、Git等の確認
-2. **権限設定**: GitHub Actions の write 権限設定
-3. **ワークフロー配置**: `.github/workflows/claude-smart-automation.yml` の配置
-4. **ラベル作成**: 必要なラベルの自動作成
-5. **テストIssue作成**: 動作確認用Issueの作成
+    -   Go to your repository's `Settings` > `Actions` > `General`.
+    -   Under `Workflow permissions`, ensure that `Read and write permissions` is selected. This allows the workflow to create PRs, merge branches, and close issues.
 
-## 手動セットアップ
+## Next Steps
 
-自動セットアップが使用できない場合の手動手順です。
-
-### Step 1: GitHub Actions 権限設定
-
-#### 1.1 現在の権限確認
-
-```bash
-gh api repos/<owner>/<repo>/actions/permissions/workflow
-```
-
-期待される出力例：
-```json
-{"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
-```
-
-#### 1.2 権限を write に変更
-
-```bash
-gh api --method PUT repos/<owner>/<repo>/actions/permissions/workflow \
-  --field default_workflow_permissions=write \
-  --field can_approve_pull_request_reviews=true
-```
-
-#### 1.3 変更確認
-
-```bash
-gh api repos/<owner>/<repo>/actions/permissions/workflow
-```
-
-期待される出力：
-```json
-{"default_workflow_permissions":"write","can_approve_pull_request_reviews":true}
-```
-
-### Step 2: ワークフローファイル配置
-
-#### 2.1 ディレクトリ作成
-
-```bash
-mkdir -p .github/workflows
-```
-
-#### 2.2 ワークフローファイルコピー
-
-```bash
-# claude-automationリポジトリから
-cp workflows/claude-smart-automation.yml .github/workflows/
-```
-
-または、直接作成：
-
-```yaml
-# .github/workflows/claude-smart-automation.yml
-name: Claude Smart Automation
-
-on:
-  schedule:
-    # 平日夜間実行 (23:00, 02:00, 05:00 JST)
-    - cron: '0 14,17,20 * * 1-5'
-    # 土日昼間実行 (10:00, 14:00, 18:00, 22:00 JST)
-    - cron: '0 1,5,9,13 * * 0,6'
-  workflow_dispatch:
-
-jobs:
-  smart-automation:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      actions: read
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
-        ref: main
-    
-    - name: Smart Automation Processing
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          # (完全なスクリプトはworkflows/claude-smart-automation.ymlを参照)
-```
-
-### Step 3: 必要なラベル作成
-
-```bash
-# 必須ラベル作成
-gh label create "claude-processed" --description "Claude Codeで処理済み" --color "1d76db"
-gh label create "claude-completed" --description "自動化処理完了" --color "0e8a16"
-gh label create "smart-automation" --description "スマート自動化実行済み" --color "b60205"
-
-# 優先度ラベル作成
-gh label create "priority:high" --description "高優先度" --color "d93f0b"
-gh label create "priority:medium" --description "中優先度" --color "fbca04"
-gh label create "priority:low" --description "低優先度" --color "0052cc"
-```
-
-### Step 4: テスト用Issue作成
-
-```bash
-gh issue create \
-  --title "テスト: Claude Smart Automation" \
-  --body "Claude Smart Automationのテスト用Issueです。
-
-@claude テスト実装をお願いします。" \
-  --label "claude-processed,priority:high"
-```
-
-## 設定の確認
-
-### 権限設定確認
-
-```bash
-# GitHub Actions権限確認
-gh api repos/<owner>/<repo>/actions/permissions/workflow
-
-# 期待される出力
-# {"default_workflow_permissions":"write","can_approve_pull_request_reviews":true}
-```
-
-### ワークフロー確認
-
-```bash
-# ワークフローファイル存在確認
-ls -la .github/workflows/claude-smart-automation.yml
-
-# ワークフロー構文確認
-gh workflow list
-```
-
-### ラベル確認
-
-```bash
-# 作成されたラベル確認
-gh label list | grep -E "(claude|priority)"
-```
-
-期待される出力：
-```
-claude-completed    自動化処理完了              0e8a16
-claude-processed    Claude Codeで処理済み       1d76db
-priority:high       高優先度                   d93f0b
-priority:low        低優先度                   0052cc
-priority:medium     中優先度                   fbca04
-smart-automation    スマート自動化実行済み       b60205
-```
-
-## 初回テスト
-
-### 1. Claude Codeでの実装
-
-1. テスト用Issueに対してClaude Codeで実装
-2. 実装ブランチの作成・プッシュ
-
-### 2. ワークフローの手動実行
-
-```bash
-# 手動でワークフロー実行
-gh workflow run claude-smart-automation.yml
-
-# 実行状況確認
-gh run list --workflow="claude-smart-automation.yml" --limit 5
-```
-
-### 3. 実行ログの確認
-
-```bash
-# 最新の実行ログ確認
-RUN_ID=$(gh run list --workflow="claude-smart-automation.yml" --limit 1 --json databaseId --jq '.[0].databaseId')
-gh run view $RUN_ID --log
-```
-
-### 4. 結果の確認
-
-期待される結果：
-- [x] PR自動作成
-- [x] PR自動マージ
-- [x] Issue自動クローズ
-- [x] ブランチ自動削除
-- [x] 適切なラベル付け
-
-## トラブルシューティング
-
-よくある問題と解決方法については [troubleshooting.md](troubleshooting.md) を参照してください。
-
-## 次のステップ
-
-- [使用方法](usage.md) - 基本的な使用方法
-- [カスタマイズ](customization.md) - 設定のカスタマイズ
-- [FAQ](faq.md) - よくある質問
+Once the setup is complete, you can start using the automation by creating issues with the `claude-processed` label. For more details on how to use the system, refer to the [Usage Guide](usage.md).
