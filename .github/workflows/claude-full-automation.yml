@@ -1,413 +1,113 @@
-name: Claude Full Automation
+name: Simple Claude Automation
 
 on:
   schedule:
-    # RepairGPT inspired intelligent scheduling
-    # Weekdays: Night automation (23:00, 02:00, 05:00 JST)
-    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST
-    # Weekends: Day automation (10:00, 14:00, 18:00, 22:00 JST)
-    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST
+    - cron: '0 15 * * *'  # Daily at 15:00 UTC
   workflow_dispatch:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
   push:
     branches:
-      - 'claude/**'
       - 'feature/issue-*'
       - 'fix/issue-*'
-      - 'automation/**'
 
 jobs:
-  full-automation:
+  auto-process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
-      actions: read
-      checks: read
       
     steps:
-    - name: Checkout Repository
+    - name: Checkout
       uses: actions/checkout@v4
       with:
         token: ${{ github.token }}
-        fetch-depth: 0
-        ref: main
         
-    - name: Full Automation Engine
+    - name: Process Issues
       uses: actions/github-script@v7
       with:
         github-token: ${{ github.token }}
         script: |
-          console.log('🚀 CLAUDE FULL AUTOMATION ENGINE ACTIVATED');
-          const now = new Date();
-          const timestamp = now.toISOString();
-          const executionId = Math.random().toString(36).substring(7);
+          console.log('🤖 Starting Claude automation...');
           
-          console.log(`⚡ Execution ID: ${executionId}`);
-          console.log(`🕒 Timestamp: ${timestamp}`);
-          console.log(`🌐 Trigger: ${context.eventName}`);
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'automation-ready'
+          });
           
-          // Advanced metrics tracking
-          let metrics = {
-            issuesProcessed: 0,
-            prsCreated: 0,
-            prsMerged: 0,
-            issuesClosed: 0,
-            branchesDeleted: 0,
-            errors: 0,
-            startTime: Date.now()
-          };
+          if (issues.data.length === 0) {
+            console.log('No automation-ready issues found');
+            return;
+          }
           
-          try {
-            // === PHASE 1: INTELLIGENT ISSUE DISCOVERY ===
-            console.log('\n🔍 PHASE 1: INTELLIGENT ISSUE DISCOVERY');
+          for (const issue of issues.data) {
+            console.log(`Processing issue #${issue.number}: ${issue.title}`);
             
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              per_page: 100,
-              sort: 'created',
-              direction: 'desc'
-            });
-            
-            console.log(`📊 Total open issues: ${issues.data.length}`);
-            
-            // Enhanced label detection (RepairGPT inspired)
-            const automationLabels = [
-              'claude-processed',
-              'claude-ready', 
-              'automation-ready',
-              'smart-automation',
-              'fully-automated',
-              'ultimate-automation',
-              'rapid-process'
-            ];
-            
-            const automationIssues = issues.data.filter(issue => 
-              issue.labels.some(label => automationLabels.includes(label.name))
-            );
-            
-            console.log(`🎯 Automation-ready issues: ${automationIssues.length}`);
-            
-            if (automationIssues.length === 0) {
-              console.log('✨ No automation-ready issues found, engine idle');
-              return;
-            }
-            
-            // === PHASE 2: ADVANCED BRANCH DETECTION ===
-            console.log('\n🔬 PHASE 2: ADVANCED BRANCH DETECTION');
+            const branchName = `feature/issue-${issue.number}`;
             
             const branches = await github.rest.repos.listBranches({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 200
+              repo: context.repo.repo
             });
             
-            console.log(`🌿 Total branches: ${branches.data.length}`);
-            
-            // === PHASE 3: ISSUE PROCESSING ENGINE ===
-            console.log('\n⚡ PHASE 3: ISSUE PROCESSING ENGINE');
-            
-            for (const issue of automationIssues) {
-              try {
-                console.log(`\n🔥 PROCESSING Issue #${issue.number}: ${issue.title}`);
-                metrics.issuesProcessed++;
-                
-                // Enhanced branch pattern matching (RepairGPT style)
-                const branchPatterns = [
-                  `issue-${issue.number}`,
-                  `claude-${issue.number}`,
-                  `feature/issue-${issue.number}`,
-                  `fix/issue-${issue.number}`,
-                  `claude/issue-${issue.number}`,
-                  `automation-${issue.number}`,
-                  `rapid-${issue.number}`,
-                  `smart/${issue.number}`,
-                  `ultimate/${issue.number}`
-                ];
-                
-                const matchingBranches = branches.data.filter(branch => 
-                  branchPatterns.some(pattern => 
-                    branch.name.includes(pattern) || 
-                    branch.name.match(new RegExp(`${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'))
-                  )
-                );
-                
-                if (matchingBranches.length === 0) {
-                  console.log(`⚠️ No automation branch found for Issue #${issue.number}`);
-                  continue;
-                }
-                
-                const targetBranch = matchingBranches[0];
-                console.log(`✅ Branch located: ${targetBranch.name}`);
-                
-                // === PHASE 4: INTELLIGENT PR MANAGEMENT ===
-                console.log(`📝 PHASE 4: INTELLIGENT PR MANAGEMENT`);
-                
-                const existingPRs = await github.rest.pulls.list({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  head: `${context.repo.owner}:${targetBranch.name}`,
-                  state: 'all',
-                  per_page: 10
-                });
-                
-                let prNumber = null;
-                let needsNewPR = true;
-                
-                if (existingPRs.data.length > 0) {
-                  const latestPR = existingPRs.data[0];
-                  console.log(`📋 Existing PR #${latestPR.number} found, state: ${latestPR.state}`);
-                  
-                  if (latestPR.state === 'open') {
-                    prNumber = latestPR.number;
-                    needsNewPR = false;
-                  } else if (latestPR.merged) {
-                    console.log(`✅ PR #${latestPR.number} already merged, skipping`);
-                    continue;
-                  }
-                }
-                
-                // Enhanced PR creation (RepairGPT template)
-                if (needsNewPR) {
-                  console.log(`🚀 CREATING FULL AUTOMATION PR for Issue #${issue.number}`);
-                  
-                  const priorityLabel = issue.labels.find(l => l.name.startsWith('priority:'));
-                  const tierLabel = issue.labels.find(l => l.name.includes('automation') || l.name.includes('tier'));
-                  
-                  const prTitle = `🚀 Full Automation: ${issue.title} (resolves #${issue.number})`;
-                  const prBody = `## 🚀 Claude Full Automation Engine
-
-### 🎯 Issue Resolution
-Resolves #${issue.number}
-
-### ⚡ Full Automation Workflow
-- [x] 🔍 **Intelligent Detection** - Advanced issue scanning with multi-label support
-- [x] 🧠 **Smart Branch Matching** - 9+ naming pattern recognition
-- [x] 🚀 **Full PR Creation** - Comprehensive automation workflow
-- [x] ⚡ **Lightning Merge** - Immediate auto-merge execution
-- [x] 🎯 **Smart Closure** - Automatic issue resolution with enhanced labeling
-- [x] 🧹 **Complete Cleanup** - Branch auto-deletion and metadata update
-
-### 🕒 Execution Details
-**Execution ID:** \`${executionId}\`
-**Timestamp:** ${timestamp}
-**Engine:** Full Automation (RepairGPT Enhanced)
-**Branch:** \`${targetBranch.name}\`
-**Priority:** ${priorityLabel ? priorityLabel.name : 'standard'}
-**Tier:** ${tierLabel ? tierLabel.name : 'full-automation'}
-
-### 📊 Advanced Features
-- **Multi-trigger Support:** Schedule, Push, Workflow Run
-- **Intelligent Scheduling:** Weekday nights + Weekend days
-- **Enhanced Pattern Matching:** 9+ branch naming conventions
-- **Advanced Labeling:** Full RepairGPT label compatibility
-- **Performance Metrics:** Real-time tracking and reporting
-- **Error Recovery:** Comprehensive error handling and logging
-
-### 🔥 RepairGPT Integration
-- **Label System:** claude-auto-generated, fully-automated
-- **Scheduling Strategy:** Timezone-optimized execution
-- **Quality Standards:** Gold-tier automation process
-- **Performance:** Sub-minute to lightning-fast processing
-
----
-🚀 **Powered by Claude Full Automation Engine** | [Claude Smart Automation](https://github.com/takezou621/claude-automation)
-⚡ **RepairGPT Enhanced** | **Next Generation AI Development**
-🎯 **Zero Human Intervention Required**`;
-                  
-                  try {
-                    const pr = await github.rest.pulls.create({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      title: prTitle,
-                      head: targetBranch.name,
-                      base: 'main',
-                      body: prBody,
-                      draft: false
-                    });
-                    
-                    prNumber = pr.data.number;
-                    metrics.prsCreated++;
-                    console.log(`🎉 FULL AUTOMATION PR #${prNumber} CREATED!`);
-                    
-                    // Add advanced labels to PR
-                    await github.rest.issues.addLabels({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: prNumber,
-                      labels: ['claude-auto-generated', 'fully-automated', 'claude-full-automation']
-                    });
-                    
-                  } catch (prError) {
-                    console.log(`❌ Full automation PR creation failed: ${prError.message}`);
-                    metrics.errors++;
-                    continue;
-                  }
-                }
-                
-                // === PHASE 5: LIGHTNING AUTO-MERGE ===
-                if (prNumber) {
-                  console.log(`⚡ PHASE 5: LIGHTNING AUTO-MERGE PR #${prNumber}`);
-                  
-                  // Strategic wait for optimal merge timing
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  
-                  try {
-                    await github.rest.pulls.merge({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      pull_number: prNumber,
-                      commit_title: `🚀 Full Auto-merge: Issue #${issue.number} [${executionId}]`,
-                      commit_message: `Full Automation Engine - Complete resolution
-
-Execution ID: ${executionId}
-Processed by: Claude Full Automation (RepairGPT Enhanced)
-Timestamp: ${timestamp}
-Quality: Gold Standard
-Performance: Lightning Fast`,
-                      merge_method: 'squash'
-                    });
-                    
-                    metrics.prsMerged++;
-                    console.log(`🚀 LIGHTNING MERGE COMPLETED for PR #${prNumber}`);
-                    
-                  } catch (mergeError) {
-                    console.log(`⚠️ Lightning merge failed: ${mergeError.message}`);
-                    metrics.errors++;
-                    continue;
-                  }
-                }
-                
-                // === PHASE 6: COMPREHENSIVE ISSUE COMPLETION ===
-                console.log(`🎯 PHASE 6: COMPREHENSIVE ISSUE COMPLETION #${issue.number}`);
-                
-                const completionComment = `🚀 **CLAUDE FULL AUTOMATION COMPLETED**
-
-Issue #${issue.number} has been **FULLY RESOLVED** by Claude Full Automation Engine!
-
-## 🚀 **Execution Summary:**
-- 🔍 **Intelligent Detection:** Advanced multi-label issue scanning
-- 🧠 **Smart Processing:** Enhanced RepairGPT-inspired automation
-- ⚡ **Lightning Implementation:** Sub-minute end-to-end resolution
-- 🚀 **Full Automation PR:** Auto-created with comprehensive metadata
-- 🎯 **Smart Closure:** Issue automatically resolved with enhanced labeling
-- 🧹 **Complete Cleanup:** Branch automatically deleted with metrics
-
-## ⚡ **Performance Metrics:**
-- **Execution ID:** \`${executionId}\`
-- **Processing Time:** < ${Math.round((Date.now() - metrics.startTime) / 1000)}s
-- **Quality Standard:** Gold Tier
-- **Automation Level:** 100% Autonomous
-- **Success Rate:** 99.9% reliability
-
-## 🕒 **Execution Timeline:**
-**Started:** ${timestamp}
-**Completed:** ${new Date().toISOString()}
-**Branch:** \`${targetBranch.name}\`
-**PR:** #${prNumber}
-**Performance:** Lightning Fast
-
-## 🚀 **Full Automation Features:**
-- **Multi-Trigger Support:** Schedule + Push + Workflow Run
-- **Intelligent Scheduling:** Weekday nights (23:00-05:00 JST) + Weekend days (10:00-22:00 JST)
-- **Enhanced Detection:** 7+ automation labels supported
-- **Advanced Patterns:** 9+ branch naming conventions
-- **RepairGPT Integration:** Full label system compatibility
-- **Quality Assurance:** Gold standard processing
-
-## 📊 **Session Metrics:**
-- **Issues Processed:** ${metrics.issuesProcessed}
-- **PRs Created:** ${metrics.prsCreated}  
-- **PRs Merged:** ${metrics.prsMerged}
-- **Success Rate:** ${Math.round(((metrics.prsCreated + metrics.prsMerged) / (metrics.issuesProcessed * 2)) * 100)}%
-
----
-🚀 **Claude Full Automation Engine** | **RepairGPT Enhanced Technology**
-⚡ **Zero Latency • Maximum Efficiency • Perfect Execution**
-🎯 **Powered by [Claude Smart Automation](https://github.com/takezou621/claude-automation)**`;
-                
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  body: completionComment
-                });
-                
-                // Enhanced issue closure with RepairGPT labels
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed'
-                });
-                
-                const completionLabels = [
-                  'claude-completed',
-                  'fully-automated', 
-                  'claude-full-automation',
-                  'ai-resolved',
-                  'quality:gold',
-                  'perf:sub-minute'
-                ];
-                
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  labels: completionLabels
-                });
-                
-                metrics.issuesClosed++;
-                
-                // === PHASE 7: COMPLETE CLEANUP ===
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                try {
-                  await github.rest.git.deleteRef({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    ref: `heads/${targetBranch.name}`
-                  });
-                  
-                  metrics.branchesDeleted++;
-                  console.log(`🗑️ COMPLETE CLEANUP: Deleted branch ${targetBranch.name}`);
-                  
-                } catch (deleteError) {
-                  console.log(`⚠️ Branch cleanup warning: ${deleteError.message}`);
-                  metrics.errors++;
-                }
-                
-                console.log(`🔥 Issue #${issue.number} FULL AUTOMATION SUCCESS! ⚡`);
-                
-              } catch (issueError) {
-                console.log(`❌ Issue #${issue.number} full automation failed: ${issueError.message}`);
-                metrics.errors++;
-                continue;
-              }
+            const branch = branches.data.find(b => b.name === branchName);
+            if (!branch) {
+              console.log(`Branch ${branchName} not found, skipping...`);
+              continue;
             }
             
-            // === FINAL REPORTING ===
-            const totalTime = Math.round((Date.now() - metrics.startTime) / 1000);
-            console.log(`\n🎯 CLAUDE FULL AUTOMATION ENGINE COMPLETE`);
-            console.log(`⚡ Execution ID: ${executionId}`);
-            console.log(`📊 Final Metrics:`);
-            console.log(`   - Issues Processed: ${metrics.issuesProcessed}`);
-            console.log(`   - PRs Created: ${metrics.prsCreated}`);
-            console.log(`   - PRs Merged: ${metrics.prsMerged}`);
-            console.log(`   - Issues Closed: ${metrics.issuesClosed}`);
-            console.log(`   - Branches Deleted: ${metrics.branchesDeleted}`);
-            console.log(`   - Errors: ${metrics.errors}`);
-            console.log(`   - Total Time: ${totalTime}s`);
-            console.log(`   - Success Rate: ${Math.round(((metrics.issuesClosed) / Math.max(metrics.issuesProcessed, 1)) * 100)}%`);
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branchName}`,
+              state: 'open'
+            });
             
-          } catch (error) {
-            console.log(`❌ Claude Full Automation Engine error: ${error.message}`);
-            console.log(error.stack);
-            throw error;
+            let prNumber;
+            if (existingPRs.data.length === 0) {
+              const pr = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Fix: ${issue.title}`,
+                head: branchName,
+                base: 'main',
+                body: `Resolves #${issue.number}\n\n🤖 Auto-generated by Claude automation`
+              });
+              prNumber = pr.data.number;
+              console.log(`Created PR #${prNumber}`);
+            } else {
+              prNumber = existingPRs.data[0].number;
+            }
+            
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash'
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '✅ Automatically resolved by Claude automation'
+              });
+              
+              console.log(`Completed issue #${issue.number}`);
+              
+            } catch (error) {
+              console.log(`Failed to merge PR #${prNumber}: ${error.message}`);
+            }
           }
+          
+          console.log('✅ Automation complete')
