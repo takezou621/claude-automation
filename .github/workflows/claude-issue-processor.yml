@@ -22,12 +22,12 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ github.token }}
         
     - name: Issue Processing Engine
       uses: actions/github-script@v7
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ github.token }}
         script: |
           console.log('🔄 CLAUDE ISSUE PROCESSOR ACTIVATED');
           const now = new Date();
