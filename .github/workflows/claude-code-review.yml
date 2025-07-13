@@ -53,7 +53,7 @@ jobs:
 **Risk Level**: ${riskLevel}
 **Files Changed**: ${files.data.length}
 
-${issues.length > 0 ? '### Issues Found:\n' + issues.map(i => `- ${i}`).join('\n') : '✅ No issues detected'}
+${issues.length > 0 ? '### Issues Found:\n' + issues.map(i => \`- ${i}\`).join('\n') : '✅ No issues detected'}
 
 ${riskLevel === 'LOW' ? '✅ Ready for merge' : '👀 Manual review recommended'}`;
 
