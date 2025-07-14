@@ -74,10 +74,15 @@ The setup script will configure your new sandbox repository by creating the nece
 -   `<repo>`: The name of your sandbox repository (`my-sandbox-project`)
 
 ```bash
-# This script is interactive and will guide you
+# For standard PR automation
 ./scripts/setup-smart-automation.sh <owner> <repo>
+
+# For FULL Issue-to-Code automation with Claude Code CLI
+./scripts/setup-claude-code-automation.sh <owner> <repo>
 ```
 The script will ask for a `GITHUB_TOKEN`. You can create one [**here**](https://github.com/settings/tokens/new) with the `repo` and `workflow` scopes.
+
+**For Claude Code automation, you'll also need an Anthropic API key from [console.anthropic.com](https://console.anthropic.com/).**
 
 ### Step 4: See the Magic Happen!
 
@@ -115,7 +120,11 @@ Now, let's simulate a full development cycle in your new `my-sandbox-project` re
 
 4.  **Manually trigger the workflow** to see the result instantly.
     ```bash
+    # For standard automation (requires manual branch creation)
     gh workflow run claude-smart-automation.yml
+    
+    # For FULL Claude Code automation (no manual coding required!)
+    gh workflow run claude-code-automation.yml
     ```
 
 **That's it!** Check your repository. You will see that the system has automatically created a PR, merged it, closed the issue, and deleted the branch.
@@ -130,6 +139,7 @@ Choose the automation tier that best fits your needs:
 
 | Tier | Schedule | Best For | Features |
 |------|----------|----------|----------|
+| **🤖 Claude Code** | Intelligent schedule | Complete automation | 🧠 Full Issue-to-Code with Claude Code CLI integration |
 | **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
 | **🚀 Full** | RepairGPT Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
 | **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
@@ -140,6 +150,18 @@ Choose the automation tier that best fits your needs:
 ### Schedule Configuration
 
 Choose your preferred automation workflow:
+
+#### 🤖 Claude Code Full Automation (claude-code-automation.yml)
+```yaml
+on:
+  schedule:
+    # Intelligent scheduling - weekday nights and weekend days
+    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
+    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, labeled]
+```
 
 #### Ultimate Automation (claude-ultimate-automation.yml)
 ```yaml
@@ -181,13 +203,55 @@ const branchPatterns = [
 ];
 ```
 
+## 🤖 Claude Code Full Automation
+
+**The ultimate Issue-to-Code automation!** This tier provides complete end-to-end automation where you only need to create an issue, and Claude Code CLI generates the implementation automatically.
+
+### ✨ Key Features
+
+- **🧠 Intelligent Issue Analysis**: Automatically categorizes issues (feature, bugfix, refactor, test, docs)
+- **🤖 Claude Code CLI Integration**: Uses Anthropic's official Claude Code CLI for code generation
+- **🌿 Automatic Branch Management**: Creates feature branches automatically
+- **📝 Smart Code Generation**: Generates code, tests, and documentation based on issue requirements
+- **🔄 End-to-End Workflow**: From issue creation to merged PR with zero manual coding
+- **🧹 Complete Cleanup**: Automatic branch deletion and issue closure
+
+### 🚀 How It Works
+
+1. **Create Issue**: Simply create an issue with the `claude-processed` label
+2. **Automatic Analysis**: System analyzes issue type, complexity, and requirements
+3. **Code Generation**: Claude Code CLI generates the complete implementation
+4. **Branch & Commit**: Creates branch, commits changes with proper attribution
+5. **Pull Request**: Opens PR with detailed description and change summary
+6. **Auto-Merge**: Merges PR after validation (configurable)
+7. **Issue Closure**: Closes issue and cleans up branch automatically
+
+### 🔧 Setup
+
+Use the dedicated setup script for full Claude Code automation:
+
+```bash
+./scripts/setup-claude-code-automation.sh <owner> <repo>
+```
+
+**Requirements:**
+- GitHub token with repo and workflow permissions
+- Anthropic API key from [console.anthropic.com](https://console.anthropic.com/)
+
 ### 🏷️ Supported Labels
 
 The system detects issues with any of these labels:
-- `claude-processed` - Standard Claude processing
+- `claude-processed` - Standard Claude processing  
 - `claude-ready` - Ready for automation
+- `claude-code-ready` - Specifically ready for Claude Code CLI
 - `automation-ready` - General automation ready
 - `rapid-process` - Rapid processing mode
+
+**Completion Labels:**
+- `claude-completed` - Successfully automated
+- `claude-code-automated` - Automated using Claude Code CLI
+- `fully-automated` - Complete end-to-end automation
+- `automation-failed` - Automation attempt failed
 
 ## 🔍 Workflow Breakdown
 

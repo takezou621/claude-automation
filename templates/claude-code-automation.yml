@@ -1,0 +1,162 @@
+name: Claude Code Full Automation
+
+on:
+  schedule:
+    # Intelligent scheduling - weekday nights and weekend days
+    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
+    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, labeled]
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  claude-code-automation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        ref: main
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install Claude Code CLI
+      run: |
+        npm install -g @anthropic-ai/claude-code
+        echo "Claude Code version: $(claude-code --version)"
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install Python Dependencies
+      run: |
+        pip install requests pyyaml anthropic
+
+    - name: Claude Code Full Automation Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          const { exec } = require('child_process');
+          const util = require('util');
+          const execAsync = util.promisify(exec);
+          
+          console.log('🤖 Claude Code Full Automation Engine Starting...');
+          
+          try {
+            // Find automation-ready issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 50
+            });
+            
+            const automationLabels = [
+              'claude-processed', 
+              'claude-ready', 
+              'automation-ready',
+              'claude-code-ready'
+            ];
+            
+            const readyIssues = issues.data.filter(issue => 
+              issue.labels.some(label => automationLabels.includes(label.name)) &&
+              !issue.labels.some(label => label.name === 'claude-completed')
+            );
+            
+            console.log(`🔍 Found ${readyIssues.length} issues ready for automation`);
+            
+            if (readyIssues.length === 0) {
+              console.log('✅ No issues requiring automation');
+              return;
+            }
+            
+            for (const issue of readyIssues) {
+              console.log(`\n🚀 Processing Issue #${issue.number}: ${issue.title}`);
+              
+              try {
+                // Analyze issue content to determine implementation approach
+                const issueAnalysis = await analyzeIssue(issue);
+                console.log(`📊 Issue Analysis: ${issueAnalysis.type}`);
+                
+                // Check if branch already exists
+                const branchName = `claude/issue-${issue.number}`;
+                const branchExists = await checkBranchExists(branchName);
+                
+                if (!branchExists) {
+                  // Create new branch
+                  console.log(`🌿 Creating branch: ${branchName}`);
+                  await createBranch(branchName);
+                }
+                
+                // Switch to the feature branch
+                await execAsync(`git checkout ${branchName}`);
+                
+                // Generate code using Claude Code CLI
+                console.log('🔄 Generating code with Claude Code...');
+                const codeGenResult = await generateCodeWithClaude(issue, issueAnalysis);
+                
+                if (codeGenResult.success) {
+                  console.log('✅ Code generation successful');
+                  
+                  // Commit changes
+                  await commitChanges(issue, codeGenResult);
+                  
+                  // Push branch
+                  await execAsync(`git push origin ${branchName}`);
+                  console.log(`📤 Pushed branch: ${branchName}`);
+                  
+                  // Switch back to main
+                  await execAsync('git checkout main');
+                  
+                  // Create or update PR
+                  const prResult = await createOrUpdatePR(issue, branchName, codeGenResult);
+                  
+                  if (prResult.success) {
+                    // Wait for any CI checks, then auto-merge
+                    await autoMergePR(prResult.prNumber, issue);
+                    
+                    // Mark issue as completed
+                    await completeIssue(issue, prResult.prNumber, branchName);
+                    
+                    console.log(`🎉 Issue #${issue.number} fully automated!`);
+                  }
+                } else {
+                  console.log(`❌ Code generation failed for Issue #${issue.number}`);
+                  await addFailureComment(issue, codeGenResult.error);
+                }
+                
+              } catch (error) {
+                console.log(`❌ Error processing Issue #${issue.number}: ${error.message}`);
+                await addFailureComment(issue, error.message);
+              }
+            }
+            
+            console.log('\n✅ Claude Code Automation Engine Complete');
+            
+          } catch (error) {
+            console.log(`❌ Automation engine error: ${error.message}`);
+            throw error;
+          }
+          
+          // Helper functions implementation would continue here...
+          // (Same as the previous workflow file)
