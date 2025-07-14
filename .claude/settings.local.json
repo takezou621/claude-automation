@@ -27,7 +27,8 @@
       "Bash(test:*)",
       "WebFetch(domain:docs.github.com)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }

@@ -80,10 +80,10 @@ class ClaudeAutomationBugfix:
             
             # Simulate complex automation logic
             automation_steps = [
-                self._detect_implementation_type(),
-                self._generate_code_solution(),
-                self._validate_security_checks(),
-                self._prepare_review_data()
+                self._detect_implementation_type,
+                self._generate_code_solution,
+                self._validate_security_checks,
+                self._prepare_review_data
             ]
             
             results = {}
