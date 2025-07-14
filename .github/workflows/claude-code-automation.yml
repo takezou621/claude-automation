@@ -2,9 +2,11 @@ name: Claude Code Full Automation
 
 on:
   schedule:
-    # Intelligent scheduling - weekday nights and weekend days
-    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
-    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
+    # TEST: One-time execution at 8:03 JST (23:03 UTC)
+    - cron: '3 23 * * *'  # Daily at 23:03 UTC (8:03 JST next day)
+    # Intelligent scheduling - weekday nights and weekend days (disabled for test)
+    # - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
+    # - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
   workflow_dispatch:
   issues:
     types: [opened, edited, labeled]
