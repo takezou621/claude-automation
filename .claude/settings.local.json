@@ -3,7 +3,25 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh run view:*)",
+      "Bash(chmod:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(yamllint:*)",
+      "Bash(python3:*)",
+      "Bash(bash:*)",
+      "Bash(grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh pr create:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(TZ='Asia/Tokyo' date)",
+      "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')"
     ],
     "deny": []
   }
