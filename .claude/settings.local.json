@@ -21,7 +21,13 @@
       "Bash(mv:*)",
       "Bash(cp:*)",
       "Bash(TZ='Asia/Tokyo' date)",
-      "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')"
+      "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')",
+      "Bash(TZ=Asia/Tokyo date '+%H:%M JST')",
+      "Bash(TZ:*)",
+      "Bash(test:*)",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
