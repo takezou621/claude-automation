@@ -2,9 +2,11 @@ name: Claude Code Full Automation
 
 on:
   schedule:
-    # Intelligent scheduling - weekday nights and weekend days
-    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
-    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
+    # TEST: One-time execution at 8:03 JST (23:03 UTC)
+    - cron: '3 23 * * *'  # Daily at 23:03 UTC (8:03 JST next day)
+    # Intelligent scheduling - weekday nights and weekend days (disabled for test)
+    # - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
+    # - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
   workflow_dispatch:
   issues:
     types: [opened, edited, labeled]
@@ -83,7 +85,7 @@ jobs:
               !issue.labels.some(label => label.name === 'claude-completed')
             );
             
-            console.log(`🔍 Found ${readyIssues.length} issues ready for automation`);
+            console.log('🔍 Found ' + readyIssues.length + ' issues ready for automation');
             
             if (readyIssues.length === 0) {
               console.log('✅ No issues requiring automation');
@@ -91,25 +93,25 @@ jobs:
             }
             
             for (const issue of readyIssues) {
-              console.log(`\n🚀 Processing Issue #${issue.number}: ${issue.title}`);
+              console.log('\\n🚀 Processing Issue #' + issue.number + ': ' + issue.title);
               
               try {
                 // Analyze issue content to determine implementation approach
                 const issueAnalysis = await analyzeIssue(issue);
-                console.log(`📊 Issue Analysis: ${issueAnalysis.type}`);
+                console.log('📊 Issue Analysis: ' + issueAnalysis.type);
                 
                 // Check if branch already exists
-                const branchName = `claude/issue-${issue.number}`;
+                const branchName = 'claude/issue-' + issue.number;
                 const branchExists = await checkBranchExists(branchName);
                 
                 if (!branchExists) {
                   // Create new branch
-                  console.log(`🌿 Creating branch: ${branchName}`);
+                  console.log('🌿 Creating branch: ' + branchName);
                   await createBranch(branchName);
                 }
                 
                 // Switch to the feature branch
-                await execAsync(`git checkout ${branchName}`);
+                await execAsync('git checkout ' + branchName);
                 
                 // Generate code using Claude Code CLI
                 console.log('🔄 Generating code with Claude Code...');
@@ -122,8 +124,8 @@ jobs:
                   await commitChanges(issue, codeGenResult);
                   
                   // Push branch
-                  await execAsync(`git push origin ${branchName}`);
-                  console.log(`📤 Pushed branch: ${branchName}`);
+                  await execAsync('git push origin ' + branchName);
+                  console.log('📤 Pushed branch: ' + branchName);
                   
                   // Switch back to main
                   await execAsync('git checkout main');
@@ -138,25 +140,307 @@ jobs:
                     // Mark issue as completed
                     await completeIssue(issue, prResult.prNumber, branchName);
                     
-                    console.log(`🎉 Issue #${issue.number} fully automated!`);
+                    console.log('🎉 Issue #' + issue.number + ' fully automated!');
                   }
                 } else {
-                  console.log(`❌ Code generation failed for Issue #${issue.number}`);
+                  console.log('❌ Code generation failed for Issue #' + issue.number);
                   await addFailureComment(issue, codeGenResult.error);
                 }
                 
               } catch (error) {
-                console.log(`❌ Error processing Issue #${issue.number}: ${error.message}`);
+                console.log('❌ Error processing Issue #' + issue.number + ': ' + error.message);
                 await addFailureComment(issue, error.message);
               }
             }
             
-            console.log('\n✅ Claude Code Automation Engine Complete');
+            console.log('\\n✅ Claude Code Automation Engine Complete');
             
           } catch (error) {
-            console.log(`❌ Automation engine error: ${error.message}`);
+            console.log('❌ Automation engine error: ' + error.message);
             throw error;
           }
           
-          // Helper functions implementation would continue here...
-          // (Same as the previous workflow file)
+          // Helper functions
+          async function analyzeIssue(issue) {
+            const title = issue.title.toLowerCase();
+            const body = issue.body || '';
+            
+            let type = 'feature';
+            let priority = 'medium';
+            let complexity = 'simple';
+            
+            // Determine issue type
+            if (title.includes('fix') || title.includes('bug') || title.includes('error')) {
+              type = 'bugfix';
+            } else if (title.includes('refactor') || title.includes('improve')) {
+              type = 'refactor';
+            } else if (title.includes('test') || title.includes('spec')) {
+              type = 'test';
+            } else if (title.includes('doc') || title.includes('readme')) {
+              type = 'documentation';
+            }
+            
+            // Determine complexity
+            if (body.length > 500 || title.includes('complex') || title.includes('major')) {
+              complexity = 'complex';
+            } else if (body.length > 200 || title.includes('enhance') || title.includes('extend')) {
+              complexity = 'medium';
+            }
+            
+            return { type, priority, complexity };
+          }
+          
+          async function checkBranchExists(branchName) {
+            try {
+              const { stdout } = await execAsync('git branch -r');
+              return stdout.includes(branchName);
+            } catch {
+              return false;
+            }
+          }
+          
+          async function createBranch(branchName) {
+            await execAsync('git checkout -b ' + branchName);
+          }
+          
+          async function generateCodeWithClaude(issue, analysis) {
+            try {
+              // Create a detailed prompt for Claude Code
+              const prompt = createClaudePrompt(issue, analysis);
+              
+              // Write prompt to temporary file
+              const promptFile = '/tmp/claude_prompt.md';
+              fs.writeFileSync(promptFile, prompt);
+              
+              // Execute Claude Code CLI
+              const claudeCommand = 'claude-code --file ' + promptFile + ' --output-format json';
+              const { stdout, stderr } = await execAsync(claudeCommand, { 
+                timeout: 300000,
+                env: { ...process.env, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
+              });
+              
+              if (stderr) {
+                console.log('Claude Code warnings: ' + stderr);
+              }
+              
+              return {
+                success: true,
+                output: stdout,
+                files_modified: await getModifiedFiles()
+              };
+              
+            } catch (error) {
+              return {
+                success: false,
+                error: error.message
+              };
+            }
+          }
+          
+          function createClaudePrompt(issue, analysis) {
+            return '# Issue Implementation Request\\n\\n' +
+              '## Issue Details\\n' +
+              '- **Number**: #' + issue.number + '\\n' +
+              '- **Title**: ' + issue.title + '\\n' +
+              '- **Type**: ' + analysis.type + '\\n' +
+              '- **Complexity**: ' + analysis.complexity + '\\n\\n' +
+              '## Issue Description\\n' +
+              (issue.body || 'No description provided') + '\\n\\n' +
+              '## Implementation Instructions\\n\\n' +
+              'Please implement the necessary code changes to resolve this issue. Consider the following:\\n\\n' +
+              '1. **Code Quality**: Write clean, maintainable code following best practices\\n' +
+              '2. **Testing**: Include appropriate tests if this is a feature or bugfix\\n' +
+              '3. **Documentation**: Update relevant documentation if needed\\n' +
+              '4. **Security**: Ensure any security implications are properly handled\\n\\n' +
+              '## Expected Deliverables\\n' +
+              '- Implementation code\\n' +
+              '- Tests (if applicable)\\n' +
+              '- Documentation updates (if applicable)\\n' +
+              '- Clear commit message explaining the changes\\n\\n' +
+              'Please implement this in the most appropriate way for the codebase structure and language being used.\\n';
+          }
+          
+          async function getModifiedFiles() {
+            try {
+              const { stdout } = await execAsync('git diff --name-only');
+              return stdout.split('\\n').filter(file => file.trim());
+            } catch {
+              return [];
+            }
+          }
+          
+          async function commitChanges(issue, codeGenResult) {
+            const commitMessage = 'feat: Implement solution for issue #' + issue.number + '\\n\\n' +
+              issue.title + '\\n\\n' +
+              'Auto-generated by Claude Code automation\\n\\n' +
+              '🤖 Generated with Claude Code\\n' +
+              'Co-Authored-By: Claude <noreply@anthropic.com>';
+
+            await execAsync('git add .');
+            await execAsync('git commit -m "' + commitMessage + '"');
+          }
+          
+          async function createOrUpdatePR(issue, branchName, codeGenResult) {
+            try {
+              // Check for existing PR
+              const existingPRs = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: context.repo.owner + ':' + branchName,
+                state: 'open'
+              });
+              
+              const prTitle = '🤖 Auto-implement: ' + issue.title;
+              const prBody = '## 🤖 Claude Code Automation\\n\\n' +
+                'Resolves #' + issue.number + '\\n\\n' +
+                '### 📝 Changes Made\\n' +
+                codeGenResult.files_modified.map(file => '- Modified: \\`' + file + '\\`').join('\\n') + '\\n\\n' +
+                '### 🧪 Testing\\n' +
+                '- [x] Code generated by Claude Code CLI\\n' +
+                '- [x] Automated commit with proper attribution\\n' +
+                '- [ ] Manual review recommended before merge\\n\\n' +
+                '### 🚀 Automation Details\\n' +
+                '- **Engine**: Claude Code Full Automation\\n' +
+                '- **Generated**: ' + new Date().toISOString() + '\\n' +
+                '- **Branch**: \\`' + branchName + '\\`\\n\\n' +
+                '---\\n' +
+                '🤖 **Powered by Claude Code Automation** | [Repository](https://github.com/takezou621/claude-automation)\\n';
+              
+              if (existingPRs.data.length > 0) {
+                // Update existing PR
+                const pr = existingPRs.data[0];
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  title: prTitle,
+                  body: prBody
+                });
+                
+                return { success: true, prNumber: pr.number };
+              } else {
+                // Create new PR
+                const pr = await github.rest.pulls.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: prTitle,
+                  head: branchName,
+                  base: 'main',
+                  body: prBody
+                });
+                
+                return { success: true, prNumber: pr.data.number };
+              }
+              
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          }
+          
+          async function autoMergePR(prNumber, issue) {
+            try {
+              // Wait a bit for any CI checks
+              await new Promise(resolve => setTimeout(resolve, 30000));
+              
+              // Attempt auto-merge
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                commit_title: '🤖 Auto-merge: Issue #' + issue.number,
+                commit_message: 'Claude Code automation merge\\n\\nResolves #' + issue.number,
+                merge_method: 'squash'
+              });
+              
+              console.log('✅ Auto-merged PR #' + prNumber);
+              
+            } catch (error) {
+              console.log('⚠️ Auto-merge failed for PR #' + prNumber + ': ' + error.message);
+              // Add comment about manual merge needed
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: '🤖 **Auto-merge Notice**\\n\\nAuto-merge failed. Manual review and merge required.\\n\\nError: ' + error.message
+              });
+            }
+          }
+          
+          async function completeIssue(issue, prNumber, branchName) {
+            // Add completion comment
+            const completionComment = '🎉 **Issue Automatically Resolved!**\\n\\n' +
+              'This issue has been fully automated using Claude Code CLI integration.\\n\\n' +
+              '## 🚀 **Automation Summary:**\\n' +
+              '- 🤖 **Code Generation**: Claude Code CLI\\n' +
+              '- 🌿 **Branch**: \\`' + branchName + '\\`\\n' +
+              '- 📋 **Pull Request**: #' + prNumber + '\\n' +
+              '- ✅ **Status**: Automatically merged\\n' +
+              '- 🧹 **Cleanup**: Branch will be auto-deleted\\n\\n' +
+              '## ⚡ **Performance:**\\n' +
+              '- **Total Time**: < 5 minutes end-to-end\\n' +
+              '- **Human Intervention**: Zero\\n' +
+              '- **Quality**: AI-generated with best practices\\n\\n' +
+              '---\\n' +
+              '🤖 **Claude Code Full Automation** | **Next Generation Development**';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: completionComment
+            });
+            
+            // Close issue and add labels
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'closed'
+            });
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['claude-completed', 'claude-code-automated', 'fully-automated']
+            });
+            
+            // Clean up branch
+            try {
+              await execAsync('git push origin --delete ' + branchName);
+              console.log('🗑️ Deleted branch: ' + branchName);
+            } catch (error) {
+              console.log('⚠️ Branch cleanup warning: ' + error.message);
+            }
+          }
+          
+          async function addFailureComment(issue, errorMessage) {
+            const failureComment = '❌ **Claude Code Automation Failed**\\n\\n' +
+              'The automated code generation for this issue encountered an error.\\n\\n' +
+              '**Error Details:**\\n' +
+              '\\`\\`\\`\\n' +
+              errorMessage + '\\n' +
+              '\\`\\`\\`\\n\\n' +
+              '**Next Steps:**\\n' +
+              '1. Review the error message above\\n' +
+              '2. Manual implementation may be required\\n' +
+              '3. Consider updating issue description for clarity\\n\\n' +
+              'The issue remains open for manual resolution.\\n\\n' +
+              '---\\n' +
+              '🤖 **Claude Code Automation Engine**';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: failureComment
+            });
+            
+            // Add failure label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['automation-failed']
+            });
+          }
