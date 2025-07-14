@@ -2,8 +2,8 @@ name: Claude Code Full Automation
 
 on:
   schedule:
-    # TEST: One-time execution at 8:03 JST (23:03 UTC)
-    - cron: '3 23 * * *'  # Daily at 23:03 UTC (8:03 JST next day)
+    # TEST: One-time execution at 8:18 JST (23:18 UTC)
+    - cron: '18 23 * * *'  # Daily at 23:18 UTC (8:18 JST next day)
     # Intelligent scheduling - weekday nights and weekend days (disabled for test)
     # - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
     # - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
