@@ -7,7 +7,7 @@
 
 **Turn your GitHub Issues into Merged Pull Requests, automatically.**
 
-This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Offering enterprise-grade automation with zero human intervention and built-in AI-powered code reviews and quality gates.
+This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Offering advanced automation with zero human intervention and built-in AI-powered code reviews and quality gates.
 
 ---
 
@@ -63,7 +63,7 @@ Our implementation offers:
 - **Advanced Branch Detection**: 9+ naming convention support
 - **Priority-Based Processing**: Critical issues get immediate attention
 
-#### 🎯 **Enterprise Features**
+#### 🎯 **Advanced Features**
 - **Zero Latency Processing**: Lightning-fast issue resolution
 - **Comprehensive Metrics**: Detailed automation analytics
 - **Fallback Systems**: Robust error handling and recovery
@@ -115,7 +115,7 @@ Choose the automation tier that best fits your needs:
 | Tier | Schedule | Best For | Features |
 |------|----------|----------|----------|
 | **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
-| **🚀 Full** | Smart Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
+| **🚀 Full** | Smart Schedule | Large projects | 🏢 Multi-trigger, AI review, metrics tracking |
 | **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
 | **🧠 Smart** | Intelligent schedule | Standard projects | 🧠 Timezone-aware, resource efficient |
 | **🤖 Code Review** | PR-triggered | Quality assurance | 🔍 AI analysis, security scanning, risk assessment |
@@ -244,7 +244,7 @@ const branchPatterns = [
 Contributions are welcome! Please see our [**Contributing Guide**](CONTRIBUTING.md) for details on how to submit pull requests, report bugs, and suggest features.
 
 ### **Advanced Research**
-This project incorporates advanced automation patterns and enterprise-grade features. See our [Integration Analysis](REPAIRGPT_INTEGRATION.md) for detailed insights.
+This project incorporates advanced automation patterns and comprehensive features. See our [Integration Analysis](REPAIRGPT_INTEGRATION.md) for detailed insights.
 
 ## 📄 License
 
