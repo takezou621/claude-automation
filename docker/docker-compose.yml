@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  claude-automation:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: claude-automation
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - GITHUB_OWNER=${GITHUB_OWNER}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - AUTO_REVIEW=${AUTO_REVIEW:-true}
+      - AUTO_LABEL=${AUTO_LABEL:-true}
+      - AUTO_ASSIGN=${AUTO_ASSIGN:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.github.claude-automation.service=webhook-server"
+      - "com.github.claude-automation.version=1.0.0"
+
+  # Optional: Redis for caching (if needed for scaling)
+  redis:
+    image: redis:7-alpine
+    container_name: claude-automation-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - redis
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: claude-automation-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - claude-automation
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - nginx
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: claude-automation-network

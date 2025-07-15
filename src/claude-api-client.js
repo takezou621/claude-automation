@@ -9,7 +9,7 @@ const MAX_TOKENS = 4000;
 const DEFAULT_TEMPERATURE = 0.1;
 
 class ClaudeAPIClient {
-  constructor(apiKey, options = {}) {
+  constructor (apiKey, options = {}) {
     this.apiKey = apiKey;
     this.baseURL = options.baseURL || CLAUDE_API_BASE_URL;
     this.model = options.model || DEFAULT_MODEL;
@@ -32,13 +32,13 @@ class ClaudeAPIClient {
   /**
    * Send a message to Claude API with enterprise features
    */
-  async sendMessage(message, options = {}) {
+  async sendMessage (message, options = {}) {
     const startTime = Date.now();
-    
+
     try {
       // Rate limiting check
       await this.checkRateLimit();
-      
+
       // Prepare request payload
       const payload = {
         model: options.model || this.model,
@@ -74,7 +74,7 @@ class ClaudeAPIClient {
       this.updateRateLimitTracking(response);
 
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: true,
         response: response.content[0].text,
@@ -83,7 +83,6 @@ class ClaudeAPIClient {
         executionTime,
         timestamp: new Date().toISOString()
       };
-
     } catch (error) {
       return {
         success: false,
@@ -97,7 +96,7 @@ class ClaudeAPIClient {
   /**
    * Analyze code with Claude AI
    */
-  async analyzeCode(code, analysisType = 'general', options = {}) {
+  async analyzeCode (code, analysisType = 'general', options = {}) {
     const systemPrompts = {
       general: 'You are a senior software engineer reviewing code. Provide constructive feedback on code quality, potential bugs, and improvements.',
       security: 'You are a security expert analyzing code for vulnerabilities. Focus on security issues, potential exploits, and secure coding practices.',
@@ -130,7 +129,7 @@ Please provide:
   /**
    * Generate code solution with Claude AI
    */
-  async generateCodeSolution(requirement, context = {}, options = {}) {
+  async generateCodeSolution (requirement, context = {}, options = {}) {
     const systemPrompt = `You are an expert software developer. Generate clean, efficient, and well-documented code solutions.
 
 Context:
@@ -166,7 +165,7 @@ Please provide:
   /**
    * Review pull request with Claude AI
    */
-  async reviewPullRequest(prData, options = {}) {
+  async reviewPullRequest (prData, options = {}) {
     const systemPrompt = `You are an expert code reviewer performing a thorough pull request review. 
     
     Focus on:
@@ -207,10 +206,10 @@ Please provide:
   /**
    * Check rate limits and wait if necessary
    */
-  async checkRateLimit() {
+  async checkRateLimit () {
     const now = Date.now();
     const windowElapsed = now - this.rateLimitConfig.windowStart;
-    
+
     // Reset window if more than 1 minute has passed
     if (windowElapsed >= 60000) {
       this.rateLimitConfig.requestCount = 0;
@@ -231,7 +230,7 @@ Please provide:
   /**
    * Update rate limit tracking
    */
-  updateRateLimitTracking(response) {
+  updateRateLimitTracking (response) {
     this.rateLimitConfig.requestCount++;
     if (response.usage && response.usage.input_tokens) {
       this.rateLimitConfig.tokenCount += response.usage.input_tokens + response.usage.output_tokens;
@@ -241,7 +240,7 @@ Please provide:
   /**
    * Execute request with retry logic
    */
-  async executeWithRetry(requestFn, attempt = 1) {
+  async executeWithRetry (requestFn, attempt = 1) {
     try {
       return await requestFn();
     } catch (error) {
@@ -256,7 +255,7 @@ Please provide:
 
       console.log(`Request failed (attempt ${attempt}/${this.retryConfig.maxRetries}). Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
-      
+
       return this.executeWithRetry(requestFn, attempt + 1);
     }
   }
@@ -264,25 +263,25 @@ Please provide:
   /**
    * Make HTTP request
    */
-  async makeRequest(endpoint, options) {
+  async makeRequest (endpoint, options) {
     const url = `${this.baseURL}${endpoint}`;
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Unknown error'}`);
     }
-    
+
     return response.json();
   }
 
   /**
    * Get API usage statistics
    */
-  getUsageStats() {
+  getUsageStats () {
     const now = Date.now();
     const windowElapsed = now - this.rateLimitConfig.windowStart;
-    
+
     return {
       requestsThisMinute: this.rateLimitConfig.requestCount,
       tokensThisMinute: this.rateLimitConfig.tokenCount,
@@ -299,15 +298,15 @@ Please provide:
   /**
    * Test API connectivity
    */
-  async testConnection() {
+  async testConnection () {
     const startTime = Date.now();
-    
+
     try {
       const result = await this.sendMessage('Test connection. Please respond with "Connection successful."', {
         maxTokens: 100,
         temperature: 0
       });
-      
+
       return {
         success: true,
         responseTime: Date.now() - startTime,

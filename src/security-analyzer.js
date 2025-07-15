@@ -8,7 +8,7 @@ const ConfigManager = require('./config-manager');
 const crypto = require('crypto');
 
 class SecurityAnalyzer {
-  constructor(apiKey, options = {}) {
+  constructor (apiKey, options = {}) {
     this.claude = new ClaudeAPIClient(apiKey, options);
     this.config = new ConfigManager();
     this.vulnerabilityDatabase = new Map();
@@ -25,25 +25,25 @@ class SecurityAnalyzer {
   /**
    * Analyze code for security vulnerabilities
    */
-  async analyzeCode(code, context = {}) {
+  async analyzeCode (code, context = {}) {
     const startTime = Date.now();
     const analysisId = this.generateAnalysisId();
-    
+
     console.log(`🔍 Starting security analysis: ${analysisId}`);
-    
+
     try {
       // Pre-analysis security checks
       const preAnalysis = await this.performPreAnalysis(code, context);
-      
+
       // AI-powered deep security analysis
       const aiAnalysis = await this.performAISecurityAnalysis(code, context, preAnalysis);
-      
+
       // Pattern-based vulnerability detection
       const patternAnalysis = await this.performPatternAnalysis(code, context);
-      
+
       // Dependency security analysis
       const dependencyAnalysis = await this.analyzeDependencies(code, context);
-      
+
       // Combine all analysis results
       const combinedResults = this.combineAnalysisResults({
         preAnalysis,
@@ -51,16 +51,16 @@ class SecurityAnalyzer {
         patternAnalysis,
         dependencyAnalysis
       });
-      
+
       // Generate security report
       const securityReport = await this.generateSecurityReport(combinedResults, context);
-      
+
       // Calculate risk score
       const riskScore = this.calculateRiskScore(combinedResults);
-      
+
       // Generate recommendations
       const recommendations = this.generateSecurityRecommendations(combinedResults, riskScore);
-      
+
       const result = {
         success: true,
         analysisId,
@@ -87,12 +87,11 @@ class SecurityAnalyzer {
           aiModel: this.claude.model
         }
       };
-      
+
       // Record learning data
       await this.recordSecurityLearning(result);
-      
+
       return result;
-      
     } catch (error) {
       console.error(`❌ Security analysis failed: ${error.message}`);
       return {
@@ -107,9 +106,9 @@ class SecurityAnalyzer {
   /**
    * Pre-analysis security checks
    */
-  async performPreAnalysis(code, context) {
+  async performPreAnalysis (code, context) {
     const findings = [];
-    
+
     // Check for obvious secrets
     const secretPatterns = [
       /password\s*[:=]\s*['"'][^'"]{8,}['"]/gi,
@@ -119,7 +118,7 @@ class SecurityAnalyzer {
       /private[_-]?key\s*[:=]\s*['"'][^'"]{32,}['"]/gi,
       /-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----/gi
     ];
-    
+
     for (const pattern of secretPatterns) {
       const matches = code.match(pattern);
       if (matches) {
@@ -132,7 +131,7 @@ class SecurityAnalyzer {
         });
       }
     }
-    
+
     // Check for dangerous functions
     const dangerousFunctions = [
       { pattern: /eval\s*\(/gi, severity: 'HIGH', message: 'Use of eval() function' },
@@ -142,7 +141,7 @@ class SecurityAnalyzer {
       { pattern: /system\s*\(/gi, severity: 'HIGH', message: 'Use of system() function' },
       { pattern: /shell_exec\s*\(/gi, severity: 'HIGH', message: 'Use of shell_exec() function' }
     ];
-    
+
     for (const func of dangerousFunctions) {
       const matches = code.match(func.pattern);
       if (matches) {
@@ -155,14 +154,14 @@ class SecurityAnalyzer {
         });
       }
     }
-    
+
     // Check for SQL injection patterns
     const sqlPatterns = [
       /query\s*\+\s*['"]/gi,
       /\$[a-zA-Z_][a-zA-Z0-9_]*\s*\.\s*['"]/gi,
       /["'].*?\+.*?["']/gi
     ];
-    
+
     for (const pattern of sqlPatterns) {
       const matches = code.match(pattern);
       if (matches) {
@@ -175,7 +174,7 @@ class SecurityAnalyzer {
         });
       }
     }
-    
+
     return {
       findings,
       riskScore: findings.reduce((sum, f) => sum + this.riskLevels[f.severity], 0)
@@ -185,22 +184,22 @@ class SecurityAnalyzer {
   /**
    * AI-powered security analysis
    */
-  async performAISecurityAnalysis(code, context, preAnalysis) {
+  async performAISecurityAnalysis (code, context, preAnalysis) {
     const securityPrompt = this.buildSecurityAnalysisPrompt(code, context, preAnalysis);
-    
+
     const aiResult = await this.claude.analyzeCode(code, 'security', {
       systemPrompt: securityPrompt.systemPrompt,
       maxTokens: 3000,
       temperature: 0.05 // Low temperature for consistent security analysis
     });
-    
+
     if (!aiResult.success) {
       throw new Error(`AI security analysis failed: ${aiResult.error}`);
     }
-    
+
     // Parse AI response
     const analysis = this.parseAISecurityResponse(aiResult.response);
-    
+
     return {
       success: true,
       analysis,
@@ -213,9 +212,9 @@ class SecurityAnalyzer {
   /**
    * Pattern-based vulnerability detection
    */
-  async performPatternAnalysis(code, context) {
+  async performPatternAnalysis (code, context) {
     const vulnerabilities = [];
-    
+
     for (const [category, patterns] of this.securityPatterns) {
       for (const pattern of patterns) {
         const matches = this.findPatternMatches(code, pattern);
@@ -232,7 +231,7 @@ class SecurityAnalyzer {
         }
       }
     }
-    
+
     return {
       vulnerabilities,
       totalFindings: vulnerabilities.length,
@@ -243,17 +242,17 @@ class SecurityAnalyzer {
   /**
    * Dependency security analysis
    */
-  async analyzeDependencies(code, context) {
+  async analyzeDependencies (code, context) {
     const dependencies = [];
     const vulnerabilities = [];
-    
+
     // Extract dependencies from package.json, requirements.txt, etc.
     const depPatterns = [
       { pattern: /"([^"]+)"\s*:\s*"([^"]+)"/g, type: 'npm' },
       { pattern: /import\s+(?:[\w\s{},*]+\s+from\s+)?['"']([^'"]+)['"]/g, type: 'import' },
       { pattern: /require\s*\(\s*['"']([^'"]+)['"]\s*\)/g, type: 'require' }
     ];
-    
+
     for (const depPattern of depPatterns) {
       let match;
       while ((match = depPattern.pattern.exec(code)) !== null) {
@@ -264,13 +263,13 @@ class SecurityAnalyzer {
         });
       }
     }
-    
+
     // Check against known vulnerability database
     for (const dep of dependencies) {
       const knownVulns = await this.checkVulnerabilityDatabase(dep.name, dep.version);
       vulnerabilities.push(...knownVulns);
     }
-    
+
     return {
       dependencies,
       vulnerabilities,
@@ -282,38 +281,38 @@ class SecurityAnalyzer {
   /**
    * Combine analysis results
    */
-  combineAnalysisResults(results) {
+  combineAnalysisResults (results) {
     const allVulnerabilities = [];
     const allWarnings = [];
-    
+
     // Combine pre-analysis findings
     if (results.preAnalysis.findings) {
       allVulnerabilities.push(...results.preAnalysis.findings);
     }
-    
+
     // Combine AI analysis findings
     if (results.aiAnalysis.success && results.aiAnalysis.analysis.vulnerabilities) {
       allVulnerabilities.push(...results.aiAnalysis.analysis.vulnerabilities);
     }
-    
+
     if (results.aiAnalysis.success && results.aiAnalysis.analysis.warnings) {
       allWarnings.push(...results.aiAnalysis.analysis.warnings);
     }
-    
+
     // Combine pattern analysis findings
     if (results.patternAnalysis.vulnerabilities) {
       allVulnerabilities.push(...results.patternAnalysis.vulnerabilities);
     }
-    
+
     // Combine dependency analysis findings
     if (results.dependencyAnalysis.vulnerabilities) {
       allVulnerabilities.push(...results.dependencyAnalysis.vulnerabilities);
     }
-    
+
     // Deduplicate and prioritize
     const uniqueVulnerabilities = this.deduplicateFindings(allVulnerabilities);
     const prioritizedVulnerabilities = this.prioritizeFindings(uniqueVulnerabilities);
-    
+
     return {
       vulnerabilities: prioritizedVulnerabilities,
       warnings: allWarnings,
@@ -330,9 +329,9 @@ class SecurityAnalyzer {
   /**
    * Generate security report
    */
-  async generateSecurityReport(combinedResults, context) {
+  async generateSecurityReport (combinedResults, context) {
     const { vulnerabilities, warnings, summary } = combinedResults;
-    
+
     const reportPrompt = `Generate a comprehensive security report based on the following analysis:
 
 **Vulnerabilities Found**: ${summary.totalVulnerabilities}
@@ -372,18 +371,18 @@ Please provide:
   /**
    * Calculate overall risk score
    */
-  calculateRiskScore(combinedResults) {
+  calculateRiskScore (combinedResults) {
     const { vulnerabilities } = combinedResults;
-    
+
     let totalScore = 0;
     let weightedScore = 0;
-    
+
     for (const vuln of vulnerabilities) {
       const baseScore = this.riskLevels[vuln.severity] || 1;
       const multiplier = vuln.matches || 1;
-      
+
       totalScore += baseScore * multiplier;
-      
+
       // Apply weighting based on vulnerability type
       if (vuln.type === 'SECRET_EXPOSURE') {
         weightedScore += baseScore * multiplier * 2;
@@ -393,17 +392,17 @@ Please provide:
         weightedScore += baseScore * multiplier;
       }
     }
-    
+
     return Math.min(100, Math.round(weightedScore));
   }
 
   /**
    * Generate security recommendations
    */
-  generateSecurityRecommendations(combinedResults, riskScore) {
+  generateSecurityRecommendations (combinedResults, riskScore) {
     const recommendations = [];
     const { vulnerabilities, summary } = combinedResults;
-    
+
     // Critical vulnerabilities
     if (summary.criticalVulnerabilities > 0) {
       recommendations.push({
@@ -418,7 +417,7 @@ Please provide:
         ]
       });
     }
-    
+
     // High-risk vulnerabilities
     if (summary.highVulnerabilities > 0) {
       recommendations.push({
@@ -433,7 +432,7 @@ Please provide:
         ]
       });
     }
-    
+
     // General security improvements
     if (riskScore > 30) {
       recommendations.push({
@@ -448,7 +447,7 @@ Please provide:
         ]
       });
     }
-    
+
     // Dependency security
     const depVulns = vulnerabilities.filter(v => v.category === 'DEPENDENCY');
     if (depVulns.length > 0) {
@@ -464,17 +463,17 @@ Please provide:
         ]
       });
     }
-    
+
     return recommendations;
   }
 
   /**
    * Helper methods
    */
-  
-  initializeSecurityPatterns() {
+
+  initializeSecurityPatterns () {
     const patterns = new Map();
-    
+
     // XSS patterns
     patterns.set('XSS', [
       {
@@ -492,7 +491,7 @@ Please provide:
         recommendation: 'Use modern DOM methods instead'
       }
     ]);
-    
+
     // SQL Injection patterns
     patterns.set('SQL_INJECTION', [
       {
@@ -503,7 +502,7 @@ Please provide:
         recommendation: 'Use parameterized queries'
       }
     ]);
-    
+
     // Authentication patterns
     patterns.set('AUTH', [
       {
@@ -514,11 +513,11 @@ Please provide:
         recommendation: 'Enforce stronger password requirements'
       }
     ]);
-    
+
     return patterns;
   }
 
-  buildSecurityAnalysisPrompt(code, context, preAnalysis) {
+  buildSecurityAnalysisPrompt (code, context, preAnalysis) {
     return {
       systemPrompt: `You are a cybersecurity expert analyzing code for vulnerabilities. 
       
@@ -540,15 +539,15 @@ Please provide:
     };
   }
 
-  parseAISecurityResponse(response) {
+  parseAISecurityResponse (response) {
     // Parse structured AI response
     const vulnerabilities = [];
     const warnings = [];
-    
+
     // Extract vulnerabilities
     const vulnRegex = /(?:vulnerability|vuln|risk).*?:?\s*(.+?)(?:\n|$)/gi;
     let match;
-    
+
     while ((match = vulnRegex.exec(response)) !== null) {
       vulnerabilities.push({
         type: 'AI_DETECTED',
@@ -557,10 +556,10 @@ Please provide:
         source: 'ai-analysis'
       });
     }
-    
+
     // Extract warnings
     const warningRegex = /(?:warning|caution|note).*?:?\s*(.+?)(?:\n|$)/gi;
-    
+
     while ((match = warningRegex.exec(response)) !== null) {
       warnings.push({
         type: 'AI_WARNING',
@@ -568,7 +567,7 @@ Please provide:
         source: 'ai-analysis'
       });
     }
-    
+
     return {
       vulnerabilities,
       warnings,
@@ -576,27 +575,27 @@ Please provide:
     };
   }
 
-  extractSeverity(text) {
+  extractSeverity (text) {
     const severityMap = {
-      'critical': 'CRITICAL',
-      'high': 'HIGH',
-      'medium': 'MEDIUM',
-      'low': 'LOW'
+      critical: 'CRITICAL',
+      high: 'HIGH',
+      medium: 'MEDIUM',
+      low: 'LOW'
     };
-    
+
     for (const [keyword, level] of Object.entries(severityMap)) {
       if (text.toLowerCase().includes(keyword)) {
         return level;
       }
     }
-    
+
     return null;
   }
 
-  findPatternMatches(code, pattern) {
+  findPatternMatches (code, pattern) {
     const matches = [];
     const lines = code.split('\n');
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (pattern.pattern.test(line)) {
@@ -606,20 +605,20 @@ Please provide:
         });
       }
     }
-    
+
     return matches;
   }
 
-  async checkVulnerabilityDatabase(packageName, version) {
+  async checkVulnerabilityDatabase (packageName, version) {
     // This would integrate with real vulnerability databases
     // For now, return mock data
     return [];
   }
 
-  deduplicateFindings(findings) {
+  deduplicateFindings (findings) {
     const seen = new Set();
     const unique = [];
-    
+
     for (const finding of findings) {
       const key = `${finding.type}-${finding.severity}-${finding.message}`;
       if (!seen.has(key)) {
@@ -627,13 +626,13 @@ Please provide:
         unique.push(finding);
       }
     }
-    
+
     return unique;
   }
 
-  prioritizeFindings(findings) {
+  prioritizeFindings (findings) {
     const priorityOrder = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
-    
+
     return findings.sort((a, b) => {
       const aPriority = priorityOrder.indexOf(a.severity);
       const bPriority = priorityOrder.indexOf(b.severity);
@@ -641,7 +640,7 @@ Please provide:
     });
   }
 
-  getRiskLevel(score) {
+  getRiskLevel (score) {
     if (score >= 80) return 'CRITICAL';
     if (score >= 60) return 'HIGH';
     if (score >= 40) return 'MEDIUM';
@@ -649,11 +648,11 @@ Please provide:
     return 'INFO';
   }
 
-  generateAnalysisId() {
+  generateAnalysisId () {
     return crypto.randomBytes(8).toString('hex');
   }
 
-  async recordSecurityLearning(result) {
+  async recordSecurityLearning (result) {
     if (this.config.get('learning.enableLearning')) {
       await this.config.recordLearning('securityAnalysis', {
         analysisId: result.analysisId,
@@ -668,7 +667,7 @@ Please provide:
   /**
    * Get security analysis statistics
    */
-  getSecurityStats() {
+  getSecurityStats () {
     return {
       supportedPatterns: Array.from(this.securityPatterns.keys()),
       totalPatterns: Array.from(this.securityPatterns.values()).reduce((sum, patterns) => sum + patterns.length, 0),

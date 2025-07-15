@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class ConfigManager {
-  constructor(configPath = './config/claude-automation.json') {
+  constructor (configPath = './config/claude-automation.json') {
     this.configPath = configPath;
     this.config = {
       version: '1.0.0',
@@ -106,28 +106,27 @@ class ConfigManager {
         }
       }
     };
-    
+
     this.loadConfig();
   }
 
   /**
    * Load configuration from file
    */
-  async loadConfig() {
+  async loadConfig () {
     try {
       // Ensure config directory exists
       const configDir = path.dirname(this.configPath);
       await fs.mkdir(configDir, { recursive: true });
-      
+
       // Load existing config
       const configData = await fs.readFile(this.configPath, 'utf8');
       const savedConfig = JSON.parse(configData);
-      
+
       // Merge with defaults (in case new options were added)
       this.config = this.mergeConfigs(this.config, savedConfig);
-      
+
       console.log('📋 Configuration loaded successfully');
-      
     } catch (error) {
       if (error.code === 'ENOENT') {
         // Config file doesn't exist, create it with defaults
@@ -142,15 +141,14 @@ class ConfigManager {
   /**
    * Save configuration to file
    */
-  async saveConfig() {
+  async saveConfig () {
     try {
       this.config.lastUpdated = new Date().toISOString();
-      
+
       const configData = JSON.stringify(this.config, null, 2);
       await fs.writeFile(this.configPath, configData, 'utf8');
-      
+
       console.log('💾 Configuration saved successfully');
-      
     } catch (error) {
       console.error('❌ Error saving configuration:', error.message);
       throw error;
@@ -160,10 +158,10 @@ class ConfigManager {
   /**
    * Get configuration value
    */
-  get(path, defaultValue = null) {
+  get (path, defaultValue = null) {
     const keys = path.split('.');
     let current = this.config;
-    
+
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {
         current = current[key];
@@ -171,17 +169,17 @@ class ConfigManager {
         return defaultValue;
       }
     }
-    
+
     return current;
   }
 
   /**
    * Set configuration value
    */
-  async set(path, value) {
+  async set (path, value) {
     const keys = path.split('.');
     let current = this.config;
-    
+
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
       if (!(key in current) || typeof current[key] !== 'object') {
@@ -189,81 +187,81 @@ class ConfigManager {
       }
       current = current[key];
     }
-    
+
     current[keys[keys.length - 1]] = value;
     await this.saveConfig();
-    
+
     console.log(`⚙️ Configuration updated: ${path} = ${JSON.stringify(value)}`);
   }
 
   /**
    * Update AI model settings
    */
-  async updateAISettings(settings) {
+  async updateAISettings (settings) {
     await this.set('ai', { ...this.get('ai'), ...settings });
   }
 
   /**
    * Update analysis settings
    */
-  async updateAnalysisSettings(settings) {
+  async updateAnalysisSettings (settings) {
     await this.set('analysis', { ...this.get('analysis'), ...settings });
   }
 
   /**
    * Update automation settings
    */
-  async updateAutomationSettings(settings) {
+  async updateAutomationSettings (settings) {
     await this.set('automation', { ...this.get('automation'), ...settings });
   }
 
   /**
    * Record learning data
    */
-  async recordLearning(type, data) {
+  async recordLearning (type, data) {
     if (!this.get('learning.enableLearning')) {
       return;
     }
 
     const learningData = this.get('learning') || {};
-    
+
     if (!learningData[type]) {
       learningData[type] = [];
     }
-    
+
     // Add new learning data
     learningData[type].push({
       timestamp: new Date().toISOString(),
-      data: data
+      data
     });
-    
+
     // Keep only recent entries
     const historySize = this.get('learning.historySize', 1000);
     if (learningData[type].length > historySize) {
       learningData[type] = learningData[type].slice(-historySize);
     }
-    
+
     await this.set('learning', learningData);
-    
+
     console.log(`🧠 Learning data recorded: ${type}`);
   }
 
   /**
    * Get learning insights
    */
-  getLearningInsights(type) {
+  getLearningInsights (type) {
     const learningData = this.get(`learning.${type}`, []);
-    
+
     if (learningData.length === 0) {
       return {
         totalEntries: 0,
         insights: []
       };
     }
-    
+
     // Analyze patterns
     const insights = [];
-    
+
     // Example: Find common issue patterns
     if (type === 'codeReview') {
       const issueTypes = {};
@@ -275,20 +273,20 @@ class ConfigManager {
           });
         }
       });
-      
+
       insights.push({
         type: 'commonIssues',
         data: Object.entries(issueTypes)
-          .sort(([,a], [,b]) => b - a)
+          .sort(([, a], [, b]) => b - a)
           .slice(0, 10)
           .map(([type, count]) => ({ type, count }))
       });
     }
-    
+
     // Example: Success rate analysis
     const successfulEntries = learningData.filter(entry => entry.data.success);
     const successRate = (successfulEntries.length / learningData.length) * 100;
-    
+
     insights.push({
       type: 'successRate',
       data: {
@@ -297,7 +295,7 @@ class ConfigManager {
         successful: successfulEntries.length
       }
     });
-    
+
     return {
       totalEntries: learningData.length,
       insights
@@ -307,24 +305,24 @@ class ConfigManager {
   /**
    * Update performance metrics
    */
-  async updatePerformanceMetrics(metrics) {
+  async updatePerformanceMetrics (metrics) {
     const currentMetrics = this.get('performance.metrics');
     const updatedMetrics = { ...currentMetrics, ...metrics };
-    
+
     await this.set('performance.metrics', updatedMetrics);
   }
 
   /**
    * Get performance report
    */
-  getPerformanceReport() {
+  getPerformanceReport () {
     const metrics = this.get('performance.metrics');
     const thresholds = {
       responseTime: 2000, // 2 seconds
       successRate: 95, // 95%
       errorRate: 5 // 5%
     };
-    
+
     return {
       metrics,
       status: {
@@ -339,9 +337,9 @@ class ConfigManager {
   /**
    * Generate performance recommendations
    */
-  generatePerformanceRecommendations(metrics, thresholds) {
+  generatePerformanceRecommendations (metrics, thresholds) {
     const recommendations = [];
-    
+
     if (metrics.averageResponseTime > thresholds.responseTime) {
       recommendations.push({
         type: 'performance',
@@ -354,7 +352,7 @@ class ConfigManager {
         ]
       });
     }
-    
+
     if (metrics.successRate < thresholds.successRate) {
       recommendations.push({
         type: 'reliability',
@@ -367,7 +365,7 @@ class ConfigManager {
         ]
       });
     }
-    
+
     if (metrics.errorRate > thresholds.errorRate) {
       recommendations.push({
         type: 'stability',
@@ -380,20 +378,20 @@ class ConfigManager {
         ]
       });
     }
-    
+
     return recommendations;
   }
 
   /**
    * Export configuration
    */
-  async exportConfig(exportPath) {
+  async exportConfig (exportPath) {
     const exportData = {
       ...this.config,
       exportedAt: new Date().toISOString(),
       version: this.config.version
     };
-    
+
     await fs.writeFile(exportPath, JSON.stringify(exportData, null, 2), 'utf8');
     console.log(`📤 Configuration exported to ${exportPath}`);
   }
@@ -401,36 +399,36 @@ class ConfigManager {
   /**
    * Import configuration
    */
-  async importConfig(importPath) {
+  async importConfig (importPath) {
     const importData = await fs.readFile(importPath, 'utf8');
     const importedConfig = JSON.parse(importData);
-    
+
     // Validate imported config
     if (!importedConfig.version) {
       throw new Error('Invalid configuration file: missing version');
     }
-    
+
     // Merge imported config with current config
     this.config = this.mergeConfigs(this.config, importedConfig);
     await this.saveConfig();
-    
+
     console.log(`📥 Configuration imported from ${importPath}`);
   }
 
   /**
    * Reset configuration to defaults
    */
-  async resetConfig() {
+  async resetConfig () {
     // Create backup
     const backupPath = `${this.configPath}.backup.${Date.now()}`;
     await fs.copyFile(this.configPath, backupPath);
-    
+
     // Reset to defaults
     this.config = {
       ...this.config,
       lastUpdated: new Date().toISOString()
     };
-    
+
     await this.saveConfig();
     console.log(`🔄 Configuration reset to defaults. Backup saved: ${backupPath}`);
   }
@@ -438,27 +436,27 @@ class ConfigManager {
   /**
    * Validate configuration
    */
-  validateConfig() {
+  validateConfig () {
     const errors = [];
-    
+
     // Check required fields
     if (!this.config.ai.model) {
       errors.push('AI model is not configured');
     }
-    
+
     if (!this.config.ai.maxTokens || this.config.ai.maxTokens <= 0) {
       errors.push('Invalid AI max tokens configuration');
     }
-    
+
     if (!this.config.repository.mainBranch) {
       errors.push('Main branch is not configured');
     }
-    
+
     // Check performance settings
     if (this.config.performance.maxExecutionTime <= 0) {
       errors.push('Invalid max execution time');
     }
-    
+
     return {
       valid: errors.length === 0,
       errors
@@ -468,9 +466,9 @@ class ConfigManager {
   /**
    * Merge configurations
    */
-  mergeConfigs(defaultConfig, userConfig) {
+  mergeConfigs (defaultConfig, userConfig) {
     const result = { ...defaultConfig };
-    
+
     for (const [key, value] of Object.entries(userConfig)) {
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
         result[key] = this.mergeConfigs(result[key] || {}, value);
@@ -478,14 +476,14 @@ class ConfigManager {
         result[key] = value;
       }
     }
-    
+
     return result;
   }
 
   /**
    * Get configuration summary
    */
-  getConfigSummary() {
+  getConfigSummary () {
     return {
       version: this.config.version,
       lastUpdated: this.config.lastUpdated,

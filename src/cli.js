@@ -14,7 +14,7 @@ require('dotenv').config();
 const SimpleAutomationSystem = require('./simple-automation-system');
 
 // 設定の取得
-function getConfig() {
+function getConfig () {
   return {
     github: {
       token: process.env.GITHUB_TOKEN,
@@ -34,25 +34,25 @@ function getConfig() {
 }
 
 // システムの初期化
-async function initializeSystem() {
+async function initializeSystem () {
   const config = getConfig();
-  
+
   // 設定の検証
   if (!config.github.token) {
     console.error(chalk.red('Error: GITHUB_TOKEN is required'));
     process.exit(1);
   }
-  
+
   if (!config.claude.apiKey) {
     console.error(chalk.red('Error: CLAUDE_API_KEY is required'));
     process.exit(1);
   }
-  
+
   if (!config.github.owner || !config.github.repo) {
     console.error(chalk.red('Error: GITHUB_OWNER and GITHUB_REPO are required'));
     process.exit(1);
   }
-  
+
   return new SimpleAutomationSystem(config);
 }
 
@@ -68,11 +68,11 @@ program
   .description('Initialize the automation system')
   .action(async () => {
     const spinner = ora('Initializing Simple Automation System...').start();
-    
+
     try {
       const system = await initializeSystem();
       const result = await system.initialize();
-      
+
       if (result.success) {
         spinner.succeed('System initialized successfully');
         console.log(chalk.green('✓ GitHub connection: OK'));
@@ -94,33 +94,32 @@ program
   .description('Check system health')
   .action(async () => {
     const spinner = ora('Checking system health...').start();
-    
+
     try {
       const system = await initializeSystem();
       const health = await system.healthCheck();
-      
+
       spinner.stop();
-      
+
       if (health.status === 'healthy') {
         console.log(chalk.green('✓ System is healthy'));
       } else {
         console.log(chalk.yellow('⚠ System has issues'));
       }
-      
+
       console.log('\n' + chalk.bold('Health Status:'));
       console.log(`GitHub: ${health.github.status === 'healthy' ? chalk.green('✓') : chalk.red('✗')} ${health.github.status}`);
       console.log(`Claude: ${health.claude ? chalk.green('✓') : chalk.red('✗')} ${health.claude ? 'Connected' : 'Failed'}`);
-      
+
       if (health.rateLimit) {
         console.log(`Rate Limit: ${health.rateLimit.remaining}/5000 remaining`);
       }
-      
+
       console.log('\n' + chalk.bold('Statistics:'));
       console.log(`PRs Processed: ${health.stats.processedPRs}`);
       console.log(`Issues Processed: ${health.stats.processedIssues}`);
       console.log(`Errors: ${health.stats.errors}`);
       console.log(`Uptime: ${Math.floor(health.stats.uptime)}s`);
-      
     } catch (error) {
       spinner.fail('Health check failed');
       console.error(chalk.red('Error:', error.message));
@@ -133,11 +132,11 @@ program
   .description('Review a specific pull request')
   .action(async (prNumber) => {
     const spinner = ora(`Reviewing PR #${prNumber}...`).start();
-    
+
     try {
       const system = await initializeSystem();
       const result = await system.reviewPullRequest(parseInt(prNumber));
-      
+
       if (result.success) {
         spinner.succeed(`PR #${prNumber} reviewed successfully`);
         console.log(chalk.green('✓ Review comment posted'));
@@ -148,7 +147,6 @@ program
         spinner.fail(`Failed to review PR #${prNumber}`);
         console.error(chalk.red('Error:', result.error));
       }
-      
     } catch (error) {
       spinner.fail(`Failed to review PR #${prNumber}`);
       console.error(chalk.red('Error:', error.message));
@@ -161,11 +159,11 @@ program
   .description('Classify a specific issue')
   .action(async (issueNumber) => {
     const spinner = ora(`Classifying issue #${issueNumber}...`).start();
-    
+
     try {
       const system = await initializeSystem();
       const result = await system.classifyIssue(parseInt(issueNumber));
-      
+
       if (result.success) {
         spinner.succeed(`Issue #${issueNumber} classified successfully`);
         console.log(chalk.green(`✓ Category: ${result.category}`));
@@ -174,7 +172,6 @@ program
         spinner.fail(`Failed to classify issue #${issueNumber}`);
         console.error(chalk.red('Error:', result.error));
       }
-      
     } catch (error) {
       spinner.fail(`Failed to classify issue #${issueNumber}`);
       console.error(chalk.red('Error:', error.message));
@@ -189,32 +186,31 @@ program
   .option('-i, --issues-only', 'Process only issues')
   .action(async (options) => {
     const spinner = ora('Processing pending items...').start();
-    
+
     try {
       const system = await initializeSystem();
       const results = [];
-      
+
       if (!options.issuesOnly) {
         spinner.text = 'Processing pending PRs...';
         const prResult = await system.processPendingPRs();
         results.push({ type: 'PRs', ...prResult });
       }
-      
+
       if (!options.prsOnly) {
         spinner.text = 'Processing pending issues...';
         const issueResult = await system.processPendingIssues();
         results.push({ type: 'Issues', ...issueResult });
       }
-      
+
       spinner.succeed('Batch processing completed');
-      
+
       results.forEach(result => {
         console.log(`\n${chalk.bold(result.type)}:`);
         console.log(`Processed: ${result.processed}`);
         console.log(`Success: ${result.results?.filter(r => r.success).length || 0}`);
         console.log(`Failed: ${result.results?.filter(r => !r.success).length || 0}`);
       });
-      
     } catch (error) {
       spinner.fail('Batch processing failed');
       console.error(chalk.red('Error:', error.message));
@@ -227,26 +223,25 @@ program
   .description('Show system statistics')
   .action(async () => {
     const spinner = ora('Gathering statistics...').start();
-    
+
     try {
       const system = await initializeSystem();
       const stats = system.getStats();
-      
+
       spinner.succeed('Statistics gathered');
-      
+
       console.log('\n' + chalk.bold('System Statistics:'));
       console.log(`Start Time: ${stats.startTime}`);
       console.log(`Uptime: ${Math.floor(stats.uptime)}s`);
       console.log(`PRs Processed: ${stats.processedPRs}`);
       console.log(`Issues Processed: ${stats.processedIssues}`);
       console.log(`Errors: ${stats.errors}`);
-      
+
       if (stats.processedPRs > 0 || stats.processedIssues > 0) {
         const total = stats.processedPRs + stats.processedIssues;
         const successRate = ((total - stats.errors) / total * 100).toFixed(1);
         console.log(`Success Rate: ${successRate}%`);
       }
-      
     } catch (error) {
       spinner.fail('Failed to gather statistics');
       console.error(chalk.red('Error:', error.message));
@@ -259,7 +254,7 @@ program
   .description('Show current configuration')
   .action(async () => {
     const config = getConfig();
-    
+
     console.log(chalk.bold('Current Configuration:'));
     console.log(`GitHub Owner: ${config.github.owner}`);
     console.log(`GitHub Repo: ${config.github.repo}`);
@@ -278,9 +273,9 @@ program
   .action(async () => {
     console.log(chalk.bold('🤖 Claude Automation - Interactive Mode'));
     console.log('Select an action to perform:\n');
-    
+
     const system = await initializeSystem();
-    
+
     const mainMenu = async () => {
       const answers = await inquirer.prompt([
         {
@@ -298,18 +293,18 @@ program
           ]
         }
       ]);
-      
+
       switch (answers.action) {
         case 'health':
           const spinner = ora('Checking system health...').start();
           const health = await system.healthCheck();
           spinner.stop();
-          
+
           console.log(`\nSystem Status: ${health.status === 'healthy' ? chalk.green('Healthy') : chalk.red('Unhealthy')}`);
           console.log(`GitHub: ${health.github.status === 'healthy' ? chalk.green('Connected') : chalk.red('Failed')}`);
           console.log(`Claude: ${health.claude ? chalk.green('Connected') : chalk.red('Failed')}`);
           break;
-          
+
         case 'review':
           const prAnswer = await inquirer.prompt([
             {
@@ -322,11 +317,11 @@ program
               }
             }
           ]);
-          
+
           const reviewSpinner = ora('Reviewing PR...').start();
           const reviewResult = await system.reviewPullRequest(parseInt(prAnswer.prNumber));
           reviewSpinner.stop();
-          
+
           if (reviewResult.success) {
             console.log(chalk.green('✓ Review completed successfully'));
             console.log('\nReview:');
@@ -335,7 +330,7 @@ program
             console.log(chalk.red('✗ Review failed:', reviewResult.error));
           }
           break;
-          
+
         case 'classify':
           const issueAnswer = await inquirer.prompt([
             {
@@ -348,11 +343,11 @@ program
               }
             }
           ]);
-          
+
           const classifySpinner = ora('Classifying issue...').start();
           const classifyResult = await system.classifyIssue(parseInt(issueAnswer.issueNumber));
           classifySpinner.stop();
-          
+
           if (classifyResult.success) {
             console.log(chalk.green('✓ Classification completed successfully'));
             console.log(`Category: ${classifyResult.category}`);
@@ -361,7 +356,7 @@ program
             console.log(chalk.red('✗ Classification failed:', classifyResult.error));
           }
           break;
-          
+
         case 'stats':
           const stats = system.getStats();
           console.log('\n' + chalk.bold('System Statistics:'));
@@ -370,7 +365,7 @@ program
           console.log(`Errors: ${stats.errors}`);
           console.log(`Uptime: ${Math.floor(stats.uptime)}s`);
           break;
-          
+
         case 'batch':
           const batchSpinner = ora('Processing pending items...').start();
           const [prResult, issueResult] = await Promise.all([
@@ -378,12 +373,12 @@ program
             system.processPendingIssues()
           ]);
           batchSpinner.stop();
-          
+
           console.log('\n' + chalk.bold('Batch Processing Results:'));
           console.log(`PRs: ${prResult.processed} processed`);
           console.log(`Issues: ${issueResult.processed} processed`);
           break;
-          
+
         case 'config':
           const config = getConfig();
           console.log('\n' + chalk.bold('Current Configuration:'));
@@ -392,16 +387,16 @@ program
           console.log(`Auto Review: ${config.automation.autoReview ? 'Enabled' : 'Disabled'}`);
           console.log(`Auto Label: ${config.automation.autoLabel ? 'Enabled' : 'Disabled'}`);
           break;
-          
+
         case 'exit':
           console.log(chalk.blue('Goodbye! 👋'));
           process.exit(0);
       }
-      
+
       console.log('\n');
       await mainMenu();
     };
-    
+
     await mainMenu();
   });
 
@@ -414,7 +409,7 @@ program.on('command:*', () => {
 // プログラムの実行
 if (require.main === module) {
   program.parse(process.argv);
-  
+
   if (!process.argv.slice(2).length) {
     program.outputHelp();
   }

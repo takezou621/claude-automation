@@ -32,7 +32,15 @@
       "Bash(gh pr review:*)",
       "Bash(gh pr comment:*)",
       "Bash(gh pr merge:*)",
-      "Bash(gh pr show:*)"
+      "Bash(gh pr show:*)",
+      "Bash(npm test)",
+      "Bash(npm install)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)",
+      "Bash(docker:*)",
+      "Bash(npm run docker:build:*)",
+      "Bash(npm run cli:*)"
     ],
     "deny": []
   }
