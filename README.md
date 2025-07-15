@@ -37,7 +37,7 @@ Built on insights from the sophisticated RepairGPT automation system, our implem
 -   **Enhanced Label System**: 25+ specialized labels for comprehensive project management
 -   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup
 -   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow
--   **Enterprise Ready**: Production-grade automation with comprehensive monitoring and metrics
+-   **Production Ready**: Production-grade automation with comprehensive monitoring and metrics
 
 ## 🚀 Get Started in 5 Minutes
 
@@ -131,7 +131,7 @@ Choose the automation tier that best fits your needs:
 | Tier | Schedule | Best For | Features |
 |------|----------|----------|----------|
 | **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
-| **🚀 Full** | RepairGPT Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
+| **🚀 Full** | RepairGPT Schedule | Large-scale projects | 🏢 Multi-trigger, AI review, metrics tracking |
 | **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
 | **🧠 Smart** | Intelligent schedule | Standard projects | 🧠 Timezone-aware, resource efficient |
 | **🤖 Code Review** | PR-triggered | Quality assurance | 🔍 AI analysis, security scanning, risk assessment |

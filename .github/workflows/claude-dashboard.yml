@@ -408,7 +408,7 @@ jobs:
 
 ---
 📊 **Service Dashboard Generator** | **${dashboardType.toUpperCase()} View** | **Real-time Monitoring**
-⚡ **Auto-updating** | **Interactive Visualizations** | **Enterprise Dashboards**`;
+⚡ **Auto-updating** | **Interactive Visualizations** | **Advanced Dashboards**`;
 
             // Post dashboard generation report
             const reportIssue = await github.rest.issues.create({
@@ -760,7 +760,7 @@ ${error.stack}
     <div class="container">
         <div class="header">
             <h1>📊 Claude Dashboards</h1>
-            <p>Enterprise-Grade System Monitoring & Analytics</p>
+            <p>System Monitoring & Analytics</p>
         </div>
         
         <div class="dashboard-links">
@@ -790,8 +790,8 @@ ${error.stack}
         </div>
         
         <div class="footer">
-            <p>📊 Claude Smart Automation Platform | Real-time Enterprise Dashboards</p>
-            <p>Auto-updating every hour | Interactive visualizations | Enterprise-grade monitoring</p>
+            <p>📊 Claude Smart Automation Platform | Real-time Dashboards</p>
+            <p>Auto-updating every hour | Interactive visualizations | Advanced monitoring</p>
         </div>
     </div>
 </body>

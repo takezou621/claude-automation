@@ -444,7 +444,7 @@ ${timeWindowHours >= 24 ? '- **Trend Analysis**: Available for 24+ hour windows'
 **Real-time Monitoring**: ${observabilityType === 'real_time' ? 'Active' : 'Available via workflow_dispatch'}
 
 ---
-📊 **Comprehensive Observability** | **Enterprise Monitoring** | **Data-Driven Operations**
+📊 **Comprehensive Observability** | **Advanced Monitoring** | **Data-Driven Operations**
 ⚡ **Real-time Analytics** | **Predictive Insights** | **Continuous Improvement**`;
 
             // Post observability dashboard

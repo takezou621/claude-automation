@@ -409,7 +409,7 @@ ${sloCompliancePercentage >= 95 ? '- ✅ All SLOs meeting targets, maintain curr
 **Deep Analysis**: ${analyticsType === 'deep' ? 'Completed' : 'Available on-demand'}
 
 ---
-📊 **Performance Analytics Engine** | **SLO Monitoring** | **Enterprise Performance Management**
+📊 **Performance Analytics Engine** | **SLO Monitoring** | **Performance Management**
 ⚡ **Real-time Metrics** | **Predictive Analysis** | **Continuous Optimization**`;
 
             // Post performance report

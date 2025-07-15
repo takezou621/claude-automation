@@ -265,7 +265,7 @@ ${Object.keys(docMetrics.generatedContent).map(file =>
 4. 📊 **Monitor**: Track documentation usage and feedback
 
 ---
-📚 **Automated Documentation Generator** | **${generationType.toUpperCase()} Generation** | **Enterprise Documentation**
+📚 **Automated Documentation Generator** | **${generationType.toUpperCase()} Generation** | **Advanced Documentation**
 ⚡ **AI-Powered** | **Always Current** | **Comprehensive Coverage**`;
 
             // Post documentation generation report
@@ -346,9 +346,9 @@ ${error.stack}
             
             return `# 🚀 Claude Smart Automation Platform
 
-## 🌟 Enterprise-Grade AI-Powered Development Automation
+## 🌟 AI-Powered Development Automation
 
-**Claude Smart Automation** is a revolutionary, AI-driven automation platform that provides comprehensive DevOps capabilities with enterprise-grade reliability, security, and performance monitoring.
+**Claude Smart Automation** is a revolutionary, AI-driven automation platform that provides comprehensive DevOps capabilities with advanced reliability, security, and performance monitoring.
 
 ### ✨ Key Features
 
@@ -366,13 +366,13 @@ ${features.map(feature => `- 🎯 **${feature}**: Next-generation automation wit
 - **Health Monitor**: Real-time system health assessment with SLO compliance
 - **Performance Analytics**: Comprehensive performance metrics and trend analysis
 - **Error Recovery**: Advanced circuit breaker patterns with automatic failover
-- **Security Scanner**: Enterprise-grade vulnerability detection and threat analysis
+- **Security Scanner**: Advanced vulnerability detection and threat analysis
 
 #### 🎯 Quality & Reliability
 - **Quality Gates**: Multi-tier quality assurance with automated enforcement
 - **Degradation Detection**: Proactive service degradation monitoring
 - **Workload Distribution**: Intelligent load balancing and resource optimization
-- **Observability Engine**: Complete system visibility with enterprise reporting
+- **Observability Engine**: Complete system visibility with advanced reporting
 
 ### 🚀 Quick Start
 
@@ -416,14 +416,12 @@ performance_tracking: "enabled"
 #### 🔒 Security Features
 - **Vulnerability Scanning**: Comprehensive security analysis
 - **Threat Detection**: Real-time threat monitoring
-- **Access Control**: Enterprise-grade permission management
+- **Access Control**: Permission management
 - **Audit Logging**: Complete audit trail with compliance reporting
 
 #### 📋 Compliance Standards
-- SOC 2 Type II compliance ready
-- GDPR data protection standards
-- Industry security best practices
-- Enterprise audit requirements
+- **GDPR data protection standards**
+- **Industry security best practices**
 
 ### 📚 Documentation
 
@@ -456,14 +454,14 @@ performance_tracking: "enabled"
 #### 🔥 Tier 3: Ultimate Automation
 - **Capabilities**: Maximum automation features
 - **Intelligence**: Predictive analytics
-- **Monitoring**: Enterprise-grade observability
+- **Monitoring**: Advanced observability
 - **Use Case**: Mission-critical operations
 
 #### 🏆 Tier 4: Full Automation
 - **Coverage**: End-to-end automation
 - **Features**: RepairGPT-inspired enhancements
 - **Monitoring**: Complete system visibility
-- **Use Case**: Large-scale enterprise automation
+- **Use Case**: Large-scale automation
 
 ### 📞 Support & Community
 
@@ -471,7 +469,6 @@ performance_tracking: "enabled"
 - **Documentation**: Comprehensive guides and tutorials
 - **Issues**: GitHub Issues for bug reports and feature requests
 - **Discussions**: Community discussions and Q&A
-- **Enterprise Support**: Professional support options available
 
 #### 🤝 Contributing
 - **Code Contributions**: Pull requests welcome
@@ -485,7 +482,6 @@ performance_tracking: "enabled"
 - Enhanced AI capabilities
 - Improved performance optimization
 - Advanced security features
-- Enterprise integration tools
 
 #### 🔮 Future Plans
 - Multi-cloud support
@@ -500,13 +496,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### 🎉 Acknowledgments
 
 - **RepairGPT**: Inspiration for advanced automation patterns
-- **Enterprise DevOps**: Best practices and standards
 - **Open Source Community**: Contributions and feedback
 - **AI/ML Research**: Cutting-edge automation techniques
 
 ---
 
-🚀 **Claude Smart Automation Platform** | **Enterprise-Grade AI Automation** | **Next-Generation DevOps**
+🚀 **Claude Smart Automation Platform** | **AI Automation** | **Next-Generation DevOps**
 
 ⚡ **Powered by Advanced AI** | **Built for Scale** | **Designed for Excellence**
 
@@ -527,9 +522,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
                 name: 'Claude Ultimate Automation',
                 description: 'Maximum automation tier with predictive capabilities',
                 tier: 'Ultimate',
-                features: ['Predictive analytics', 'Advanced ML optimization', 'Enterprise monitoring'],
+                features: ['Predictive analytics', 'Advanced ML optimization', 'Advanced monitoring'],
                 schedule: 'Continuous monitoring with intelligent scheduling',
-                slo: '99.9% reliability, enterprise SLA'
+                slo: '99.9% reliability, advanced SLA'
               },
               'claude-health-monitor.yml': {
                 name: 'Claude Health Monitor',
@@ -565,7 +560,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
               },
               'claude-security-scanner.yml': {
                 name: 'Claude Security Scanner',
-                description: 'Enterprise-grade vulnerability detection and threat analysis',
+                description: 'Advanced vulnerability detection and threat analysis',
                 tier: 'Security',
                 features: ['Vulnerability scanning', 'Threat detection', 'Compliance reporting'],
                 schedule: 'Every 8 hours + on PR',
@@ -573,7 +568,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
               },
               'claude-observability.yml': {
                 name: 'Claude Observability',
-                description: 'Complete system visibility with enterprise reporting',
+                description: 'Complete system visibility with advanced reporting',
                 tier: 'Observability',
                 features: ['Log aggregation', 'Metrics collection', 'Distributed tracing'],
                 schedule: 'Hourly aggregation',
@@ -720,11 +715,10 @@ ${info.slo}
 - **Documentation**: Comprehensive guides and tutorials
 - **Issues**: GitHub Issues for bug reports
 - **Community**: Discussions and community support
-- **Enterprise**: Professional support options
 
 ---
 
-⚙️ **Claude Automation Workflows** | **Enterprise DevOps** | **AI-Powered Automation**
+⚙️ **Claude Automation Workflows** | **DevOps** | **AI-Powered Automation**
 
 *Generated automatically by Claude Documentation Generator - Last updated: ${new Date().toISOString()}*`;
           }
@@ -760,7 +754,7 @@ The Claude Smart Automation Platform is built on a microservices-like architectu
 - **Security Scanning**: Vulnerability detection and threat analysis
 - **Quality Gates**: Automated quality assurance and enforcement
 - **Compliance Monitoring**: Regulatory compliance and audit trails
-- **Access Control**: Enterprise-grade security and permissions
+- **Access Control**: Security and permissions
 
 ## 🔄 Data Flow Architecture
 
@@ -905,7 +899,7 @@ GitHub Event → Event Router → Workflow Selector → Execution Engine → Mon
 
 ---
 
-🏗️ **Claude Smart Automation Architecture** | **Enterprise-Grade Design** | **Scalable & Secure**
+🏗️ **Claude Smart Automation Architecture** | **Scalable & Secure Design**
 
 *Generated automatically by Claude Documentation Generator - Last updated: ${new Date().toISOString()}*`;
           }
@@ -1068,7 +1062,7 @@ Current System Status:
 
 ---
 
-📊 **Claude Smart Automation Metrics** | **Enterprise Analytics** | **Data-Driven Performance**
+📊 **Claude Smart Automation Metrics** | **Data-Driven Performance**
 
 *Generated automatically by Claude Documentation Generator - Last updated: ${new Date().toISOString()}*`;
           }
@@ -1102,7 +1096,7 @@ features:
 \`\`\`yaml
 # Quality assurance settings
 quality_gates:
-  enforcement_level: "standard"  # Options: basic, standard, strict, enterprise
+  enforcement_level: "standard"  # Options: basic, standard, strict
   
   thresholds:
     max_files_changed: 25
@@ -1417,7 +1411,7 @@ error_handling:
 
 ---
 
-🔧 **Claude Smart Automation API** | **Enterprise Configuration** | **Comprehensive Integration**
+🔧 **Claude Smart Automation API** | **Configuration** | **Comprehensive Integration**
 
 *Generated automatically by Claude Documentation Generator - Last updated: ${new Date().toISOString()}*`;
           }

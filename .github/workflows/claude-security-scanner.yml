@@ -510,7 +510,7 @@ ${securityMetrics.riskScore >= 50 ? `- ⚠️ High risk score: ${securityMetrics
 4. 📚 **EDUCATION**: Keep security knowledge current
 
 ---
-🛡️ **Security Scanner Engine** | **${scanType.toUpperCase()} Scan** | **Enterprise Security Standards**
+🛡️ **Security Scanner Engine** | **${scanType.toUpperCase()} Scan** | **High Security Standards**
 ⚡ **Real-time Threat Detection** | **OWASP Compliance** | **Zero-Trust Security**`;
 
             // Post security report

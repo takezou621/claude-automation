@@ -310,7 +310,7 @@ ${healthMetrics.recommendations.length > 0 ? healthMetrics.recommendations.map(r
 **Type**: Automatic full health assessment
 
 ---
-🏥 **Claude Health Monitor** | **Enterprise-Grade Service Quality**
+🏥 **Claude Health Monitor** | **High Service Quality**
 ⚡ **99.9% SLO Target** | **Real-time Monitoring** | **Proactive Alerting**`;
 
             console.log(`📋 Health report generated (${healthReport.length} chars)`);

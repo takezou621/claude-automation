@@ -21,7 +21,6 @@ on:
           - 'basic'
           - 'standard' 
           - 'strict'
-          - 'enterprise'
 
 jobs:
   quality-gates:
@@ -87,14 +86,6 @@ jobs:
               maxLinesChanged: 300,
               minTestCoverage: 85,
               maxComplexityScore: 60,
-              securityScanRequired: true,
-              performanceTestRequired: true
-            },
-            enterprise: {
-              maxFilesChanged: 10,
-              maxLinesChanged: 200,
-              minTestCoverage: 95,
-              maxComplexityScore: 40,
               securityScanRequired: true,
               performanceTestRequired: true
             }
@@ -363,8 +354,7 @@ jobs:
                                qualityMetrics.overallQualityScore >= 70 ? 'B' :
                                qualityMetrics.overallQualityScore >= 60 ? 'C' : 'F';
             
-            const passThreshold = gateLevel === 'enterprise' ? 95 :
-                                 gateLevel === 'strict' ? 85 :
+            const passThreshold = gateLevel === 'strict' ? 85 :
                                  gateLevel === 'standard' ? 75 : 60;
             
             const qualityPassed = qualityMetrics.overallQualityScore >= passThreshold && 
@@ -436,7 +426,7 @@ This PR meets the **${gateLevel}** quality standards and is approved for merge.
 - 📝 Add comprehensive tests for new functionality
 
 ---
-🎯 **Quality Assurance Pipeline** | **${gateLevel.toUpperCase()} Standards** | **Enterprise-Grade Quality**
+🎯 **Quality Assurance Pipeline** | **${gateLevel.toUpperCase()} Standards** | **High-Grade Quality**
 ⚡ **Automated Quality Gates** | **Pre-Merge Protection** | **Zero-Defect Delivery**`;
 
             // Post quality report as PR comment
