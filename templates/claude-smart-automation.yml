@@ -69,6 +69,7 @@ jobs:
                 });
                 
                 const claudeBranches = branches.data.filter(branch => 
+                  branch.name === `claude-auto-impl-issue-${issue.number}` ||
                   branch.name.includes(`issue-${issue.number}`) ||
                   branch.name.includes(`claude`) && branch.name.includes(`${issue.number}`)
                 );
