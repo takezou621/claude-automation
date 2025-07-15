@@ -1,7 +1,7 @@
 # Claude Smart Automation System 🤖
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](./test_repairgpt_enhancements.js)
+[![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](#)
 
 > **Language**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
 
@@ -234,17 +234,15 @@ const branchPatterns = [
 
 ## 🔗 **Related Documentation**
 
-- 📋 [**Integration Guide**](REPAIRGPT_INTEGRATION.md) - Detailed integration analysis
 - 🔧 [**Workflow Selection Guide**](docs/workflow-selection-guide.md) - Choose your automation tier
 - 🚀 [**Setup Documentation**](docs/setup.md) - Complete installation guide
-- 🧪 [**Testing Guide**](test_repairgpt_enhancements.js) - Validation test suite
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please see our [**Contributing Guide**](CONTRIBUTING.md) for details on how to submit pull requests, report bugs, and suggest features.
 
 ### **Advanced Research**
-This project incorporates advanced automation patterns and comprehensive features. See our [Integration Analysis](REPAIRGPT_INTEGRATION.md) for detailed insights.
+This project incorporates advanced automation patterns and comprehensive features.
 
 ## 📄 License
 

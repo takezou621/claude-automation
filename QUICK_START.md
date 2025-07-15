@@ -1,12 +1,12 @@
 # 🚀 Quick Start Guide
 
-無料版GitHub自動化システムを5分で始めましょう！
+GitHub自動化システムを5分で始めましょう！
 
 ## 📋 前提条件
 
 - Node.js 18.0.0以上
 - GitHub Personal Access Token
-- Claude API Key
+- GitHub Actions有効なリポジトリ
 
 ## 🔧 セットアップ
 
@@ -31,10 +31,6 @@ GITHUB_TOKEN=ghp_your_token_here
 GITHUB_OWNER=your-username
 GITHUB_REPO=your-repo-name
 
-# Claude AI設定
-CLAUDE_API_KEY=your_claude_api_key_here
-CLAUDE_MODEL=claude-3-haiku-20240307
-
 # 自動化設定
 AUTO_REVIEW=true
 AUTO_LABEL=true
@@ -49,7 +45,7 @@ npm run automation:init
 ```
 
 初期化により以下が実行されます：
-- GitHub/Claude API接続テスト
+- GitHub API接続テスト
 - 基本ラベルの作成
 - システムの準備確認
 
@@ -140,14 +136,6 @@ export AUTO_REVIEW=false
 export AUTO_LABEL=false
 ```
 
-### Claudeモデルの変更
-```bash
-# より高性能なモデル（コスト増加）
-export CLAUDE_MODEL=claude-3-sonnet-20240229
-
-# より経済的なモデル
-export CLAUDE_MODEL=claude-3-haiku-20240307
-```
 
 ## 🛠️ トラブルシューティング
 
@@ -197,13 +185,12 @@ jobs:
       - run: npm run cli review ${{ github.event.pull_request.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           GITHUB_OWNER: ${{ github.repository_owner }}
           GITHUB_REPO: ${{ github.event.repository.name }}
 ```
 
 ## 🎉 完了！
 
-これで無料版GitHub自動化システムが使用できます。
+これでGitHub自動化システムが使用できます。
 
 質問や問題がある場合は、GitHubイシューで報告してください。

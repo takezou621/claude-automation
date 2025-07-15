@@ -1,7 +1,7 @@
 # Claude Smart Automation System 🤖
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](./test_repairgpt_enhancements.js)
+[![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](#)
 
 > **言語**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
 
@@ -220,10 +220,8 @@ gh run view <run-id> --log
 
 ## 📚 関連ドキュメント
 
-- 📋 [**統合ガイド**](REPAIRGPT_INTEGRATION.md) - 詳細統合分析
 - 🔧 [**ワークフロー選択ガイド**](docs/workflow-selection-guide.md) - 自動化ティア選択
 - 🚀 [**セットアップドキュメント**](docs/setup.md) - 完全インストールガイド
-- 🧪 [**テストガイド**](test_repairgpt_enhancements.js) - 検証テストスイート
 - [GitHub Actions公式ドキュメント](https://docs.github.com/en/actions)
 - [Claude Code公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
 
@@ -236,7 +234,7 @@ gh run view <run-id> --log
 MIT License
 
 ### **先進的研究**
-このプロジェクトは、高度な自動化パターンと包括的な機能を組み込んでいます。詳細な洞察については、[統合分析](REPAIRGPT_INTEGRATION.md)をご覧ください。
+このプロジェクトは、高度な自動化パターンと包括的な機能を組み込んでいます。
 
 ---
 
