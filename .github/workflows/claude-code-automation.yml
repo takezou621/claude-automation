@@ -75,7 +75,7 @@ jobs:
             MERGE_WAIT_MS: 5000,
             MAX_BRANCH_NAME_LENGTH: 100,
             ALLOWED_BRANCH_CHARS: /^[a-zA-Z0-9\-_\/]+$/,
-            SECURITY_PATTERNS: ['eval\\(', 'exec\\(', 'subprocess\\.call', '__import__']
+            SECURITY_PATTERNS: ['eval\\\\(', 'exec\\\\(', 'subprocess\\\\.call', '__import__']
           };
           
           // Helper function to sanitize branch names
@@ -102,6 +102,14 @@ jobs:
               throw new Error('Invalid issue number');
             }
             return num;
+          }
+          
+          // Helper function to sanitize issue title
+          function sanitizeIssueTitle(title) {
+            if (!title || typeof title !== 'string') {
+              return 'No title';
+            }
+            return title.replace(/[<>&"']/g, '_').slice(0, 200);
           }
           
           try {
@@ -277,8 +285,8 @@ jobs:
               // Create a detailed prompt for Claude Code
               const prompt = createClaudePrompt(issue, analysis);
               
-              // Write prompt to temporary file
-              const promptFile = '/tmp/claude_prompt.md';
+              // Write prompt to temporary file (with random name for security)
+              const promptFile = '/tmp/claude_prompt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.md';
               fs.writeFileSync(promptFile, prompt);
               
               // Execute Claude Code CLI with optimized timeout for 3-minute target
@@ -350,7 +358,7 @@ jobs:
                 '        logger.info(f"Applying bugfix for Issue #' + issue.number + '")\\n' +
                 '        \\n' +
                 '        # TODO: Implement actual fix logic here\\n' +
-                '        # Based on issue description: ' + issue.title + '\\n' +
+                '        # Based on issue description: ' + sanitizeIssueTitle(issue.title) + '\\n' +
                 '        \\n' +
                 '        logger.info("Bugfix #' + issue.number + ' applied successfully")\\n' +
                 '        return True\\n' +
