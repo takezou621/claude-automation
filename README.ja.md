@@ -1,20 +1,19 @@
 # Claude Smart Automation System 🤖
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![RepairGPT Enhanced](https://img.shields.io/badge/RepairGPT-Enhanced-blue.svg)](https://github.com/takezou621/repairgpt)
 [![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](./test_repairgpt_enhancements.js)
 
 > **言語**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
 
 ## 🚀 概要
 
-**RepairGPTレベルの高度な自動化を実現する次世代開発システム**
+**高度な自動化を実現する次世代開発システム**
 
-Claude Codeを使用したエンタープライズグレードの自動化システムです。RepairGPTの先進的なパターンを分析・統合し、Issue作成からClaude Code実装、PR作成、マージ、クローズまでの完全自動化を実現します。AIによるコードレビューと品質ゲートも組み込まれています。
+Claude Codeを使用したエンタープライズグレードの自動化システムです。先進的なパターンを統合し、Issue作成からClaude Code実装、PR作成、マージ、クローズまでの完全自動化を実現します。AIによるコードレビューと品質ゲートも組み込まれています。
 
 ---
 
-### 強化されたワークフロー図 (RepairGPT インスパイア)
+### 強化されたワークフロー図
 
 ```mermaid
 graph TD
@@ -38,7 +37,7 @@ graph TD
 
 ---
 
-## ✨ RepairGPT強化機能
+## ✨ 強化機能
 
 ### 🛡️ **高度なセキュリティ & 品質管理**
 - **17セキュリティパターン**: 包括的な悪意のあるコード検出
@@ -54,7 +53,7 @@ graph TD
 
 ### 🧠 **インテリジェント処理**
 - **6自動化ティア**: シンプルからアルティメートまでの自動化モード
-- **RepairGPTスケジューリング**: タイムゾーン最適化実行パターン
+- **スマートスケジューリング**: タイムゾーン最適化実行パターン
 - **高度ブランチ検出**: 9+命名規則サポート
 - **優先度ベース処理**: 重要Issueの即座対応
 
@@ -80,7 +79,7 @@ graph TD
 3. **自動マージ判断**: インテリジェントマージ承認システム
 4. **完了ワークフロー**: Issue完了・ブランチクリーンアップ
 
-## ⏰ RepairGPTインスパイアスケジュール
+## ⏰ インテリジェントスケジュール
 
 ### **インテリジェントスケジューリング**
 ```yaml
@@ -95,7 +94,7 @@ graph TD
 | ティア | スケジュール | 最適用途 | 機能 |
 |--------|------------|----------|------|
 | **🔥 Ultimate** | 毎分 | 重要プロジェクト | ⚡ ゼロレイテンシ、9+パターン |
-| **🚀 Full** | RepairGPTスケジュール | エンタープライズ | 🏢 マルチトリガー、AIレビュー |
+| **🚀 Full** | スマートスケジュール | エンタープライズ | 🏢 マルチトリガー、AIレビュー |
 | **⚡ Rapid** | 5分毎 | 高速開発 | 🚀 クイックレスポンス最適化 |
 | **🧠 Smart** | インテリジェント | 標準プロジェクト | 🧠 タイムゾーン対応効率的 |
 
@@ -209,19 +208,19 @@ gh run view <run-id> --log
 
 ## 📊 **パフォーマンス指標**
 
-### **RepairGPT強化テスト結果**
+### **強化テスト結果**
 - ✅ **セキュリティパターン**: 7/7パターン実装済み
-- ✅ **ラベルシステム**: 7/7 RepairGPTラベル統合済み
+- ✅ **ラベルシステム**: 7/7自動化ラベル統合済み
 - ✅ **品質レビュー**: 8/8品質チェック稼働中
 - ✅ **workflow_runトリガー**: 多段階自動化動作中
 - ✅ **Issue Processor**: 完全自動化パイプライン機能中
-- ✅ **インテリジェントスケジューリング**: RepairGPTタイミングパターン適用済み
+- ✅ **インテリジェントスケジューリング**: スマートタイミングパターン適用済み
 
 **総合スコア: 6/6テスト合格** 🎉
 
 ## 📚 関連ドキュメント
 
-- 📋 [**RepairGPT統合ガイド**](REPAIRGPT_INTEGRATION.md) - 詳細統合分析
+- 📋 [**統合ガイド**](REPAIRGPT_INTEGRATION.md) - 詳細統合分析
 - 🔧 [**ワークフロー選択ガイド**](docs/workflow-selection-guide.md) - 自動化ティア選択
 - 🚀 [**セットアップドキュメント**](docs/setup.md) - 完全インストールガイド
 - 🧪 [**テストガイド**](test_repairgpt_enhancements.js) - 検証テストスイート
@@ -236,9 +235,9 @@ gh run view <run-id> --log
 
 MIT License
 
-### **RepairGPT研究**
-このプロジェクトは、RepairGPT自動化システムの分析から得られた先進的パターンを組み込んでいます。詳細な洞察については、[RepairGPT分析](REPAIRGPT_INTEGRATION.md)をご覧ください。
+### **先進的研究**
+このプロジェクトは、高度な自動化パターンとエンタープライズグレード機能を組み込んでいます。詳細な洞察については、[統合分析](REPAIRGPT_INTEGRATION.md)をご覧ください。
 
 ---
 
-**🤖 RepairGPT強化技術による** | **次世代GitHub自動化システム**
+**🤖 先進的自動化技術による** | **次世代GitHub自動化システム**

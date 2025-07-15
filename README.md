@@ -1,18 +1,17 @@
 # Claude Smart Automation System 🤖
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![RepairGPT Enhanced](https://img.shields.io/badge/RepairGPT-Enhanced-blue.svg)](https://github.com/takezou621/repairgpt)
 [![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](./test_repairgpt_enhancements.js)
 
 > **Language**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
 
-**Turn your GitHub Issues into Merged Pull Requests, automatically - now with RepairGPT-level sophistication.**
+**Turn your GitHub Issues into Merged Pull Requests, automatically.**
 
-This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Built with insights from the advanced RepairGPT automation system, offering enterprise-grade automation with zero human intervention and built-in AI-powered code reviews and quality gates.
+This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Offering enterprise-grade automation with zero human intervention and built-in AI-powered code reviews and quality gates.
 
 ---
 
-### Enhanced Workflow Diagram (RepairGPT Inspired)
+### Enhanced Workflow Diagram
 
 ```mermaid
 graph TD
@@ -43,8 +42,8 @@ graph TD
 -   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow for code integration.
 -   **Production Ready**: A robust, production-grade automation system with clear, maintainable workflows.
 
-### 🚀 **RepairGPT Enhanced Technology**
-Built on insights from the sophisticated RepairGPT automation system, our implementation offers:
+### 🚀 **Advanced Technology**
+Our implementation offers:
 
 #### 🛡️ **Advanced Security & Quality**
 - **17 Security Patterns**: Enhanced malicious code detection
@@ -60,7 +59,7 @@ Built on insights from the sophisticated RepairGPT automation system, our implem
 
 #### 🧠 **Intelligent Processing**
 - **6 Automation Tiers**: From Simple to Ultimate automation modes
-- **RepairGPT Scheduling**: Timezone-optimized execution patterns
+- **Smart Scheduling**: Timezone-optimized execution patterns
 - **Advanced Branch Detection**: 9+ naming convention support
 - **Priority-Based Processing**: Critical issues get immediate attention
 
@@ -111,12 +110,12 @@ Go to your repository's `Settings > Secrets and variables > Actions` and add the
 
 Choose the automation tier that best fits your needs:
 
-### 🚀 Automation Tiers (RepairGPT Enhanced)
+### 🚀 Automation Tiers
 
 | Tier | Schedule | Best For | Features |
 |------|----------|----------|----------|
 | **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
-| **🚀 Full** | RepairGPT Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
+| **🚀 Full** | Smart Schedule | Enterprise projects | 🏢 Multi-trigger, AI review, metrics tracking |
 | **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
 | **🧠 Smart** | Intelligent schedule | Standard projects | 🧠 Timezone-aware, resource efficient |
 | **🤖 Code Review** | PR-triggered | Quality assurance | 🔍 AI analysis, security scanning, risk assessment |
@@ -166,7 +165,7 @@ const branchPatterns = [
 ];
 ```
 
-### 🏷️ Enhanced Label System (RepairGPT Inspired)
+### 🏷️ Enhanced Label System
 
 #### **Automation Trigger Labels**
 - `claude-processed` - Standard Claude processing
@@ -223,19 +222,19 @@ const branchPatterns = [
 
 ## 📊 **Performance Metrics**
 
-### **RepairGPT Enhancement Test Results**
+### **Enhancement Test Results**
 - ✅ **Security Patterns**: 7/7 patterns implemented
-- ✅ **Label System**: 7/7 RepairGPT labels integrated
+- ✅ **Label System**: 7/7 automation labels integrated
 - ✅ **Quality Review**: 8/8 quality checks active
 - ✅ **workflow_run Triggers**: Multi-stage automation working
 - ✅ **Issue Processor**: Full automation pipeline functional
-- ✅ **Intelligent Scheduling**: RepairGPT timing patterns applied
+- ✅ **Intelligent Scheduling**: Smart timing patterns applied
 
 **Overall Score: 6/6 tests passing** 🎉
 
 ## 🔗 **Related Documentation**
 
-- 📋 [**RepairGPT Integration Guide**](REPAIRGPT_INTEGRATION.md) - Detailed integration analysis
+- 📋 [**Integration Guide**](REPAIRGPT_INTEGRATION.md) - Detailed integration analysis
 - 🔧 [**Workflow Selection Guide**](docs/workflow-selection-guide.md) - Choose your automation tier
 - 🚀 [**Setup Documentation**](docs/setup.md) - Complete installation guide
 - 🧪 [**Testing Guide**](test_repairgpt_enhancements.js) - Validation test suite
@@ -244,8 +243,8 @@ const branchPatterns = [
 
 Contributions are welcome! Please see our [**Contributing Guide**](CONTRIBUTING.md) for details on how to submit pull requests, report bugs, and suggest features.
 
-### **RepairGPT Research**
-This project incorporates advanced patterns learned from analyzing the RepairGPT automation system. See our [RepairGPT Analysis](REPAIRGPT_INTEGRATION.md) for detailed insights.
+### **Advanced Research**
+This project incorporates advanced automation patterns and enterprise-grade features. See our [Integration Analysis](REPAIRGPT_INTEGRATION.md) for detailed insights.
 
 ## 📄 License
 
@@ -253,4 +252,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-**🤖 Powered by RepairGPT-Enhanced Technology** | **Next Generation GitHub Automation**
+**🤖 Powered by Advanced Automation Technology** | **Next Generation GitHub Automation**
