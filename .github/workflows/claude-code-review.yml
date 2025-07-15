@@ -1,0 +1,111 @@
+name: Claude Code Review & Quality Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      checks: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run Quality Analysis
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            console.log(`Running quality gate for PR #${prNumber}`);
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            let issues = [];
+            // Check 1: PR Size
+            if (pr.data.additions + pr.data.deletions > 500) {
+              issues.push('❌ PR is too large (> 500 lines changed). Please split into smaller PRs.');
+            }
+
+            // Check 2: Check for hardcoded secrets
+            for (const file of files.data) {
+              if (!file.patch) continue;
+              if (/(api_key|secret|password)\s*[:=]\s*["'].+["']/i.test(file.patch)) {
+                issues.push(`❌ Potential hardcoded secret found in \`${file.filename}\`.`);
+              }
+              if (/console\.log/.test(file.patch)) {
+                issues.push(`⚠️ \`console.log\` statement found in \`${file.filename}\`.`);
+              }
+            }
+
+            const passed = issues.every(issue => issue.startsWith('⚠️')); // Only fail on ❌
+            const criticalIssues = issues.filter(issue => issue.startsWith('❌'));
+            const description = passed ? 'All quality gates passed.' : `${criticalIssues.length} critical issue(s) found.`;
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: pr.data.head.sha,
+              state: passed ? 'success' : 'failure',
+              description: description,
+              context: 'claude/quality-gate'
+            });
+
+            const commentBody = `## 🎯 Quality Gate Result: ${passed ? '✅ Passed' : '❌ Failed'}\n\n${issues.join('\n')}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: commentBody
+            });
+
+            if (!passed) {
+              throw new Error(description);
+            }
+
+  ai-review:
+    name: AI Code Review
+    needs: [quality-gate]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run AI Analysis
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running AI analysis on PR ${{ github.event.pull_request.number }}..."
+          npm run cli review ${{ github.event.pull_request.number }} || echo "AI review script failed, but we will not fail the workflow."
