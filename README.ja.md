@@ -211,55 +211,6 @@ MIT License
 ### **RepairGPT研究**
 このプロジェクトは、RepairGPT自動化システムの分析から得られた先進的パターンを組み込んでいます。詳細な洞察については、[RepairGPT分析](REPAIRGPT_INTEGRATION.md)をご覧ください。
 
-## 🚀 5分でセットアップ
-
-### ステップ1: ワークフローファイルのコピー
-
-以下のワークフローファイルをプロジェクトの `.github/workflows` ディレクトリにコピーします：
-
-1.  `claude-code-automation.yml` - メイン自動化エンジン
-2.  `claude-code-review.yml` - AI駆動コードレビュー
-3.  `claude-issue-processor.yml` - Issue分類・管理
-
-### ステップ2: シークレット設定
-
-リポジトリの `Settings > Secrets and variables > Actions` で以下を設定：
-
--   `GITHUB_TOKEN`: `repo` と `workflow` スコープを持つGitHubトークン
--   `ANTHROPIC_API_KEY`: Claude AIモデルのAPIキー
-
-### ステップ3: 自動化開始！
-
-1.  **Issueを作成**し、`claude-processed` または `claude-ready` ラベルを追加します。
-    ```bash
-    gh issue create --title "新機能の追加" --body "議論した通りに機能実装をお願いします。" --label "claude-processed"
-    ```
-
-2.  **自動化の魔法を待つ！** システムが自動的に：
-    - **Issue分析**: 分類・優先度付け
-    - **コード生成**: Claude Code CLIを使用した実装
-    - **品質レビュー**: セキュリティ・品質チェック
-    - **PR作成**: プルリクエスト自動生成
-    - **AIレビュー**: インテリジェントコード解析
-    - **自動マージ**: ワークフロー完了・Issue完了
-
-**完了！** 手動介入不要 - Issue作成からマージ完了まで、すべてが自動化されます。
-
-## 📊 **関連ドキュメント**
-
-- 📋 [**RepairGPT統合ガイド**](REPAIRGPT_INTEGRATION.md) - 詳細統合分析
-- 🔧 [**ワークフロー選択ガイド**](docs/workflow-selection-guide.md) - 自動化ティア選択
-- 🚀 [**セットアップドキュメント**](docs/setup.md) - 完全インストールガイド
-- 🧪 [**テストガイド**](test_repairgpt_enhancements.js) - 検証テストスイート
-
-## 🤝 コントリビューション
-
-バグ報告や機能改善の提案は Issue または Pull Request でお願いします。
-
-## 📄 ライセンス
-
-このプロジェクトは[MITライセンス](LICENSE)の下でライセンスされています。
-
 ---
 
 **🤖 RepairGPT強化技術による** | **次世代GitHub自動化システム**
