@@ -24,7 +24,8 @@
       "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')",
       "Bash(node:*)",
       "Bash(echo:*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(git rebase:*)"
     ],
     "deny": []
   }

@@ -1,0 +1,692 @@
+name: Claude Security Vulnerability Scanner & Threat Detection
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+  push:
+    branches: [main]
+  schedule:
+    # Security scans every 8 hours
+    - cron: '0 */8 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'quick'
+          - 'standard'
+          - 'comprehensive'
+          - 'deep'
+          - 'emergency'
+      target:
+        description: 'Scan target (branch/PR/commit)'
+        required: false
+        type: string
+
+jobs:
+  security-scanner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      security-events: write
+      actions: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ github.token }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        
+    - name: Security Scanner Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          console.log('🛡️ CLAUDE SECURITY SCANNER ENGINE ACTIVATED');
+          const startTime = Date.now();
+          const executionId = Math.random().toString(36).substring(7);
+          const timestamp = new Date().toISOString();
+          
+          const scanType = context.payload.inputs?.scan_type || 'comprehensive';
+          const targetRef = context.payload.inputs?.target || 
+                           context.payload.pull_request?.head?.sha || 
+                           context.sha;
+          const prNumber = context.payload.pull_request?.number;
+          
+          console.log(`🔍 Scan Type: ${scanType}`);
+          console.log(`🎯 Target: ${targetRef}`);
+          console.log(`⚡ Execution ID: ${executionId}`);
+          console.log(`📋 PR Number: ${prNumber || 'N/A'}`);
+          
+          // Security scan configuration by type
+          const scanConfigs = {
+            quick: {
+              depthLevel: 1,
+              patterns: ['critical', 'high'],
+              fileLimit: 50,
+              timeout: 300 // 5 minutes
+            },
+            standard: {
+              depthLevel: 2,
+              patterns: ['critical', 'high', 'medium'],
+              fileLimit: 200,
+              timeout: 600 // 10 minutes
+            },
+            comprehensive: {
+              depthLevel: 3,
+              patterns: ['critical', 'high', 'medium', 'low'],
+              fileLimit: 500,
+              timeout: 1200 // 20 minutes
+            },
+            deep: {
+              depthLevel: 4,
+              patterns: ['critical', 'high', 'medium', 'low', 'info'],
+              fileLimit: 1000,
+              timeout: 1800 // 30 minutes
+            },
+            emergency: {
+              depthLevel: 5,
+              patterns: ['critical'],
+              fileLimit: 2000,
+              timeout: 3600 // 60 minutes
+            }
+          };
+          
+          const config = scanConfigs[scanType];
+          console.log(`⚙️ Scan config:`, JSON.stringify(config, null, 2));
+          
+          // Security metrics tracking
+          const securityMetrics = {
+            totalFiles: 0,
+            scannedFiles: 0,
+            vulnerabilities: {
+              critical: 0,
+              high: 0,
+              medium: 0,
+              low: 0,
+              info: 0
+            },
+            threats: [],
+            secureFiles: 0,
+            riskScore: 0,
+            complianceScore: 100,
+            findings: [],
+            recommendations: [],
+            falsePositives: 0,
+            startTime: startTime
+          };
+          
+          try {
+            console.log('\n🔍 === PHASE 1: FILE DISCOVERY & ENUMERATION ===');
+            
+            // Get repository files for scanning
+            let filesToScan = [];
+            
+            if (prNumber) {
+              // Scan PR files
+              const prFiles = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              filesToScan = prFiles.data.map(f => ({ filename: f.filename, patch: f.patch }));
+              console.log(`📁 PR Files to scan: ${filesToScan.length}`);
+            } else {
+              // Scan repository files (simplified - using tree API)
+              const tree = await github.rest.git.getTree({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tree_sha: targetRef,
+                recursive: true
+              });
+              
+              filesToScan = tree.data.tree
+                .filter(item => item.type === 'blob')
+                .slice(0, config.fileLimit)
+                .map(f => ({ filename: f.path, sha: f.sha }));
+              console.log(`📁 Repository files to scan: ${filesToScan.length} (limited to ${config.fileLimit})`);
+            }
+            
+            securityMetrics.totalFiles = filesToScan.length;
+            
+            console.log('\n🛡️ === PHASE 2: SECURITY PATTERN DETECTION ===');
+            
+            // Comprehensive security patterns
+            const securityPatterns = {
+              critical: [
+                { pattern: /(?:password|pwd|passwd)\s*[:=]\s*["'][^"']{1,}["']/gi, message: 'Hardcoded password detected', cwe: 'CWE-798' },
+                { pattern: /(?:api[_-]?key|apikey)\s*[:=]\s*["'][^"']{8,}["']/gi, message: 'Hardcoded API key detected', cwe: 'CWE-798' },
+                { pattern: /(?:secret[_-]?key|secretkey)\s*[:=]\s*["'][^"']{8,}["']/gi, message: 'Hardcoded secret key detected', cwe: 'CWE-798' },
+                { pattern: /(?:private[_-]?key|privatekey)\s*[:=]/gi, message: 'Private key exposure risk', cwe: 'CWE-200' },
+                { pattern: /eval\s*\(/gi, message: 'Code injection vulnerability (eval)', cwe: 'CWE-94' },
+                { pattern: /exec\s*\(/gi, message: 'Command injection vulnerability (exec)', cwe: 'CWE-78' },
+                { pattern: /shell_exec\s*\(/gi, message: 'Command injection vulnerability (shell_exec)', cwe: 'CWE-78' },
+                { pattern: /system\s*\(/gi, message: 'Command injection vulnerability (system)', cwe: 'CWE-78' }
+              ],
+              high: [
+                { pattern: /(?:token|access[_-]?token)\s*[:=]\s*["'][^"']{16,}["']/gi, message: 'Hardcoded access token', cwe: 'CWE-798' },
+                { pattern: /(?:auth[_-]?key|authkey)\s*[:=]\s*["'][^"']{8,}["']/gi, message: 'Hardcoded authentication key', cwe: 'CWE-798' },
+                { pattern: /innerHTML\s*[\+]?=\s*[^;]+;/gi, message: 'XSS vulnerability (innerHTML)', cwe: 'CWE-79' },
+                { pattern: /document\.write\s*\(/gi, message: 'XSS vulnerability (document.write)', cwe: 'CWE-79' },
+                { pattern: /dangerouslySetInnerHTML/gi, message: 'XSS vulnerability (React dangerouslySetInnerHTML)', cwe: 'CWE-79' },
+                { pattern: /\$\{[^}]*\}/g, message: 'Template injection vulnerability', cwe: 'CWE-94' },
+                { pattern: /mysql_query\s*\([^)]*\$_/gi, message: 'SQL injection vulnerability', cwe: 'CWE-89' },
+                { pattern: /SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+.*\$_/gi, message: 'Potential SQL injection', cwe: 'CWE-89' }
+              ],
+              medium: [
+                { pattern: /console\.log\s*\([^)]*(?:password|secret|key|token)[^)]*\)/gi, message: 'Sensitive data in console logs', cwe: 'CWE-532' },
+                { pattern: /alert\s*\([^)]*(?:password|secret|key|token)[^)]*\)/gi, message: 'Sensitive data in alerts', cwe: 'CWE-532' },
+                { pattern: /http:\/\/[^\s"']+/gi, message: 'Insecure HTTP URLs detected', cwe: 'CWE-319' },
+                { pattern: /ftp:\/\/[^\s"']+/gi, message: 'Insecure FTP URLs detected', cwe: 'CWE-319' },
+                { pattern: /md5\s*\(/gi, message: 'Weak cryptographic hash (MD5)', cwe: 'CWE-328' },
+                { pattern: /sha1\s*\(/gi, message: 'Weak cryptographic hash (SHA1)', cwe: 'CWE-328' },
+                { pattern: /Math\.random\s*\(\)/gi, message: 'Cryptographically insecure random', cwe: 'CWE-338' },
+                { pattern: /target\s*=\s*["']_blank["'][^>]*(?!rel\s*=\s*["']noopener)/gi, message: 'Missing rel="noopener" security attribute', cwe: 'CWE-200' }
+              ],
+              low: [
+                { pattern: /TODO.*(?:security|secure|fix|vulnerability)/gi, message: 'Security-related TODO comments', cwe: 'CWE-1275' },
+                { pattern: /FIXME.*(?:security|secure|fix|vulnerability)/gi, message: 'Security-related FIXME comments', cwe: 'CWE-1275' },
+                { pattern: /HACK.*(?:security|secure|bypass)/gi, message: 'Security-related HACK comments', cwe: 'CWE-1275' },
+                { pattern: /debugger\s*;/gi, message: 'Debug statements in production code', cwe: 'CWE-489' },
+                { pattern: /console\.debug\s*\(/gi, message: 'Debug console statements', cwe: 'CWE-532' },
+                { pattern: /\.printStackTrace\s*\(\s*\)/gi, message: 'Stack trace exposure', cwe: 'CWE-209' }
+              ],
+              info: [
+                { pattern: /version\s*[:=]\s*["'][^"']+["']/gi, message: 'Version information exposure', cwe: 'CWE-200' },
+                { pattern: /build\s*[:=]\s*["'][^"']+["']/gi, message: 'Build information exposure', cwe: 'CWE-200' },
+                { pattern: /localhost:\d+/gi, message: 'Localhost references in code', cwe: 'CWE-200' },
+                { pattern: /127\.0\.0\.1/gi, message: 'Hardcoded localhost IP', cwe: 'CWE-200' }
+              ]
+            };
+            
+            // File type security rules
+            const fileTypeRules = {
+              '.env': { severity: 'critical', message: 'Environment file contains sensitive data' },
+              '.key': { severity: 'critical', message: 'Private key file detected' },
+              '.pem': { severity: 'critical', message: 'Certificate/key file detected' },
+              '.p12': { severity: 'critical', message: 'PKCS#12 certificate detected' },
+              '.pfx': { severity: 'critical', message: 'PKCS#12 certificate detected' },
+              '.sql': { severity: 'medium', message: 'Database file may contain sensitive data' },
+              '.log': { severity: 'low', message: 'Log file may contain sensitive data' },
+              '.backup': { severity: 'medium', message: 'Backup file may contain sensitive data' },
+              '.bak': { severity: 'medium', message: 'Backup file may contain sensitive data' }
+            };
+            
+            // Scan files for security vulnerabilities
+            for (const file of filesToScan) {
+              try {
+                console.log(`🔍 Scanning: ${file.filename}`);
+                securityMetrics.scannedFiles++;
+                
+                const fileExtension = '.' + file.filename.split('.').pop().toLowerCase();
+                let fileContent = '';
+                
+                // Check file type rules
+                if (fileTypeRules[fileExtension]) {
+                  const rule = fileTypeRules[fileExtension];
+                  securityMetrics.vulnerabilities[rule.severity]++;
+                  securityMetrics.findings.push({
+                    file: file.filename,
+                    severity: rule.severity,
+                    message: rule.message,
+                    cwe: 'CWE-200',
+                    type: 'file_type',
+                    line: 1
+                  });
+                }
+                
+                // Get file content for pattern scanning
+                if (file.patch) {
+                  // Use patch content for PR files
+                  fileContent = file.patch;
+                } else if (file.sha) {
+                  // Fetch file content for repository scan
+                  try {
+                    const blob = await github.rest.git.getBlob({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      file_sha: file.sha
+                    });
+                    fileContent = Buffer.from(blob.data.content, 'base64').toString('utf8');
+                  } catch (fetchError) {
+                    console.log(`⚠️ Could not fetch content for ${file.filename}: ${fetchError.message}`);
+                    continue;
+                  }
+                }
+                
+                // Skip binary files and very large files
+                if (!fileContent || fileContent.length > 1000000) { // 1MB limit
+                  continue;
+                }
+                
+                // Scan for security patterns
+                for (const severity of config.patterns) {
+                  const patterns = securityPatterns[severity] || [];
+                  
+                  for (const { pattern, message, cwe } of patterns) {
+                    const matches = fileContent.match(pattern);
+                    if (matches) {
+                      securityMetrics.vulnerabilities[severity] += matches.length;
+                      
+                      // Find line numbers for matches
+                      const lines = fileContent.split('\n');
+                      for (let i = 0; i < lines.length; i++) {
+                        if (pattern.test(lines[i])) {
+                          securityMetrics.findings.push({
+                            file: file.filename,
+                            line: i + 1,
+                            severity: severity,
+                            message: message,
+                            cwe: cwe,
+                            type: 'pattern',
+                            snippet: lines[i].trim().substring(0, 100)
+                          });
+                        }
+                      }
+                    }
+                  }
+                }
+                
+                // Additional security checks for specific file types
+                if (fileExtension === '.js' || fileExtension === '.ts') {
+                  // JavaScript/TypeScript specific checks
+                  if (/require\s*\(\s*["'][^"']*["']\s*\)/g.test(fileContent)) {
+                    // Check for potentially dangerous require calls
+                    const dangerousRequires = ['child_process', 'fs', 'os', 'crypto'];
+                    for (const dangerous of dangerousRequires) {
+                      if (new RegExp(`require\\s*\\(\\s*["']${dangerous}["']\\s*\\)`, 'g').test(fileContent)) {
+                        securityMetrics.vulnerabilities.medium++;
+                        securityMetrics.findings.push({
+                          file: file.filename,
+                          severity: 'medium',
+                          message: `Potentially dangerous module import: ${dangerous}`,
+                          cwe: 'CWE-676',
+                          type: 'dangerous_import'
+                        });
+                      }
+                    }
+                  }
+                }
+                
+              } catch (scanError) {
+                console.log(`❌ Error scanning ${file.filename}: ${scanError.message}`);
+                continue;
+              }
+            }
+            
+            console.log('\n📊 === PHASE 3: VULNERABILITY ASSESSMENT ===');
+            
+            // Calculate security metrics
+            const totalVulnerabilities = Object.values(securityMetrics.vulnerabilities).reduce((a, b) => a + b, 0);
+            securityMetrics.secureFiles = securityMetrics.scannedFiles - securityMetrics.findings.length;
+            
+            console.log(`📊 Total vulnerabilities found: ${totalVulnerabilities}`);
+            console.log(`🛡️ Secure files: ${securityMetrics.secureFiles}/${securityMetrics.scannedFiles}`);
+            
+            // Calculate risk score (0-100, higher = more dangerous)
+            const riskWeights = { critical: 25, high: 10, medium: 5, low: 2, info: 1 };
+            securityMetrics.riskScore = Math.min(100, Object.entries(securityMetrics.vulnerabilities)
+              .reduce((score, [severity, count]) => score + (count * riskWeights[severity]), 0));
+            
+            // Calculate compliance score (100 - risk score)
+            securityMetrics.complianceScore = Math.max(0, 100 - securityMetrics.riskScore);
+            
+            console.log(`🎯 Risk Score: ${securityMetrics.riskScore}/100`);
+            console.log(`✅ Compliance Score: ${securityMetrics.complianceScore}/100`);
+            
+            // Determine security grade
+            const securityGrade = securityMetrics.complianceScore >= 95 ? 'A+' :
+                                 securityMetrics.complianceScore >= 90 ? 'A' :
+                                 securityMetrics.complianceScore >= 80 ? 'B+' :
+                                 securityMetrics.complianceScore >= 70 ? 'B' :
+                                 securityMetrics.complianceScore >= 60 ? 'C' : 'F';
+            
+            console.log(`🏆 Security Grade: ${securityGrade}`);
+            
+            console.log('\n🔍 === PHASE 4: THREAT INTELLIGENCE ANALYSIS ===');
+            
+            // Identify security threats and attack vectors
+            const threats = [];
+            
+            if (securityMetrics.vulnerabilities.critical > 0) {
+              threats.push({
+                level: 'CRITICAL',
+                type: 'Data Exposure',
+                description: 'Hardcoded credentials or secrets detected',
+                impact: 'Complete system compromise possible',
+                urgency: 'IMMEDIATE'
+              });
+            }
+            
+            if (securityMetrics.vulnerabilities.high > 0) {
+              threats.push({
+                level: 'HIGH',
+                type: 'Code Injection',
+                description: 'Code or command injection vulnerabilities detected',
+                impact: 'Remote code execution possible',
+                urgency: 'URGENT'
+              });
+            }
+            
+            if (securityMetrics.vulnerabilities.medium > 0) {
+              threats.push({
+                level: 'MEDIUM',
+                type: 'Information Disclosure',
+                description: 'Potential information leakage vulnerabilities',
+                impact: 'Sensitive data exposure possible',
+                urgency: 'HIGH'
+              });
+            }
+            
+            securityMetrics.threats = threats;
+            
+            console.log('\n💡 === PHASE 5: SECURITY RECOMMENDATIONS ===');
+            
+            // Generate security recommendations
+            const recommendations = [];
+            
+            if (securityMetrics.vulnerabilities.critical > 0) {
+              recommendations.push('🔴 CRITICAL: Remove all hardcoded credentials immediately');
+              recommendations.push('🔐 Implement secure credential management (environment variables, secrets manager)');
+              recommendations.push('🚨 Conduct emergency security review of affected systems');
+            }
+            
+            if (securityMetrics.vulnerabilities.high > 0) {
+              recommendations.push('🟠 HIGH: Fix code injection vulnerabilities with input validation');
+              recommendations.push('🛡️ Implement Content Security Policy (CSP) headers');
+              recommendations.push('🔍 Add automated security testing to CI/CD pipeline');
+            }
+            
+            if (securityMetrics.vulnerabilities.medium > 0) {
+              recommendations.push('🟡 MEDIUM: Upgrade to secure protocols (HTTPS, TLS)');
+              recommendations.push('🔐 Implement stronger cryptographic algorithms');
+              recommendations.push('📝 Review and sanitize logging practices');
+            }
+            
+            if (totalVulnerabilities === 0) {
+              recommendations.push('✅ Excellent security posture - maintain current practices');
+              recommendations.push('🔄 Continue regular security scanning');
+              recommendations.push('📚 Keep security knowledge up to date');
+            }
+            
+            securityMetrics.recommendations = recommendations;
+            
+            console.log('\n📋 === PHASE 6: SECURITY REPORT GENERATION ===');
+            
+            const executionTime = Math.round((Date.now() - startTime) / 1000);
+            const securityPassed = securityMetrics.riskScore < 20 && securityMetrics.vulnerabilities.critical === 0;
+            
+            // Generate comprehensive security report
+            const securityReport = `## 🛡️ Security Vulnerability Scanner Report
+
+### 🎯 Security Assessment Summary
+**Security Grade**: ${getSecurityEmoji(securityGrade)} **${securityGrade}** (${securityMetrics.complianceScore}/100 Compliance)
+**Risk Level**: ${getRiskEmoji(securityMetrics.riskScore)} **${getRiskLevel(securityMetrics.riskScore)}** (${securityMetrics.riskScore}/100 Risk Score)
+**Scan Type**: ${scanType.toUpperCase()}
+**Security Status**: ${securityPassed ? '✅ **SECURE**' : '❌ **VULNERABILITIES DETECTED**'}
+**Execution ID**: \`${executionId}\`
+**Scan Time**: ${executionTime}s
+
+### 📊 Vulnerability Summary
+| Severity | Count | Status |
+|----------|-------|--------|
+| 🔴 **Critical** | ${securityMetrics.vulnerabilities.critical} | ${securityMetrics.vulnerabilities.critical === 0 ? '✅' : '🚨'} |
+| 🟠 **High** | ${securityMetrics.vulnerabilities.high} | ${securityMetrics.vulnerabilities.high === 0 ? '✅' : '⚠️'} |
+| 🟡 **Medium** | ${securityMetrics.vulnerabilities.medium} | ${securityMetrics.vulnerabilities.medium === 0 ? '✅' : '⚠️'} |
+| 🔵 **Low** | ${securityMetrics.vulnerabilities.low} | ${securityMetrics.vulnerabilities.low === 0 ? '✅' : 'ℹ️'} |
+| ⚪ **Info** | ${securityMetrics.vulnerabilities.info} | ℹ️ |
+| **Total** | **${totalVulnerabilities}** | ${totalVulnerabilities === 0 ? '✅' : '⚠️'} |
+
+### 🔍 Scan Coverage
+- **Total Files**: ${securityMetrics.totalFiles}
+- **Scanned Files**: ${securityMetrics.scannedFiles}
+- **Secure Files**: ${securityMetrics.secureFiles}
+- **Affected Files**: ${securityMetrics.findings.length}
+- **Coverage**: ${Math.round((securityMetrics.scannedFiles / securityMetrics.totalFiles) * 100)}%
+
+${threats.length > 0 ? `### 🚨 Threat Analysis
+${threats.map(threat => 
+  `#### ${threat.level} - ${threat.type}
+**Description**: ${threat.description}
+**Impact**: ${threat.impact}
+**Urgency**: ${threat.urgency}`
+).join('\n\n')}
+` : '### ✅ Threat Analysis\n- No significant security threats detected'}
+
+${securityMetrics.vulnerabilities.critical > 0 || securityMetrics.vulnerabilities.high > 0 ? 
+`### 🔴 Critical/High Severity Findings
+${securityMetrics.findings
+  .filter(f => f.severity === 'critical' || f.severity === 'high')
+  .slice(0, 10) // Limit to 10 for readability
+  .map(finding => 
+    `- **${finding.severity.toUpperCase()}** in \`${finding.file}\`${finding.line ? `:${finding.line}` : ''}: ${finding.message} (${finding.cwe})`
+  ).join('\n')}
+
+${securityMetrics.findings.filter(f => f.severity === 'critical' || f.severity === 'high').length > 10 ? 
+  `*... and ${securityMetrics.findings.filter(f => f.severity === 'critical' || f.severity === 'high').length - 10} more findings*` : ''}
+` : ''}
+
+### 💡 Security Recommendations
+${recommendations.map(rec => `- ${rec}`).join('\n')}
+
+### 📈 Security Metrics
+- **Risk Score**: ${securityMetrics.riskScore}/100 (${getRiskLevel(securityMetrics.riskScore)})
+- **Compliance Score**: ${securityMetrics.complianceScore}/100
+- **Security Grade**: ${securityGrade}
+- **Files at Risk**: ${Math.round(((securityMetrics.scannedFiles - securityMetrics.secureFiles) / securityMetrics.scannedFiles) * 100)}%
+
+${!securityPassed ? `### 🚫 Security Gate Status
+**Status**: ❌ **BLOCKED** - Security vulnerabilities must be resolved before deployment
+
+**Blocking Issues:**
+${securityMetrics.vulnerabilities.critical > 0 ? `- 🔴 ${securityMetrics.vulnerabilities.critical} critical vulnerabilities` : ''}
+${securityMetrics.riskScore >= 50 ? `- ⚠️ High risk score: ${securityMetrics.riskScore}/100` : ''}
+
+**Required Actions:**
+1. Address all critical and high severity vulnerabilities
+2. Reduce risk score below 20
+3. Re-run security scan to verify fixes
+` : `### ✅ Security Gate Status
+**Status**: ✅ **APPROVED** - No blocking security issues detected
+
+**Security Highlights:**
+- ✅ No critical vulnerabilities
+- ✅ Risk score within acceptable range (${securityMetrics.riskScore}/100)
+- ✅ Compliance score: ${securityMetrics.complianceScore}/100
+`}
+
+### 🔄 Next Steps
+1. ${securityMetrics.vulnerabilities.critical > 0 ? '🚨 **URGENT**: Fix critical vulnerabilities immediately' : '✅ Continue monitoring for new vulnerabilities'}
+2. ${securityMetrics.vulnerabilities.high > 0 ? '⚠️ **HIGH**: Address high severity issues within 24 hours' : '✅ Maintain current security practices'}
+3. 🔍 **ONGOING**: Regular security scans (every 8 hours)
+4. 📚 **EDUCATION**: Keep security knowledge current
+
+---
+🛡️ **Security Scanner Engine** | **${scanType.toUpperCase()} Scan** | **Enterprise Security Standards**
+⚡ **Real-time Threat Detection** | **OWASP Compliance** | **Zero-Trust Security**`;
+
+            // Post security report
+            if (prNumber) {
+              // Post as PR comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: securityReport
+              });
+            } else {
+              // Create security issue
+              const securityIssue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🛡️ Security Scan Report - ${timestamp}`,
+                body: securityReport,
+                labels: [
+                  'security-scan',
+                  `grade-${securityGrade.toLowerCase().replace('+', '-plus')}`,
+                  `risk-${getRiskLevel(securityMetrics.riskScore).toLowerCase()}`,
+                  securityPassed ? 'security-approved' : 'security-blocked'
+                ]
+              });
+            }
+            
+            // Create critical security alerts
+            if (securityMetrics.vulnerabilities.critical > 0) {
+              const criticalAlert = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 CRITICAL SECURITY ALERT - ${securityMetrics.vulnerabilities.critical} Critical Vulnerabilities`,
+                body: `## 🚨 CRITICAL SECURITY VULNERABILITY ALERT
+
+**Alert Level**: CRITICAL
+**Vulnerabilities**: ${securityMetrics.vulnerabilities.critical} critical issues
+**Risk Score**: ${securityMetrics.riskScore}/100
+**Immediate Action Required**: YES
+
+### 🔴 Critical Vulnerabilities Found
+${securityMetrics.findings
+  .filter(f => f.severity === 'critical')
+  .slice(0, 5)
+  .map(finding => `- **${finding.message}** in \`${finding.file}\`${finding.line ? `:${finding.line}` : ''} (${finding.cwe})`)
+  .join('\n')}
+
+### 🚨 IMMEDIATE ACTIONS REQUIRED
+1. **STOP**: Halt all deployments immediately
+2. **ISOLATE**: Review affected systems for compromise
+3. **FIX**: Address critical vulnerabilities within 2 hours
+4. **VERIFY**: Re-run security scan after fixes
+5. **REPORT**: Notify security team and stakeholders
+
+### 📞 Emergency Contacts
+- **Security Team**: Immediate escalation required
+- **DevOps Team**: Deployment freeze in effect
+- **Management**: Critical security incident notification
+
+### ⏰ Response Timeline
+- **Detection**: ${timestamp}
+- **Response Required**: IMMEDIATE
+- **Fix Deadline**: 2 hours from detection
+- **Verification**: Required before deployment resume
+
+---
+🚨 **CRITICAL SECURITY ALERT** | **IMMEDIATE ACTION REQUIRED** | **DEPLOYMENT BLOCKED**`,
+                labels: ['critical-security-alert', 'security-incident', 'urgent', 'deployment-block']
+              });
+              
+              console.log(`🚨 CRITICAL SECURITY ALERT ISSUED: #${criticalAlert.data.number}`);
+            }
+            
+            // Block PR/deployment if security issues found
+            if (prNumber && !securityPassed) {
+              try {
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: context.payload.pull_request.head.sha,
+                  state: 'failure',
+                  target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${prNumber}`,
+                  description: `Security vulnerabilities detected: ${totalVulnerabilities} issues`,
+                  context: 'claude/security-scan'
+                });
+                console.log('🚫 PR blocked due to security vulnerabilities');
+              } catch (statusError) {
+                console.log(`⚠️ Could not create commit status: ${statusError.message}`);
+              }
+            } else if (prNumber && securityPassed) {
+              try {
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha: context.payload.pull_request.head.sha,
+                  state: 'success',
+                  target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${prNumber}`,
+                  description: `Security scan passed: Grade ${securityGrade}`,
+                  context: 'claude/security-scan'
+                });
+              } catch (statusError) {
+                console.log(`⚠️ Could not create commit status: ${statusError.message}`);
+              }
+            }
+            
+            console.log(`✅ CLAUDE SECURITY SCANNER ENGINE COMPLETED`);
+            console.log(`🛡️ Security Grade: ${securityGrade} (${securityMetrics.complianceScore}/100)`);
+            console.log(`🎯 Vulnerabilities: ${totalVulnerabilities} (Critical: ${securityMetrics.vulnerabilities.critical})`);
+            console.log(`🚫 Deployment Status: ${securityPassed ? 'APPROVED' : 'BLOCKED'}`);
+            console.log(`⚡ Execution Time: ${executionTime}s`);
+            
+          } catch (error) {
+            console.log(`❌ Security Scanner Engine Error: ${error.message}`);
+            
+            // Create error alert
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Security Scanner System Error - ${timestamp}`,
+              body: `## ❌ Security Scanner System Error
+
+The Claude Security Scanner Engine encountered a critical error and could not complete the security assessment.
+
+**Error Details:**
+- **Message**: ${error.message}
+- **Execution ID**: \`${executionId}\`
+- **Scan Type**: ${scanType}
+- **Target**: ${targetRef}
+
+**Security Impact:**
+- Security scanning temporarily unavailable
+- Vulnerability detection interrupted
+- Manual security review required
+
+**Immediate Actions:**
+1. Conduct manual security review of changes
+2. Review scanner workflow configuration
+3. Verify system permissions and access
+4. Consider external security tool usage
+
+**Error Context:**
+\`\`\`
+${error.stack}
+\`\`\`
+
+---
+❌ **Security Scanner Error** | **Manual Review Required** | **Security Assessment Needed**`,
+              labels: ['security-scanner-error', 'system-failure', 'security-review-required', 'urgent']
+            });
+            
+            throw error;
+          }
+          
+          // Helper functions
+          function getSecurityEmoji(grade) {
+            const emojis = {
+              'A+': '🛡️',
+              'A': '🔒',
+              'B+': '🔐',
+              'B': '⚠️',
+              'C': '🚨',
+              'F': '💥'
+            };
+            return emojis[grade] || '🔍';
+          }
+          
+          function getRiskEmoji(riskScore) {
+            if (riskScore >= 80) return '🚨';
+            if (riskScore >= 50) return '⚠️';
+            if (riskScore >= 20) return '🟡';
+            return '🟢';
+          }
+          
+          function getRiskLevel(riskScore) {
+            if (riskScore >= 80) return 'CRITICAL';
+            if (riskScore >= 50) return 'HIGH';
+            if (riskScore >= 20) return 'MEDIUM';
+            return 'LOW';
+          }

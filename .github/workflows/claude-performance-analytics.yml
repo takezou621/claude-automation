@@ -1,0 +1,538 @@
+name: Claude Performance Analytics & SLO Monitoring
+
+on:
+  schedule:
+    # Performance analytics every 30 minutes during business hours
+    - cron: '*/30 6-18 * * 1-5'  # Every 30min, 6-18 UTC (15-03 JST), Mon-Fri
+    # Deep analytics every 6 hours
+    - cron: '0 */6 * * *'        # Every 6 hours
+  workflow_run:
+    workflows: ["Claude Full Automation", "Claude Ultimate Automation", "Claude Smart Automation", "Claude Health Monitor"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      analytics_type:
+        description: 'Type of performance analytics'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+          - 'quick'
+          - 'standard'
+          - 'deep'
+          - 'benchmark'
+      time_range:
+        description: 'Analysis time range (hours)'
+        required: false
+        default: '24'
+        type: choice
+        options:
+          - '1'
+          - '6'
+          - '24'
+          - '168'  # 1 week
+          - '720'  # 1 month
+
+jobs:
+  performance-analytics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+      checks: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ github.token }}
+        
+    - name: Performance Analytics Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          console.log('📊 CLAUDE PERFORMANCE ANALYTICS ENGINE ACTIVATED');
+          const startTime = Date.now();
+          const executionId = Math.random().toString(36).substring(7);
+          const timestamp = new Date().toISOString();
+          
+          const analyticsType = context.payload.inputs?.analytics_type || 'standard';
+          const timeRangeHours = parseInt(context.payload.inputs?.time_range || '24');
+          const timeRangeMs = timeRangeHours * 60 * 60 * 1000;
+          
+          console.log(`📈 Analytics Type: ${analyticsType}`);
+          console.log(`⏰ Time Range: ${timeRangeHours} hours`);
+          console.log(`⚡ Execution ID: ${executionId}`);
+          
+          // SLO Targets (Service Level Objectives)
+          const sloTargets = {
+            automationSuccessRate: 99.9,      // 99.9% success rate
+            averageProcessingTime: 30,        // ≤30 seconds average
+            maxProcessingTime: 120,           // ≤2 minutes maximum
+            errorRate: 0.1,                   // ≤0.1% error rate
+            availabilityUptime: 99.5,         // ≥99.5% availability
+            throughput: 100,                  // ≥100 operations/hour
+            responseTime95th: 60,             // 95th percentile ≤60s
+            meanTimeToRecovery: 300           // ≤5 minutes MTTR
+          };
+          
+          // Performance metrics tracking
+          const performanceMetrics = {
+            totalWorkflows: 0,
+            successfulWorkflows: 0,
+            failedWorkflows: 0,
+            cancelledWorkflows: 0,
+            averageExecutionTime: 0,
+            medianExecutionTime: 0,
+            maxExecutionTime: 0,
+            minExecutionTime: Infinity,
+            p95ExecutionTime: 0,
+            p99ExecutionTime: 0,
+            throughputPerHour: 0,
+            errorRate: 0,
+            successRate: 0,
+            availabilityScore: 0,
+            sloCompliance: {},
+            performanceTrends: {},
+            bottlenecks: [],
+            recommendations: [],
+            startTime: startTime
+          };
+          
+          try {
+            console.log('\n📊 === PHASE 1: PERFORMANCE DATA COLLECTION ===');
+            
+            const analysisStartTime = new Date(Date.now() - timeRangeMs);
+            console.log(`🔍 Analyzing from: ${analysisStartTime.toISOString()}`);
+            
+            // Get workflow runs for analysis period
+            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              created: `>${analysisStartTime.toISOString()}`
+            });
+            
+            const runs = workflowRuns.data.workflow_runs;
+            performanceMetrics.totalWorkflows = runs.length;
+            
+            console.log(`📈 Total workflows in period: ${performanceMetrics.totalWorkflows}`);
+            
+            if (runs.length === 0) {
+              console.log('📊 No workflow data available for analysis');
+              return;
+            }
+            
+            // Analyze workflow outcomes
+            performanceMetrics.successfulWorkflows = runs.filter(r => r.conclusion === 'success').length;
+            performanceMetrics.failedWorkflows = runs.filter(r => r.conclusion === 'failure').length;
+            performanceMetrics.cancelledWorkflows = runs.filter(r => r.conclusion === 'cancelled').length;
+            
+            performanceMetrics.successRate = (performanceMetrics.successfulWorkflows / performanceMetrics.totalWorkflows) * 100;
+            performanceMetrics.errorRate = (performanceMetrics.failedWorkflows / performanceMetrics.totalWorkflows) * 100;
+            
+            console.log(`✅ Success Rate: ${performanceMetrics.successRate.toFixed(2)}%`);
+            console.log(`❌ Error Rate: ${performanceMetrics.errorRate.toFixed(2)}%`);
+            console.log(`⏸️ Cancellation Rate: ${((performanceMetrics.cancelledWorkflows / performanceMetrics.totalWorkflows) * 100).toFixed(2)}%`);
+            
+            console.log('\n⚡ === PHASE 2: EXECUTION TIME ANALYSIS ===');
+            
+            // Calculate execution times
+            const executionTimes = runs
+              .filter(run => run.run_started_at && run.updated_at)
+              .map(run => {
+                const start = new Date(run.run_started_at);
+                const end = new Date(run.updated_at);
+                return {
+                  duration: (end - start) / 1000, // seconds
+                  workflow: run.name,
+                  conclusion: run.conclusion,
+                  run_id: run.id
+                };
+              })
+              .filter(item => item.duration > 0)
+              .sort((a, b) => a.duration - b.duration);
+            
+            if (executionTimes.length > 0) {
+              performanceMetrics.averageExecutionTime = executionTimes.reduce((sum, item) => sum + item.duration, 0) / executionTimes.length;
+              performanceMetrics.medianExecutionTime = executionTimes[Math.floor(executionTimes.length / 2)].duration;
+              performanceMetrics.maxExecutionTime = executionTimes[executionTimes.length - 1].duration;
+              performanceMetrics.minExecutionTime = executionTimes[0].duration;
+              
+              // Calculate percentiles
+              const p95Index = Math.floor(executionTimes.length * 0.95);
+              const p99Index = Math.floor(executionTimes.length * 0.99);
+              performanceMetrics.p95ExecutionTime = executionTimes[p95Index]?.duration || 0;
+              performanceMetrics.p99ExecutionTime = executionTimes[p99Index]?.duration || 0;
+              
+              console.log(`📊 Average Execution: ${performanceMetrics.averageExecutionTime.toFixed(2)}s`);
+              console.log(`📊 Median Execution: ${performanceMetrics.medianExecutionTime.toFixed(2)}s`);
+              console.log(`📊 95th Percentile: ${performanceMetrics.p95ExecutionTime.toFixed(2)}s`);
+              console.log(`📊 99th Percentile: ${performanceMetrics.p99ExecutionTime.toFixed(2)}s`);
+              console.log(`📊 Max Execution: ${performanceMetrics.maxExecutionTime.toFixed(2)}s`);
+              console.log(`📊 Min Execution: ${performanceMetrics.minExecutionTime.toFixed(2)}s`);
+            }
+            
+            console.log('\n🚀 === PHASE 3: THROUGHPUT & CAPACITY ANALYSIS ===');
+            
+            // Calculate throughput
+            const hoursAnalyzed = timeRangeHours;
+            performanceMetrics.throughputPerHour = performanceMetrics.totalWorkflows / hoursAnalyzed;
+            
+            console.log(`🚀 Throughput: ${performanceMetrics.throughputPerHour.toFixed(2)} workflows/hour`);
+            console.log(`📈 Total Volume: ${performanceMetrics.totalWorkflows} workflows in ${hoursAnalyzed}h`);
+            
+            // Analyze workflow patterns by hour
+            const hourlyDistribution = {};
+            for (const run of runs) {
+              const hour = new Date(run.created_at).getHours();
+              hourlyDistribution[hour] = (hourlyDistribution[hour] || 0) + 1;
+            }
+            
+            const peakHour = Object.entries(hourlyDistribution)
+              .sort(([,a], [,b]) => b - a)[0];
+            
+            if (peakHour) {
+              console.log(`📊 Peak Hour: ${peakHour[0]}:00 UTC (${peakHour[1]} workflows)`);
+            }
+            
+            console.log('\n🎯 === PHASE 4: SLO COMPLIANCE EVALUATION ===');
+            
+            // Calculate SLO compliance
+            const sloCompliance = {
+              automationSuccessRate: {
+                target: sloTargets.automationSuccessRate,
+                actual: performanceMetrics.successRate,
+                compliant: performanceMetrics.successRate >= sloTargets.automationSuccessRate,
+                deviation: performanceMetrics.successRate - sloTargets.automationSuccessRate
+              },
+              averageProcessingTime: {
+                target: sloTargets.averageProcessingTime,
+                actual: performanceMetrics.averageExecutionTime,
+                compliant: performanceMetrics.averageExecutionTime <= sloTargets.averageProcessingTime,
+                deviation: sloTargets.averageProcessingTime - performanceMetrics.averageExecutionTime
+              },
+              maxProcessingTime: {
+                target: sloTargets.maxProcessingTime,
+                actual: performanceMetrics.maxExecutionTime,
+                compliant: performanceMetrics.maxExecutionTime <= sloTargets.maxProcessingTime,
+                deviation: sloTargets.maxProcessingTime - performanceMetrics.maxExecutionTime
+              },
+              errorRate: {
+                target: sloTargets.errorRate,
+                actual: performanceMetrics.errorRate,
+                compliant: performanceMetrics.errorRate <= sloTargets.errorRate,
+                deviation: sloTargets.errorRate - performanceMetrics.errorRate
+              },
+              throughput: {
+                target: sloTargets.throughput,
+                actual: performanceMetrics.throughputPerHour,
+                compliant: performanceMetrics.throughputPerHour >= sloTargets.throughput,
+                deviation: performanceMetrics.throughputPerHour - sloTargets.throughput
+              },
+              responseTime95th: {
+                target: sloTargets.responseTime95th,
+                actual: performanceMetrics.p95ExecutionTime,
+                compliant: performanceMetrics.p95ExecutionTime <= sloTargets.responseTime95th,
+                deviation: sloTargets.responseTime95th - performanceMetrics.p95ExecutionTime
+              }
+            };
+            
+            performanceMetrics.sloCompliance = sloCompliance;
+            
+            const compliantSLOs = Object.values(sloCompliance).filter(slo => slo.compliant).length;
+            const totalSLOs = Object.keys(sloCompliance).length;
+            const sloCompliancePercentage = (compliantSLOs / totalSLOs) * 100;
+            
+            console.log(`🎯 SLO Compliance: ${sloCompliancePercentage.toFixed(1)}% (${compliantSLOs}/${totalSLOs})`);
+            
+            for (const [metric, data] of Object.entries(sloCompliance)) {
+              const status = data.compliant ? '✅' : '❌';
+              const deviation = data.deviation > 0 ? `+${data.deviation.toFixed(2)}` : data.deviation.toFixed(2);
+              console.log(`${status} ${metric}: ${data.actual.toFixed(2)} (target: ${data.target}, deviation: ${deviation})`);
+            }
+            
+            console.log('\n🔍 === PHASE 5: PERFORMANCE BOTTLENECK ANALYSIS ===');
+            
+            // Identify bottlenecks and performance issues
+            const bottlenecks = [];
+            const recommendations = [];
+            
+            // Analyze slow workflows
+            if (executionTimes.length > 0) {
+              const slowWorkflows = executionTimes.filter(wf => wf.duration > sloTargets.maxProcessingTime);
+              if (slowWorkflows.length > 0) {
+                bottlenecks.push(`${slowWorkflows.length} workflows exceed maximum processing time (>${sloTargets.maxProcessingTime}s)`);
+                recommendations.push('Optimize slow workflows or increase timeout thresholds');
+              }
+              
+              // Analyze workflow-specific performance
+              const workflowPerformance = {};
+              for (const wf of executionTimes) {
+                if (!workflowPerformance[wf.workflow]) {
+                  workflowPerformance[wf.workflow] = [];
+                }
+                workflowPerformance[wf.workflow].push(wf.duration);
+              }
+              
+              for (const [workflow, times] of Object.entries(workflowPerformance)) {
+                const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+                if (avgTime > sloTargets.averageProcessingTime * 1.5) {
+                  bottlenecks.push(`${workflow} has high average execution time: ${avgTime.toFixed(2)}s`);
+                  recommendations.push(`Optimize ${workflow} workflow performance`);
+                }
+              }
+            }
+            
+            // Analyze error patterns
+            if (performanceMetrics.errorRate > sloTargets.errorRate) {
+              bottlenecks.push(`Error rate ${performanceMetrics.errorRate.toFixed(2)}% exceeds target ${sloTargets.errorRate}%`);
+              recommendations.push('Investigate and address workflow failure causes');
+            }
+            
+            // Analyze throughput issues
+            if (performanceMetrics.throughputPerHour < sloTargets.throughput) {
+              bottlenecks.push(`Throughput ${performanceMetrics.throughputPerHour.toFixed(2)}/h below target ${sloTargets.throughput}/h`);
+              recommendations.push('Increase workflow automation frequency or optimize processing');
+            }
+            
+            performanceMetrics.bottlenecks = bottlenecks;
+            performanceMetrics.recommendations = recommendations;
+            
+            console.log(`🔍 Bottlenecks identified: ${bottlenecks.length}`);
+            console.log(`💡 Recommendations generated: ${recommendations.length}`);
+            
+            console.log('\n📈 === PHASE 6: TREND ANALYSIS ===');
+            
+            // Simplified trend analysis (comparing to previous period)
+            if (analyticsType === 'deep' || analyticsType === 'benchmark') {
+              const previousPeriodStart = new Date(analysisStartTime.getTime() - timeRangeMs);
+              const previousRuns = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                created: `>${previousPeriodStart.toISOString()}`,
+                created: `<${analysisStartTime.toISOString()}`
+              });
+              
+              const prevRunsData = previousRuns.data.workflow_runs;
+              if (prevRunsData.length > 0) {
+                const prevSuccessRate = (prevRunsData.filter(r => r.conclusion === 'success').length / prevRunsData.length) * 100;
+                const prevThroughput = prevRunsData.length / timeRangeHours;
+                
+                const successRateTrend = performanceMetrics.successRate - prevSuccessRate;
+                const throughputTrend = performanceMetrics.throughputPerHour - prevThroughput;
+                
+                performanceMetrics.performanceTrends = {
+                  successRateChange: successRateTrend,
+                  throughputChange: throughputTrend,
+                  trend: successRateTrend > 0 && throughputTrend > 0 ? 'improving' :
+                         successRateTrend < 0 || throughputTrend < 0 ? 'degrading' : 'stable'
+                };
+                
+                console.log(`📈 Success Rate Trend: ${successRateTrend > 0 ? '+' : ''}${successRateTrend.toFixed(2)}%`);
+                console.log(`📈 Throughput Trend: ${throughputTrend > 0 ? '+' : ''}${throughputTrend.toFixed(2)} workflows/h`);
+                console.log(`📈 Overall Trend: ${performanceMetrics.performanceTrends.trend}`);
+              }
+            }
+            
+            console.log('\n📋 === PHASE 7: PERFORMANCE REPORT GENERATION ===');
+            
+            const executionTime = Math.round((Date.now() - startTime) / 1000);
+            const performanceGrade = sloCompliancePercentage >= 95 ? 'A+' :
+                                   sloCompliancePercentage >= 90 ? 'A' :
+                                   sloCompliancePercentage >= 80 ? 'B+' :
+                                   sloCompliancePercentage >= 70 ? 'B' :
+                                   sloCompliancePercentage >= 60 ? 'C' : 'F';
+            
+            // Generate comprehensive performance report
+            const performanceReport = `## 📊 Performance Analytics & SLO Monitoring Report
+
+### 🎯 Performance Summary
+**Performance Grade**: ${getPerformanceEmoji(performanceGrade)} **${performanceGrade}** (${sloCompliancePercentage.toFixed(1)}% SLO Compliance)
+**Analysis Period**: ${timeRangeHours} hours (${analysisStartTime.toISOString()} - ${timestamp})
+**Analytics Type**: ${analyticsType.toUpperCase()}
+**Execution ID**: \`${executionId}\`
+**Analysis Time**: ${executionTime}s
+
+### 📈 Key Performance Metrics
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| 🚀 **Throughput** | ${performanceMetrics.throughputPerHour.toFixed(2)}/h | ≥${sloTargets.throughput}/h | ${sloCompliance.throughput.compliant ? '✅' : '❌'} |
+| ✅ **Success Rate** | ${performanceMetrics.successRate.toFixed(2)}% | ≥${sloTargets.automationSuccessRate}% | ${sloCompliance.automationSuccessRate.compliant ? '✅' : '❌'} |
+| ⚡ **Avg Processing** | ${performanceMetrics.averageExecutionTime.toFixed(2)}s | ≤${sloTargets.averageProcessingTime}s | ${sloCompliance.averageProcessingTime.compliant ? '✅' : '❌'} |
+| 🏁 **95th Percentile** | ${performanceMetrics.p95ExecutionTime.toFixed(2)}s | ≤${sloTargets.responseTime95th}s | ${sloCompliance.responseTime95th.compliant ? '✅' : '❌'} |
+| ❌ **Error Rate** | ${performanceMetrics.errorRate.toFixed(2)}% | ≤${sloTargets.errorRate}% | ${sloCompliance.errorRate.compliant ? '✅' : '❌'} |
+| 🔥 **Max Processing** | ${performanceMetrics.maxExecutionTime.toFixed(2)}s | ≤${sloTargets.maxProcessingTime}s | ${sloCompliance.maxProcessingTime.compliant ? '✅' : '❌'} |
+
+### 📊 Execution Time Distribution
+- **Average**: ${performanceMetrics.averageExecutionTime.toFixed(2)}s
+- **Median**: ${performanceMetrics.medianExecutionTime.toFixed(2)}s
+- **95th Percentile**: ${performanceMetrics.p95ExecutionTime.toFixed(2)}s
+- **99th Percentile**: ${performanceMetrics.p99ExecutionTime.toFixed(2)}s
+- **Min/Max**: ${performanceMetrics.minExecutionTime.toFixed(2)}s / ${performanceMetrics.maxExecutionTime.toFixed(2)}s
+
+### 🎯 SLO Compliance Details
+${Object.entries(sloCompliance).map(([metric, data]) => 
+  `- **${metric}**: ${data.compliant ? '✅' : '❌'} ${data.actual.toFixed(2)} ${data.compliant ? 'meets' : 'fails'} target ${data.target} (deviation: ${data.deviation > 0 ? '+' : ''}${data.deviation.toFixed(2)})`
+).join('\n')}
+
+### 📈 Workflow Volume Analysis
+- **Total Workflows**: ${performanceMetrics.totalWorkflows}
+- **Successful**: ${performanceMetrics.successfulWorkflows} (${performanceMetrics.successRate.toFixed(1)}%)
+- **Failed**: ${performanceMetrics.failedWorkflows} (${performanceMetrics.errorRate.toFixed(1)}%)
+- **Cancelled**: ${performanceMetrics.cancelledWorkflows} (${((performanceMetrics.cancelledWorkflows/performanceMetrics.totalWorkflows)*100).toFixed(1)}%)
+
+${performanceMetrics.performanceTrends?.trend ? `### 📈 Performance Trends
+**Trend Direction**: ${getTrendEmoji(performanceMetrics.performanceTrends.trend)} ${performanceMetrics.performanceTrends.trend.toUpperCase()}
+- **Success Rate Change**: ${performanceMetrics.performanceTrends.successRateChange > 0 ? '+' : ''}${performanceMetrics.performanceTrends.successRateChange.toFixed(2)}%
+- **Throughput Change**: ${performanceMetrics.performanceTrends.throughputChange > 0 ? '+' : ''}${performanceMetrics.performanceTrends.throughputChange.toFixed(2)} workflows/h
+` : ''}${bottlenecks.length > 0 ? `### 🔍 Performance Bottlenecks
+${bottlenecks.map(bottleneck => `- 🔴 ${bottleneck}`).join('\n')}
+` : ''}${recommendations.length > 0 ? `### 💡 Performance Recommendations
+${recommendations.map(rec => `- 💡 ${rec}`).join('\n')}
+` : '### ✅ Performance Recommendations
+- ✅ System performing optimally, no immediate improvements needed'}
+
+### 🎯 SLO Action Items
+${sloCompliancePercentage >= 95 ? '- ✅ All SLOs meeting targets, maintain current performance' :
+  sloCompliancePercentage >= 80 ? '- 🟡 Minor SLO violations, monitor and optimize as needed' :
+  '- 🔴 Critical SLO violations, immediate performance improvements required'}
+
+### ⏰ Next Analytics Schedule
+**Next Analysis**: ${new Date(Date.now() + 30*60*1000).toISOString()}
+**Frequency**: Every 30 minutes (business hours) / 6 hours (off-hours)
+**Deep Analysis**: ${analyticsType === 'deep' ? 'Completed' : 'Available on-demand'}
+
+---
+📊 **Performance Analytics Engine** | **SLO Monitoring** | **Enterprise Performance Management**
+⚡ **Real-time Metrics** | **Predictive Analysis** | **Continuous Optimization**`;
+
+            // Post performance report
+            const reportIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Performance Analytics Report - ${timestamp}`,
+              body: performanceReport,
+              labels: [
+                'performance-analytics', 
+                'slo-monitoring', 
+                `grade-${performanceGrade.toLowerCase().replace('+', '-plus')}`,
+                sloCompliancePercentage >= 95 ? 'slo-compliant' : 'slo-violation',
+                'automation'
+              ]
+            });
+            
+            // Alert for SLO violations
+            if (sloCompliancePercentage < 80) {
+              const alertIssue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 SLO VIOLATION ALERT - Performance Degradation Detected`,
+                body: `## 🚨 SERVICE LEVEL OBJECTIVE VIOLATION ALERT
+
+**Alert Severity**: ${sloCompliancePercentage < 60 ? 'CRITICAL' : 'WARNING'}
+**SLO Compliance**: ${sloCompliancePercentage.toFixed(1)}% (Target: ≥80%)
+**Performance Grade**: ${performanceGrade}
+**Analysis Period**: ${timeRangeHours} hours
+
+### 🔴 SLO Violations Detected
+${Object.entries(sloCompliance)
+  .filter(([, data]) => !data.compliant)
+  .map(([metric, data]) => `- **${metric}**: ${data.actual.toFixed(2)} (target: ${data.target}, deviation: ${data.deviation.toFixed(2)})`)
+  .join('\n')}
+
+### 🔍 Root Cause Analysis Required
+${bottlenecks.length > 0 ? bottlenecks.map(b => `- 🔴 ${b}`).join('\n') : '- Manual investigation required'}
+
+### ⚡ Immediate Actions Required
+1. 🚨 Review performance bottlenecks immediately
+2. 🔍 Investigate workflow failure causes
+3. ⚡ Implement performance optimizations
+4. 📊 Monitor SLO recovery closely
+
+### 📞 Escalation
+- **DevOps Team**: Immediate notification
+- **System Administrator**: Performance review required
+- **Engineering Team**: Optimization sprint planning
+
+---
+🚨 **SLO VIOLATION ALERT** | **PERFORMANCE DEGRADATION** | **IMMEDIATE ACTION REQUIRED**`,
+                labels: ['slo-violation', 'performance-alert', 'urgent', sloCompliancePercentage < 60 ? 'critical' : 'warning']
+              });
+              
+              console.log(`🚨 SLO VIOLATION ALERT ISSUED: #${alertIssue.data.number}`);
+            }
+            
+            console.log(`✅ CLAUDE PERFORMANCE ANALYTICS ENGINE COMPLETED`);
+            console.log(`📊 Performance Grade: ${performanceGrade} (${sloCompliancePercentage.toFixed(1)}% SLO compliance)`);
+            console.log(`🎯 Bottlenecks: ${bottlenecks.length}, Recommendations: ${recommendations.length}`);
+            console.log(`⚡ Execution Time: ${executionTime}s`);
+            
+          } catch (error) {
+            console.log(`❌ Performance Analytics Engine Error: ${error.message}`);
+            
+            // Create error alert
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Performance Analytics System Error - ${timestamp}`,
+              body: `## ❌ Performance Analytics System Error
+
+The Claude Performance Analytics Engine encountered a critical error and could not complete the analysis.
+
+**Error Details:**
+- **Message**: ${error.message}
+- **Execution ID**: \`${executionId}\`
+- **Analytics Type**: ${analyticsType}
+- **Time Range**: ${timeRangeHours} hours
+
+**Impact:**
+- Performance monitoring temporarily unavailable
+- SLO compliance assessment interrupted
+- Manual performance review recommended
+
+**Recovery Actions:**
+1. Review analytics workflow configuration
+2. Verify data access permissions
+3. Check system resources and API limits
+4. Consider manual performance assessment
+
+**Error Context:**
+\`\`\`
+${error.stack}
+\`\`\`
+
+---
+❌ **Performance Analytics Error** | **Monitoring System Down** | **Manual Review Required**`,
+              labels: ['analytics-error', 'system-failure', 'performance-monitoring', 'urgent']
+            });
+            
+            throw error;
+          }
+          
+          // Helper functions
+          function getPerformanceEmoji(grade) {
+            const emojis = {
+              'A+': '🏆',
+              'A': '🥇', 
+              'B+': '🥈',
+              'B': '🥉',
+              'C': '⚠️',
+              'F': '❌'
+            };
+            return emojis[grade] || '📊';
+          }
+          
+          function getTrendEmoji(trend) {
+            const emojis = {
+              'improving': '📈',
+              'stable': '➡️',
+              'degrading': '📉'
+            };
+            return emojis[trend] || '📊';
+          }

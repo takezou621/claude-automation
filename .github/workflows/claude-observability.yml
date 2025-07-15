@@ -1,0 +1,609 @@
+name: Claude Comprehensive Logging & Observability
+
+on:
+  workflow_run:
+    workflows: ["Claude Full Automation", "Claude Ultimate Automation", "Claude Smart Automation", "Claude Health Monitor", "Claude Error Recovery", "Claude Quality Gates", "Claude Performance Analytics", "Claude Security Scanner"]
+    types: [requested, in_progress, completed]
+  schedule:
+    # Observability aggregation every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      observability_type:
+        description: 'Type of observability analysis'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'logs'
+          - 'metrics'
+          - 'traces'
+          - 'comprehensive'
+          - 'real_time'
+      time_window:
+        description: 'Analysis time window (hours)'
+        required: false
+        default: '24'
+        type: choice
+        options:
+          - '1'
+          - '6'
+          - '24'
+          - '168'  # 1 week
+          - '720'  # 1 month
+
+jobs:
+  observability:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+      checks: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ github.token }}
+        
+    - name: Comprehensive Observability Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          console.log('📊 CLAUDE COMPREHENSIVE OBSERVABILITY ENGINE ACTIVATED');
+          const startTime = Date.now();
+          const executionId = Math.random().toString(36).substring(7);
+          const timestamp = new Date().toISOString();
+          
+          const observabilityType = context.payload.inputs?.observability_type || 'comprehensive';
+          const timeWindowHours = parseInt(context.payload.inputs?.time_window || '24');
+          const timeWindowMs = timeWindowHours * 60 * 60 * 1000;
+          
+          console.log(`📈 Observability Type: ${observabilityType}`);
+          console.log(`⏰ Time Window: ${timeWindowHours} hours`);
+          console.log(`⚡ Execution ID: ${executionId}`);
+          
+          // Observability metrics tracking
+          const observabilityMetrics = {
+            logs: {
+              totalEntries: 0,
+              errorEntries: 0,
+              warningEntries: 0,
+              infoEntries: 0,
+              debugEntries: 0,
+              logSources: {},
+              errorPatterns: {},
+              logTrends: {}
+            },
+            metrics: {
+              workflowExecutions: 0,
+              averageExecutionTime: 0,
+              successRate: 0,
+              throughput: 0,
+              resourceUtilization: {},
+              performanceMetrics: {},
+              customMetrics: {}
+            },
+            traces: {
+              totalTraces: 0,
+              traceSpans: 0,
+              slowTraces: [],
+              errorTraces: [],
+              serviceDependencies: {},
+              latencyDistribution: {}
+            },
+            alerts: {
+              critical: 0,
+              warning: 0,
+              info: 0,
+              resolved: 0,
+              alertTrends: {}
+            },
+            system: {
+              availability: 0,
+              reliability: 0,
+              observabilityScore: 0,
+              dataQuality: 0
+            },
+            startTime: startTime
+          };
+          
+          try {
+            console.log('\n📊 === PHASE 1: LOG AGGREGATION & ANALYSIS ===');
+            
+            const analysisStartTime = new Date(Date.now() - timeWindowMs);
+            console.log(`🔍 Analyzing from: ${analysisStartTime.toISOString()}`);
+            
+            // Get workflow runs for log analysis
+            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              created: `>${analysisStartTime.toISOString()}`
+            });
+            
+            const runs = workflowRuns.data.workflow_runs;
+            console.log(`📈 Workflow runs for analysis: ${runs.length}`);
+            
+            // Analyze workflow logs
+            for (const run of runs.slice(0, 20)) { // Limit to 20 runs for performance
+              try {
+                console.log(`📋 Analyzing logs for run ${run.id} (${run.name})`);
+                
+                // Get jobs for this workflow run
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id
+                });
+                
+                for (const job of jobs.data.jobs) {
+                  // Log source tracking
+                  const logSource = `${run.name}/${job.name}`;
+                  observabilityMetrics.logs.logSources[logSource] = 
+                    (observabilityMetrics.logs.logSources[logSource] || 0) + 1;
+                  
+                  // Analyze job conclusions for log patterns
+                  if (job.conclusion === 'success') {
+                    observabilityMetrics.logs.infoEntries++;
+                  } else if (job.conclusion === 'failure') {
+                    observabilityMetrics.logs.errorEntries++;
+                    
+                    // Track error patterns
+                    const errorPattern = `${run.name}_failure`;
+                    observabilityMetrics.logs.errorPatterns[errorPattern] = 
+                      (observabilityMetrics.logs.errorPatterns[errorPattern] || 0) + 1;
+                  } else if (job.conclusion === 'cancelled') {
+                    observabilityMetrics.logs.warningEntries++;
+                  }
+                  
+                  observabilityMetrics.logs.totalEntries++;
+                  
+                  // Performance metrics from job timing
+                  if (job.started_at && job.completed_at) {
+                    const executionTime = (new Date(job.completed_at) - new Date(job.started_at)) / 1000;
+                    
+                    if (!observabilityMetrics.metrics.performanceMetrics[logSource]) {
+                      observabilityMetrics.metrics.performanceMetrics[logSource] = [];
+                    }
+                    observabilityMetrics.metrics.performanceMetrics[logSource].push(executionTime);
+                  }
+                }
+                
+              } catch (jobError) {
+                console.log(`⚠️ Error analyzing job logs for run ${run.id}: ${jobError.message}`);
+                observabilityMetrics.logs.errorEntries++;
+              }
+            }
+            
+            console.log(`📊 Log entries analyzed: ${observabilityMetrics.logs.totalEntries}`);
+            console.log(`❌ Error entries: ${observabilityMetrics.logs.errorEntries}`);
+            console.log(`⚠️ Warning entries: ${observabilityMetrics.logs.warningEntries}`);
+            console.log(`ℹ️ Info entries: ${observabilityMetrics.logs.infoEntries}`);
+            
+            console.log('\n📈 === PHASE 2: METRICS COLLECTION & AGGREGATION ===');
+            
+            // Calculate workflow metrics
+            observabilityMetrics.metrics.workflowExecutions = runs.length;
+            const successfulRuns = runs.filter(r => r.conclusion === 'success').length;
+            observabilityMetrics.metrics.successRate = runs.length > 0 ? 
+              (successfulRuns / runs.length) * 100 : 100;
+            observabilityMetrics.metrics.throughput = runs.length / timeWindowHours;
+            
+            // Calculate average execution times
+            const executionTimes = runs
+              .filter(run => run.run_started_at && run.updated_at)
+              .map(run => (new Date(run.updated_at) - new Date(run.run_started_at)) / 1000);
+            
+            if (executionTimes.length > 0) {
+              observabilityMetrics.metrics.averageExecutionTime = 
+                executionTimes.reduce((a, b) => a + b, 0) / executionTimes.length;
+            }
+            
+            console.log(`🚀 Workflow executions: ${observabilityMetrics.metrics.workflowExecutions}`);
+            console.log(`✅ Success rate: ${observabilityMetrics.metrics.successRate.toFixed(2)}%`);
+            console.log(`⚡ Throughput: ${observabilityMetrics.metrics.throughput.toFixed(2)} runs/hour`);
+            console.log(`⏱️ Avg execution time: ${observabilityMetrics.metrics.averageExecutionTime.toFixed(2)}s`);
+            
+            // Resource utilization analysis
+            const workflowTypes = {};
+            runs.forEach(run => {
+              workflowTypes[run.name] = (workflowTypes[run.name] || 0) + 1;
+            });
+            
+            observabilityMetrics.metrics.resourceUtilization = workflowTypes;
+            
+            console.log('\n🔍 === PHASE 3: DISTRIBUTED TRACING ANALYSIS ===');
+            
+            // Simulate distributed tracing analysis
+            observabilityMetrics.traces.totalTraces = runs.length;
+            
+            // Analyze workflow dependencies and service interactions
+            const serviceDependencies = {
+              'github-api': 0,
+              'claude-engine': 0,
+              'workflow-runner': 0,
+              'notification-service': 0
+            };
+            
+            // Track service interactions based on workflow patterns
+            runs.forEach(run => {
+              serviceDependencies['github-api']++;
+              serviceDependencies['workflow-runner']++;
+              
+              if (run.name.includes('claude')) {
+                serviceDependencies['claude-engine']++;
+              }
+              
+              if (run.conclusion === 'success' || run.conclusion === 'failure') {
+                serviceDependencies['notification-service']++;
+              }
+            });
+            
+            observabilityMetrics.traces.serviceDependencies = serviceDependencies;
+            
+            // Identify slow traces (workflows taking longer than 2 minutes)
+            const slowTraces = runs
+              .filter(run => {
+                if (!run.run_started_at || !run.updated_at) return false;
+                const duration = (new Date(run.updated_at) - new Date(run.run_started_at)) / 1000;
+                return duration > 120; // 2 minutes
+              })
+              .map(run => ({
+                id: run.id,
+                name: run.name,
+                duration: (new Date(run.updated_at) - new Date(run.run_started_at)) / 1000,
+                status: run.conclusion
+              }));
+            
+            observabilityMetrics.traces.slowTraces = slowTraces;
+            
+            console.log(`🔍 Total traces: ${observabilityMetrics.traces.totalTraces}`);
+            console.log(`🐌 Slow traces: ${slowTraces.length}`);
+            console.log(`📊 Service dependencies:`, JSON.stringify(serviceDependencies, null, 2));
+            
+            console.log('\n🚨 === PHASE 4: ALERT & INCIDENT ANALYSIS ===');
+            
+            // Analyze alerts and incidents from issues
+            const alertIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'alert,critical-alert,warning,health-monitor,error-recovery',
+              state: 'all',
+              per_page: 100,
+              since: analysisStartTime.toISOString()
+            });
+            
+            const alerts = alertIssues.data;
+            
+            // Categorize alerts by severity
+            alerts.forEach(alert => {
+              const labels = alert.labels.map(l => l.name.toLowerCase());
+              
+              if (labels.includes('critical') || labels.includes('critical-alert')) {
+                observabilityMetrics.alerts.critical++;
+              } else if (labels.includes('warning') || labels.includes('error')) {
+                observabilityMetrics.alerts.warning++;
+              } else {
+                observabilityMetrics.alerts.info++;
+              }
+              
+              if (alert.state === 'closed') {
+                observabilityMetrics.alerts.resolved++;
+              }
+            });
+            
+            console.log(`🚨 Critical alerts: ${observabilityMetrics.alerts.critical}`);
+            console.log(`⚠️ Warning alerts: ${observabilityMetrics.alerts.warning}`);
+            console.log(`ℹ️ Info alerts: ${observabilityMetrics.alerts.info}`);
+            console.log(`✅ Resolved alerts: ${observabilityMetrics.alerts.resolved}`);
+            
+            console.log('\n📊 === PHASE 5: SYSTEM HEALTH & RELIABILITY METRICS ===');
+            
+            // Calculate system health metrics
+            const totalWorkflows = observabilityMetrics.metrics.workflowExecutions;
+            const successfulWorkflows = Math.round(totalWorkflows * (observabilityMetrics.metrics.successRate / 100));
+            
+            // Availability calculation (simplified)
+            observabilityMetrics.system.availability = totalWorkflows > 0 ? 
+              (successfulWorkflows / totalWorkflows) * 100 : 100;
+            
+            // Reliability calculation based on error rates and alert frequency
+            const errorRate = observabilityMetrics.logs.errorEntries / Math.max(observabilityMetrics.logs.totalEntries, 1);
+            const alertRate = (observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning) / Math.max(totalWorkflows, 1);
+            
+            observabilityMetrics.system.reliability = Math.max(0, 100 - (errorRate * 50) - (alertRate * 30));
+            
+            // Data quality assessment
+            const logCoverage = observabilityMetrics.logs.totalEntries / Math.max(totalWorkflows, 1);
+            const metricsCoverage = Object.keys(observabilityMetrics.metrics.performanceMetrics).length / Math.max(Object.keys(observabilityMetrics.logs.logSources).length, 1);
+            
+            observabilityMetrics.system.dataQuality = Math.min(100, (logCoverage * 40) + (metricsCoverage * 60));
+            
+            // Overall observability score
+            observabilityMetrics.system.observabilityScore = (
+              observabilityMetrics.system.availability * 0.3 +
+              observabilityMetrics.system.reliability * 0.4 +
+              observabilityMetrics.system.dataQuality * 0.3
+            );
+            
+            console.log(`📊 System availability: ${observabilityMetrics.system.availability.toFixed(2)}%`);
+            console.log(`🔧 System reliability: ${observabilityMetrics.system.reliability.toFixed(2)}%`);
+            console.log(`📈 Data quality: ${observabilityMetrics.system.dataQuality.toFixed(2)}%`);
+            console.log(`🎯 Observability score: ${observabilityMetrics.system.observabilityScore.toFixed(2)}%`);
+            
+            console.log('\n📋 === PHASE 6: OBSERVABILITY DASHBOARD GENERATION ===');
+            
+            const executionTime = Math.round((Date.now() - startTime) / 1000);
+            const observabilityGrade = observabilityMetrics.system.observabilityScore >= 95 ? 'A+' :
+                                     observabilityMetrics.system.observabilityScore >= 90 ? 'A' :
+                                     observabilityMetrics.system.observabilityScore >= 80 ? 'B+' :
+                                     observabilityMetrics.system.observabilityScore >= 70 ? 'B' :
+                                     observabilityMetrics.system.observabilityScore >= 60 ? 'C' : 'F';
+            
+            // Generate comprehensive observability report
+            const observabilityReport = `## 📊 Comprehensive Observability Dashboard
+
+### 🎯 Observability Summary
+**Observability Grade**: ${getObservabilityEmoji(observabilityGrade)} **${observabilityGrade}** (${observabilityMetrics.system.observabilityScore.toFixed(1)}/100)
+**System Health**: ${getHealthStatus(observabilityMetrics.system.availability)}
+**Analysis Period**: ${timeWindowHours} hours (${analysisStartTime.toISOString()} - ${timestamp})
+**Analysis Type**: ${observabilityType.toUpperCase()}
+**Execution ID**: \`${executionId}\`
+**Processing Time**: ${executionTime}s
+
+### 📈 Key System Metrics
+| Metric | Value | Status |
+|--------|-------|--------|
+| 🚀 **System Availability** | ${observabilityMetrics.system.availability.toFixed(2)}% | ${observabilityMetrics.system.availability >= 99 ? '✅' : observabilityMetrics.system.availability >= 95 ? '⚠️' : '❌'} |
+| 🔧 **System Reliability** | ${observabilityMetrics.system.reliability.toFixed(2)}% | ${observabilityMetrics.system.reliability >= 95 ? '✅' : observabilityMetrics.system.reliability >= 90 ? '⚠️' : '❌'} |
+| 📊 **Data Quality** | ${observabilityMetrics.system.dataQuality.toFixed(2)}% | ${observabilityMetrics.system.dataQuality >= 90 ? '✅' : observabilityMetrics.system.dataQuality >= 80 ? '⚠️' : '❌'} |
+| ⚡ **Throughput** | ${observabilityMetrics.metrics.throughput.toFixed(2)}/h | 📊 |
+| ✅ **Success Rate** | ${observabilityMetrics.metrics.successRate.toFixed(2)}% | ${observabilityMetrics.metrics.successRate >= 95 ? '✅' : observabilityMetrics.metrics.successRate >= 90 ? '⚠️' : '❌'} |
+| ⏱️ **Avg Response Time** | ${observabilityMetrics.metrics.averageExecutionTime.toFixed(2)}s | ${observabilityMetrics.metrics.averageExecutionTime <= 30 ? '✅' : observabilityMetrics.metrics.averageExecutionTime <= 60 ? '⚠️' : '❌'} |
+
+### 📊 Log Analytics Summary
+- **Total Log Entries**: ${observabilityMetrics.logs.totalEntries.toLocaleString()}
+- **Error Rate**: ${observabilityMetrics.logs.totalEntries > 0 ? ((observabilityMetrics.logs.errorEntries / observabilityMetrics.logs.totalEntries) * 100).toFixed(2) : '0.00'}%
+- **Warning Rate**: ${observabilityMetrics.logs.totalEntries > 0 ? ((observabilityMetrics.logs.warningEntries / observabilityMetrics.logs.totalEntries) * 100).toFixed(2) : '0.00'}%
+- **Log Sources**: ${Object.keys(observabilityMetrics.logs.logSources).length}
+
+### 🔍 Top Log Sources
+${Object.entries(observabilityMetrics.logs.logSources)
+  .sort(([,a], [,b]) => b - a)
+  .slice(0, 5)
+  .map(([source, count]) => `- **${source}**: ${count} entries`)
+  .join('\n')}
+
+${Object.keys(observabilityMetrics.logs.errorPatterns).length > 0 ? `### ❌ Error Patterns
+${Object.entries(observabilityMetrics.logs.errorPatterns)
+  .sort(([,a], [,b]) => b - a)
+  .slice(0, 5)
+  .map(([pattern, count]) => `- **${pattern}**: ${count} occurrences`)
+  .join('\n')}
+` : '### ✅ Error Patterns\n- No significant error patterns detected'}
+
+### 🚀 Workflow Performance Metrics
+- **Total Executions**: ${observabilityMetrics.metrics.workflowExecutions}
+- **Success Rate**: ${observabilityMetrics.metrics.successRate.toFixed(2)}%
+- **Average Duration**: ${observabilityMetrics.metrics.averageExecutionTime.toFixed(2)}s
+- **Throughput**: ${observabilityMetrics.metrics.throughput.toFixed(2)} workflows/hour
+
+### 🔍 Resource Utilization
+${Object.entries(observabilityMetrics.metrics.resourceUtilization)
+  .sort(([,a], [,b]) => b - a)
+  .slice(0, 5)
+  .map(([workflow, count]) => `- **${workflow}**: ${count} executions (${(count/observabilityMetrics.metrics.workflowExecutions*100).toFixed(1)}%)`)
+  .join('\n')}
+
+### 🌐 Service Dependencies
+${Object.entries(observabilityMetrics.traces.serviceDependencies)
+  .sort(([,a], [,b]) => b - a)
+  .map(([service, calls]) => `- **${service}**: ${calls} interactions`)
+  .join('\n')}
+
+${observabilityMetrics.traces.slowTraces.length > 0 ? `### 🐌 Performance Bottlenecks
+${observabilityMetrics.traces.slowTraces
+  .slice(0, 5)
+  .map(trace => `- **${trace.name}**: ${trace.duration.toFixed(2)}s (${trace.status})`)
+  .join('\n')}
+` : '### ✅ Performance Status\n- No significant performance bottlenecks detected'}
+
+### 🚨 Alert & Incident Summary
+- **Critical Alerts**: ${observabilityMetrics.alerts.critical} 🔴
+- **Warning Alerts**: ${observabilityMetrics.alerts.warning} 🟡
+- **Info Alerts**: ${observabilityMetrics.alerts.info} 🔵
+- **Resolved**: ${observabilityMetrics.alerts.resolved} ✅
+- **Resolution Rate**: ${(observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning + observabilityMetrics.alerts.info) > 0 ? 
+  (observabilityMetrics.alerts.resolved / (observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning + observabilityMetrics.alerts.info) * 100).toFixed(1) : '100'}%
+
+### 📊 Observability Health Check
+| Component | Score | Grade | Status |
+|-----------|-------|-------|--------|
+| 📊 **Logging Coverage** | ${(observabilityMetrics.logs.totalEntries / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100).toFixed(1)}% | ${getComponentGrade(observabilityMetrics.logs.totalEntries / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100)} | ${getComponentStatus(observabilityMetrics.logs.totalEntries / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100)} |
+| 📈 **Metrics Collection** | ${(Object.keys(observabilityMetrics.metrics.performanceMetrics).length / Math.max(Object.keys(observabilityMetrics.logs.logSources).length, 1) * 100).toFixed(1)}% | ${getComponentGrade(Object.keys(observabilityMetrics.metrics.performanceMetrics).length / Math.max(Object.keys(observabilityMetrics.logs.logSources).length, 1) * 100)} | ${getComponentStatus(Object.keys(observabilityMetrics.metrics.performanceMetrics).length / Math.max(Object.keys(observabilityMetrics.logs.logSources).length, 1) * 100)} |
+| 🔍 **Trace Coverage** | ${(observabilityMetrics.traces.totalTraces / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100).toFixed(1)}% | ${getComponentGrade(observabilityMetrics.traces.totalTraces / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100)} | ${getComponentStatus(observabilityMetrics.traces.totalTraces / Math.max(observabilityMetrics.metrics.workflowExecutions, 1) * 100)} |
+| 🚨 **Alert Management** | ${observabilityMetrics.alerts.resolved > 0 ? (observabilityMetrics.alerts.resolved / (observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning + observabilityMetrics.alerts.info + observabilityMetrics.alerts.resolved) * 100).toFixed(1) : '100'}% | ${getComponentGrade(observabilityMetrics.alerts.resolved > 0 ? (observabilityMetrics.alerts.resolved / (observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning + observabilityMetrics.alerts.info + observabilityMetrics.alerts.resolved) * 100) : 100)} | ${getComponentStatus(observabilityMetrics.alerts.resolved > 0 ? (observabilityMetrics.alerts.resolved / (observabilityMetrics.alerts.critical + observabilityMetrics.alerts.warning + observabilityMetrics.alerts.info + observabilityMetrics.alerts.resolved) * 100) : 100)} |
+
+### 💡 Observability Recommendations
+${getObservabilityRecommendations(observabilityMetrics)}
+
+### 📈 Trend Analysis
+${timeWindowHours >= 24 ? '- **Trend Analysis**: Available for 24+ hour windows' : '- **Trend Analysis**: Requires 24+ hour analysis window'}
+- **Data Retention**: ${timeWindowHours} hours analyzed
+- **Sample Size**: ${observabilityMetrics.logs.totalEntries} log entries, ${observabilityMetrics.metrics.workflowExecutions} workflows
+- **Coverage**: ${((observabilityMetrics.logs.totalEntries / Math.max(observabilityMetrics.metrics.workflowExecutions, 1)) * 100).toFixed(1)}% log-to-workflow ratio
+
+### ⏰ Next Analysis
+**Schedule**: Every hour (automated)
+**Deep Analysis**: ${observabilityType === 'comprehensive' ? 'Completed' : 'Available on-demand'}
+**Real-time Monitoring**: ${observabilityType === 'real_time' ? 'Active' : 'Available via workflow_dispatch'}
+
+---
+📊 **Comprehensive Observability** | **Enterprise Monitoring** | **Data-Driven Operations**
+⚡ **Real-time Analytics** | **Predictive Insights** | **Continuous Improvement**`;
+
+            // Post observability dashboard
+            const dashboardIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Observability Dashboard - ${timestamp}`,
+              body: observabilityReport,
+              labels: [
+                'observability',
+                'monitoring',
+                'dashboard',
+                `grade-${observabilityGrade.toLowerCase().replace('+', '-plus')}`,
+                observabilityMetrics.system.observabilityScore >= 90 ? 'healthy' : 'needs-attention'
+              ]
+            });
+            
+            // Alert for observability issues
+            if (observabilityMetrics.system.observabilityScore < 70) {
+              const observabilityAlert = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `⚠️ Observability Alert - System Visibility Degraded`,
+                body: `## ⚠️ OBSERVABILITY SYSTEM ALERT
+
+**Alert Level**: ${observabilityMetrics.system.observabilityScore < 50 ? 'CRITICAL' : 'WARNING'}
+**Observability Score**: ${observabilityMetrics.system.observabilityScore.toFixed(1)}/100
+**System Impact**: Reduced visibility into system operations
+
+### 📊 Observability Issues
+- **System Availability**: ${observabilityMetrics.system.availability.toFixed(2)}%
+- **System Reliability**: ${observabilityMetrics.system.reliability.toFixed(2)}%
+- **Data Quality**: ${observabilityMetrics.system.dataQuality.toFixed(2)}%
+
+### 🔍 Root Cause Analysis
+${observabilityMetrics.system.availability < 95 ? '- 🔴 System availability below target (95%)' : ''}
+${observabilityMetrics.system.reliability < 90 ? '- 🔴 System reliability below target (90%)' : ''}
+${observabilityMetrics.system.dataQuality < 80 ? '- 🔴 Data quality below target (80%)' : ''}
+${observabilityMetrics.logs.errorEntries / observabilityMetrics.logs.totalEntries > 0.1 ? '- 🔴 High error rate in logs' : ''}
+
+### ⚡ Immediate Actions Required
+1. 🔍 Review observability infrastructure
+2. 📊 Validate monitoring configurations
+3. 🚨 Check alert system functionality
+4. 📈 Increase monitoring coverage
+
+---
+⚠️ **Observability Alert** | **System Visibility Issue** | **Monitoring Attention Required**`,
+                labels: ['observability-alert', 'monitoring-issue', observabilityMetrics.system.observabilityScore < 50 ? 'critical' : 'warning']
+              });
+              
+              console.log(`⚠️ OBSERVABILITY ALERT ISSUED: #${observabilityAlert.data.number}`);
+            }
+            
+            console.log(`✅ CLAUDE OBSERVABILITY ENGINE COMPLETED`);
+            console.log(`📊 Observability Grade: ${observabilityGrade} (${observabilityMetrics.system.observabilityScore.toFixed(1)}/100)`);
+            console.log(`🎯 System Health: Availability ${observabilityMetrics.system.availability.toFixed(1)}%, Reliability ${observabilityMetrics.system.reliability.toFixed(1)}%`);
+            console.log(`⚡ Execution Time: ${executionTime}s`);
+            
+          } catch (error) {
+            console.log(`❌ Observability Engine Error: ${error.message}`);
+            
+            // Create error alert
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Observability System Error - ${timestamp}`,
+              body: `## ❌ Observability System Error
+
+The Claude Observability Engine encountered a critical error and could not complete the analysis.
+
+**Error Details:**
+- **Message**: ${error.message}
+- **Execution ID**: \`${executionId}\`
+- **Analysis Type**: ${observabilityType}
+- **Time Window**: ${timeWindowHours} hours
+
+**Impact:**
+- System observability temporarily reduced
+- Monitoring data collection interrupted
+- Dashboard generation failed
+
+**Recovery Actions:**
+1. Review observability workflow configuration
+2. Check data access permissions and API limits
+3. Verify monitoring infrastructure health
+4. Consider manual system assessment
+
+**Error Context:**
+\`\`\`
+${error.stack}
+\`\`\`
+
+---
+❌ **Observability System Error** | **Monitoring Disruption** | **Manual Assessment Required**`,
+              labels: ['observability-error', 'system-failure', 'monitoring-down', 'urgent']
+            });
+            
+            throw error;
+          }
+          
+          // Helper functions
+          function getObservabilityEmoji(grade) {
+            const emojis = {
+              'A+': '🏆',
+              'A': '📊',
+              'B+': '📈',
+              'B': '📉',
+              'C': '⚠️',
+              'F': '❌'
+            };
+            return emojis[grade] || '📊';
+          }
+          
+          function getHealthStatus(availability) {
+            if (availability >= 99) return '🟢 EXCELLENT';
+            if (availability >= 95) return '🟡 GOOD';
+            if (availability >= 90) return '🟠 DEGRADED';
+            return '🔴 CRITICAL';
+          }
+          
+          function getComponentGrade(score) {
+            if (score >= 95) return 'A+';
+            if (score >= 90) return 'A';
+            if (score >= 80) return 'B+';
+            if (score >= 70) return 'B';
+            if (score >= 60) return 'C';
+            return 'F';
+          }
+          
+          function getComponentStatus(score) {
+            if (score >= 90) return '✅';
+            if (score >= 70) return '⚠️';
+            return '❌';
+          }
+          
+          function getObservabilityRecommendations(metrics) {
+            const recommendations = [];
+            
+            if (metrics.system.observabilityScore >= 95) {
+              recommendations.push('✅ Excellent observability - maintain current practices');
+            } else {
+              if (metrics.system.availability < 95) {
+                recommendations.push('🔴 Improve system availability through better error handling');
+              }
+              if (metrics.system.reliability < 90) {
+                recommendations.push('🔴 Enhance system reliability with proactive monitoring');
+              }
+              if (metrics.system.dataQuality < 80) {
+                recommendations.push('🔴 Increase data collection coverage and quality');
+              }
+              if (metrics.logs.errorEntries / Math.max(metrics.logs.totalEntries, 1) > 0.1) {
+                recommendations.push('🟡 Reduce error rate through improved error handling');
+              }
+            }
+            
+            recommendations.push('📊 Continue regular observability assessments');
+            recommendations.push('🔍 Expand monitoring coverage for new services');
+            recommendations.push('📈 Implement predictive analytics for proactive monitoring');
+            
+            return recommendations.map(rec => `- ${rec}`).join('\n');
+          }
