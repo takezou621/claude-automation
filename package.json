@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "start:simple": "node src/simple-automation-system.js",
+    "cli": "node src/cli.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -20,7 +21,13 @@
     "dev": "nodemon src/index.js",
     "dev:simple": "nodemon src/simple-automation-system.js",
     "docs:generate": "jsdoc src/ -d docs/",
-    "performance:test": "node src/performance-test.js"
+    "performance:test": "node src/performance-test.js",
+    "automation:init": "node src/cli.js init",
+    "automation:health": "node src/cli.js health",
+    "automation:batch": "node src/cli.js batch",
+    "automation:stats": "node src/cli.js stats",
+    "automation:interactive": "node src/cli.js interactive",
+    "example": "node examples/simple-usage.js"
   },
   "keywords": [
     "claude",
