@@ -24,3 +24,10 @@ build/
 # IDE configuration
 .vscode/
 .idea/
+# Test outputs - automatically generated
+test-automation/test-output/
+test-automation/test-automation/
+test-automation/real-test-output/
+
+# Node modules in workflows (misplaced)
+.github/workflows/node_modules/
