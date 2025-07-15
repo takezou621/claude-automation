@@ -2,17 +2,12 @@ name: Claude Smart Automation
 
 on:
   schedule:
-    # 平日夜間実行 (23:00, 02:00, 05:00 JST)
-    - cron: '0 14,17,20 * * 1-5'  # UTC時間 月-金
-    # 土日昼間実行 (10:00, 14:00, 18:00, 22:00 JST)
-    - cron: '0 1,5,9,13 * * 0,6'  # UTC時間 土日
+    # Weekday nights (23:00, 02:00, 05:00 JST)
+    - cron: '0 14,17,20 * * 1-5'
+    # Weekend days (10:00, 14:00, 18:00, 22:00 JST)
+    - cron: '0 1,5,9,13 * * 0,6'
   workflow_dispatch:
     inputs:
-      test_mode:
-        description: 'Enable test mode for immediate execution'
-        required: false
-        default: 'false'
-        type: boolean
       target_issues:
         description: 'Specific issues to process (comma-separated)'
         required: false
@@ -25,239 +20,129 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      actions: read
-    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        token: ${{ github.token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
-        ref: main
-    
+
     - name: Smart Automation Processing
       uses: actions/github-script@v7
       with:
-        github-token: ${{ github.token }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           console.log('🚀 SMART AUTOMATION START');
-          const now = new Date();
-          const testMode = context.payload.inputs?.test_mode === 'true';
-          const targetIssues = context.payload.inputs?.target_issues;
-          
-          console.log(`Execution time: ${now.toISOString()}`);
-          console.log(`Test mode: ${testMode}`);
-          console.log(`Target issues: ${targetIssues || 'auto-detect'}`);
-          
-          try {
-            // 全オープンIssueを取得
-            const issues = await github.rest.issues.listForRepo({
+          const targetLabels = ['claude-processed', 'claude-ready', 'automation-ready'];
+
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: targetLabels.join(',')
+          });
+
+          if (issues.data.length === 0) {
+            console.log('No automation-ready issues found.');
+            return;
+          }
+
+          for (const issue of issues.data) {
+            console.log(`\n🔍 Processing Issue #${issue.number}: ${issue.title}`);
+
+            const branchPatterns = [
+              `issue-${issue.number}`,
+              `claude-${issue.number}`,
+              `feature/issue-${issue.number}`,
+              `fix/issue-${issue.number}`,
+              `claude/issue-${issue.number}`,
+              `automation-${issue.number}`
+            ];
+
+            const branches = await github.rest.repos.listBranches({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const claudeBranch = branches.data.find(branch =>
+              branchPatterns.some(pattern => branch.name.includes(pattern))
+            );
+
+            if (!claudeBranch) {
+              console.log(`No Claude branch found for Issue #${issue.number}`);
+              continue;
+            }
+
+            console.log(`Found branch: ${claudeBranch.name}`);
+
+            const existingPRs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: 'open',
-              per_page: 50
+              head: `${context.repo.owner}:${claudeBranch.name}`,
+              state: 'open'
             });
-            
-            console.log(`Found ${issues.data.length} open issues`);
-            
-            // Enhanced label detection with multiple patterns
-            const targetLabels = ['claude-processed', 'claude-ready', 'automation-ready'];
-            const processedIssues = issues.data.filter(issue => 
-              issue.labels.some(label => targetLabels.includes(label.name))
-            );
-            
-            console.log(`Found ${processedIssues.length} Claude-processed issues`);
-            
-            if (processedIssues.length === 0) {
-              console.log('No Claude-processed issues found, ending');
-              return;
+
+            let prNumber;
+            if (existingPRs.data.length === 0) {
+              const pr = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `fix: ${issue.title} (closes #${issue.number})`,
+                head: claudeBranch.name,
+                base: 'main',
+                body: `## 🚀 Claude Smart Automation\n\n### 関連Issue\nCloses #${issue.number}`
+              });
+              prNumber = pr.data.number;
+              console.log(`✅ Created PR #${prNumber}`);
+            } else {
+              prNumber = existingPRs.data[0].number;
+              console.log(`Found existing PR #${prNumber}`);
             }
-            
-            for (const issue of processedIssues) {
-              console.log(`\\n🔍 Processing Issue #${issue.number}: ${issue.title}`);
-              
-              try {
-                // Enhanced branch detection with multiple patterns
-                const branches = await github.rest.repos.listBranches({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  per_page: 200
-                });
-                
-                // Advanced branch matching patterns (inspired by RepairGPT)
-                const branchPatterns = [
-                  `issue-${issue.number}`,
-                  `claude-${issue.number}`,
-                  `feature/issue-${issue.number}`,
-                  `fix/issue-${issue.number}`,
-                  `claude/issue-${issue.number}`,
-                  `automation-${issue.number}`
-                ];
-                
-                const claudeBranches = branches.data.filter(branch => 
-                  branchPatterns.some(pattern => branch.name.includes(pattern))
-                );
-                
-                if (claudeBranches.length === 0) {
-                  console.log(`No Claude branch found for Issue #${issue.number}`);
-                  continue;
-                }
-                
-                const claudeBranch = claudeBranches[0];
-                console.log(`Found branch: ${claudeBranch.name}`);
-                
-                // 既存PRをチェック
-                const existingPRs = await github.rest.pulls.list({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  head: `${context.repo.owner}:${claudeBranch.name}`,
-                  state: 'all'
-                });
-                
-                let prNumber = null;
-                
-                if (existingPRs.data.length > 0) {
-                  const pr = existingPRs.data[0];
-                  console.log(`Found existing PR #${pr.number}, state: ${pr.state}`);
-                  
-                  if (pr.state === 'open') {
-                    prNumber = pr.number;
-                  } else {
-                    console.log(`PR #${pr.number} is already ${pr.state}`);
-                    continue;
-                  }
-                } else {
-                  // PRを作成
-                  console.log(`📝 Creating PR for Issue #${issue.number}`);
-                  
-                  try {
-                    const pr = await github.rest.pulls.create({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      title: `fix: ${issue.title} (closes #${issue.number})`,
-                      head: claudeBranch.name,
-                      base: 'main',
-                      body: `## 🚀 Claude Smart Automation
 
-### 関連Issue
-Closes #${issue.number}
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash'
+              });
+              console.log(`✅ Merged PR #${prNumber}`);
 
-### 自動化フロー
-- [x] ✅ Claude Code実装検知
-- [x] ✅ 自動PR作成（平日夜間・土日昼間）
-- [x] ✅ 自動マージ実行
-- [x] ✅ Issue自動クローズ
-- [x] ✅ ブランチ自動削除
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `🚀 **Claude Smart Automation 完了**\n\nIssue #${issue.number} の自動化処理が完了しました。`
+              });
 
-### 実行時刻
-${now.toISOString()}
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
 
-### スケジュール
-- 平日: 23:00, 02:00, 05:00 JST
-- 土日: 10:00, 14:00, 18:00, 22:00 JST
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['claude-completed', 'smart-automation']
+              });
 
----
-🚀 **Generated by Claude Smart Automation** | [Claude Automation](https://github.com/takezou621/claude-automation)`
-                    });
-                    
-                    prNumber = pr.data.number;
-                    console.log(`✅ Created PR #${prNumber}`);
-                    
-                  } catch (prError) {
-                    console.log(`❌ PR creation failed: ${prError.message}`);
-                    continue;
-                  }
-                }
-                
-                // PRマージ処理
-                if (prNumber) {
-                  console.log(`🔄 Auto-merging PR #${prNumber}`);
-                  
-                  // マージ前に短時間待機
-                  await new Promise(resolve => setTimeout(resolve, 3000));
-                  
-                  try {
-                    await github.rest.pulls.merge({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      pull_number: prNumber,
-                      commit_title: `Smart Auto-merge: Issue #${issue.number}`,
-                      merge_method: 'squash'
-                    });
-                    console.log(`✅ Merged PR #${prNumber}`);
-                  } catch (mergeError) {
-                    console.log(`⚠️ Merge failed: ${mergeError.message}`);
-                    continue;
-                  }
-                }
-                
-                // Issue完了処理
-                console.log(`🔒 Closing Issue #${issue.number}`);
-                
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  body: `🚀 **Claude Smart Automation 完了**
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${claudeBranch.name}`
+              });
+              console.log(`🗑️ Deleted branch ${claudeBranch.name}`);
 
-Issue #${issue.number} の自動化処理が完了しました。
-
-**実行内容:**
-- 🤖 Claude Code実装検知
-- 📝 自動PR作成・マージ
-- 🔒 Issue自動クローズ
-- 🧹 ブランチ自動削除
-
-**実行時刻:** ${now.toISOString()}
-
-**実行スケジュール:**
-- 平日: 夜間自動実行（23:00, 02:00, 05:00 JST）
-- 土日: 昼間自動実行（10:00, 14:00, 18:00, 22:00 JST）
-
----
-🚀 **Powered by [Claude Smart Automation](https://github.com/takezou621/claude-automation)**`
-                });
-                
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed'
-                });
-                
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  labels: ['claude-completed', 'smart-automation']
-                });
-                
-                // ブランチ削除
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                try {
-                  await github.rest.git.deleteRef({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    ref: `heads/${claudeBranch.name}`
-                  });
-                  console.log(`🗑️ Deleted branch ${claudeBranch.name}`);
-                } catch (deleteError) {
-                  console.log(`⚠️ Branch deletion failed: ${deleteError.message}`);
-                }
-                
-                console.log(`🎯 Issue #${issue.number} SMART AUTOMATION COMPLETED!`);
-                
-              } catch (issueError) {
-                console.log(`❌ Issue #${issue.number} processing failed: ${issueError.message}`);
-                continue;
-              }
+            } catch (error) {
+              console.log(`❌ Failed to process PR #${prNumber}: ${error.message}`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `🤖 **Auto-merge Notice**\n\nAuto-merge failed. Manual intervention required.\n\nError: ${error.message}`
+              });
             }
-            
-            console.log('\\n🚀 SMART AUTOMATION FINISHED');
-            
-          } catch (error) {
-            console.log(`❌ Smart automation error: ${error.message}`);
-            console.log(error.stack);
-            throw error;
           }
