@@ -6,11 +6,7 @@
 
 **Turn your GitHub Issues into Merged Pull Requests, automatically - now with RepairGPT-level sophistication.**
 
-<<<<<<< HEAD
-This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup, with built-in AI-powered code reviews and quality gates.
-=======
-This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Built with insights from the advanced RepairGPT automation system, offering enterprise-grade automation with zero human intervention.
->>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
+This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Built with insights from the advanced RepairGPT automation system, offering enterprise-grade automation with zero human intervention and built-in AI-powered code reviews and quality gates.
 
 ---
 
@@ -18,15 +14,6 @@ This system provides a complete, hands-off workflow that automates the entire de
 
 ```mermaid
 graph TD
-<<<<<<< HEAD
-    A[📝 Pull Request Created] --> B{🤖 Code Review & Quality Gate};
-    B --> |❌ Failed| C[PR Blocked];
-    B --> |✅ Passed| D[PR Approved for Merge];
-    E[⏰ Scheduled Automation] --> F{🤖 Smart Automation Triggered};
-    F --> G{🔍 Finds Approved PRs for labeled issues};
-    G --> H[🚀 Auto-Merge PR];
-    H --> I[🎉 Close Issue & Clean Up];
-=======
     A[📝 Issue Created] --> B{🤖 Issue Processor};
     B --> C[🏷️ Auto-Labeling & Prioritization];
     C --> D[👤 Auto-Assignment];
@@ -43,7 +30,6 @@ graph TD
     style B fill:#e1f5fe
     style H fill:#fff3e0
     style J fill:#f3e5f5
->>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
 ```
 
 ---
@@ -55,9 +41,9 @@ graph TD
 -   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow for code integration.
 -   **Production Ready**: A robust, production-grade automation system with clear, maintainable workflows.
 
-<<<<<<< HEAD
-## 🚀 Get Started in 3 Steps
-=======
+### 🚀 **RepairGPT Enhanced Technology**
+Built on insights from the sophisticated RepairGPT automation system, our implementation offers:
+
 #### 🛡️ **Advanced Security & Quality**
 - **17 Security Patterns**: Enhanced malicious code detection
 - **9 Quality Checks**: Comprehensive code review automation
@@ -81,74 +67,44 @@ graph TD
 - **Comprehensive Metrics**: Detailed automation analytics
 - **Fallback Systems**: Robust error handling and recovery
 - **100% Automated Workflow**: From issue creation to merge completion
->>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
+
+## 🚀 Get Started in 5 Minutes
 
 ### Step 1: Copy the Workflows
 
-Copy the two workflow files from this repository's `.github/workflows` directory into your own project's `.github/workflows` directory:
+Copy the workflow files from this repository's `.github/workflows` directory into your own project's `.github/workflows` directory:
 
-1.  `claude-smart-automation.yml`
-2.  `claude-code-review.yml`
+1.  `claude-code-automation.yml` - Main automation engine
+2.  `claude-code-review.yml` - AI-powered code review
+3.  `claude-issue-processor.yml` - Issue categorization and management
 
 ### Step 2: Configure Secrets
 
 Go to your repository's `Settings > Secrets and variables > Actions` and add the following secrets:
 
 -   `GITHUB_TOKEN`: A GitHub token with `repo` and `workflow` scopes. The default `secrets.GITHUB_TOKEN` should work for most operations.
--   `CLAUDE_API_KEY`: Your API key for the Claude AI model.
+-   `ANTHROPIC_API_KEY`: Your API key for the Claude AI model.
 
 ### Step 3: See the Magic Happen!
 
-1.  **Create an issue** and add the `claude-ready` label to it.
+1.  **Create an issue** and add the `claude-processed` or `claude-ready` label to it.
     ```bash
-    gh issue create --title "Add a new feature" --body "Implement the feature as discussed." --label "claude-ready"
+    gh issue create --title "Add a new feature" --body "Implement the feature as discussed." --label "claude-processed"
     # Note the issue number (e.g., #1)
     ```
 
-2.  **Create a branch and push a change.** The branch name must contain the issue number (e.g., `feature/issue-1`).
-    ```bash
-    git checkout -b feature/issue-1
-    echo "New feature" > new-feature.txt
-    git add .
-    git commit -m "feat: Implement new feature for #1"
-    git push --set-upstream origin feature/issue-1
-    ```
+2.  **Wait for automation magic!** The system will automatically:
+    - **Issue Processor**: Categorize and prioritize your issue
+    - **Code Generation**: Create implementation using Claude Code CLI
+    - **Quality Review**: Run security and quality checks  
+    - **PR Creation**: Generate pull request automatically
+    - **AI Review**: Perform intelligent code analysis
+    - **Auto-Merge**: Complete the workflow and close the issue
 
-3.  **Create a Pull Request.**
-    ```bash
-    gh pr create --title "feat: Implement new feature" --body "Closes #1"
-    ```
-
-**That's it!** The system will now:
-1.  Run the **Code Review & Quality Gate** on your PR.
-2.  On its next scheduled run, the **Smart Automation** workflow will merge the PR, close the issue, and delete the branch.
+**That's it!** No manual intervention required - from issue creation to merge completion, everything is automated.
 
 ---
 
-<<<<<<< HEAD
-## 🔍 Workflow Breakdown
-
-This repository uses two core workflows to manage the automation process.
-
-### 1. `claude-code-review.yml` (Code Review & Quality Gate)
-
--   **Trigger**: Runs whenever a pull request is opened or updated.
--   **Purpose**: Acts as a gatekeeper to ensure code quality.
--   **Jobs**:
-    -   **Quality Gate**: Performs basic checks, such as PR size and scanning for hardcoded secrets. It will block the PR if critical issues are found.
-    -   **AI Review**: If the quality gate passes, this job runs the `npm run cli review` command to perform an AI-powered code analysis and posts the results as a comment.
-
-### 2. `claude-smart-automation.yml` (Smart Automation)
-
--   **Trigger**: Runs on a schedule (weekday nights, weekend days) or can be triggered manually.
--   **Purpose**: The main engine that automates the development lifecycle.
--   **Process**:
-    1.  Finds open issues with a `claude-ready` (or similar) label.
-    2.  Finds the associated branch for each issue.
-    3.  Creates a pull request if one doesn't already exist.
-    4.  Checks if the PR has passed all required status checks (including the quality gate).
-    5.  Merges the PR, closes the issue, and deletes the branch.
-=======
 ## 🔧 Configuration & Workflow Selection
 
 Choose the automation tier that best fits your needs:
@@ -281,7 +237,6 @@ const branchPatterns = [
 - 🔧 [**Workflow Selection Guide**](docs/workflow-selection-guide.md) - Choose your automation tier
 - 🚀 [**Setup Documentation**](docs/setup.md) - Complete installation guide
 - 🧪 [**Testing Guide**](test_repairgpt_enhancements.js) - Validation test suite
->>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
 
 ## 🤝 Contributing
 
@@ -293,10 +248,7 @@ This project incorporates advanced patterns learned from analyzing the RepairGPT
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
-<<<<<<< HEAD
-=======
 
 ---
 
 **🤖 Powered by RepairGPT-Enhanced Technology** | **Next Generation GitHub Automation**
->>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
