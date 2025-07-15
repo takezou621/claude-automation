@@ -214,8 +214,10 @@ log_header "📋 Step 4: ワークフローファイルの配置"
 mkdir -p .github/workflows
 
 # ワークフローファイルの存在確認とコピー
-WORKFLOW_SOURCE="workflows/claude-smart-automation.yml"
-WORKFLOW_DEST=".github/workflows/claude-smart-automation.yml"
+WORKFLOW_SOURCE_AUTOMATION="workflows/claude-smart-automation.yml"
+WORKFLOW_DEST_AUTOMATION=".github/workflows/claude-smart-automation.yml"
+WORKFLOW_SOURCE_REVIEW="workflows/claude-code-review.yml"
+WORKFLOW_DEST_REVIEW=".github/workflows/claude-code-review.yml"
 
 if [ -f "$WORKFLOW_SOURCE" ]; then
     if [ "$DRY_RUN" = false ]; then

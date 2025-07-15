@@ -1,237 +1,100 @@
-# Claude Automation Workflow Selection Guide
+# Claude Automation Workflow Guide
 
-## 🚀 Choose Your Automation Tier
+## 🚀 Overview
 
-Claude Automation now offers **three distinct automation tiers** to match different project needs and development styles. Each tier provides unique benefits optimized for specific use cases.
+This guide explains the two main workflows that power the Claude Automation system:
 
----
-
-## 📊 Comparison Matrix
-
-| Feature | Ultimate | Rapid | Smart |
-|---------|----------|-------|-------|
-| **Execution Frequency** | Every minute | Every 5 minutes | Scheduled (hourly) |
-| **Response Time** | < 1 minute | < 5 minutes | Hours |
-| **GitHub Actions Usage** | High | Medium | Low |
-| **Best For** | Critical projects | Fast development | Standard projects |
-| **Resource Efficiency** | Low | Medium | High |
-| **Detection Speed** | Instant | Fast | Scheduled |
-| **Processing Speed** | Lightning | Rapid | Smart |
+1.  **`claude-smart-automation.yml`**: Handles the end-to-end automation of turning issues into merged pull requests.
+2.  **`claude-code-review.yml`**: Ensures the quality and security of pull requests before they are merged.
 
 ---
 
-## 🔥 Ultimate Automation
+## 🧠 `claude-smart-automation.yml`
 
-### When to Use
-- **Mission-critical projects** requiring instant issue resolution
-- **High-frequency development** with continuous deployments
-- **Zero-latency requirements** for immediate feedback
-- **Maximum productivity** scenarios
+### Purpose
+This workflow is the core of the automation system. It periodically scans for issues that are ready for automation and processes them from pull request creation to branch cleanup.
 
-### Features
-- ⚡ **Every minute execution** - Maximum responsiveness
-- 🔥 **Lightning-fast processing** - Sub-minute resolution
-- 🚀 **Advanced branch detection** - 6+ naming patterns
-- 📊 **Performance metrics** - Real-time monitoring
-- ⚡ **Zero-delay automation** - Instant processing
+### Triggers
+-   **Scheduled Execution**: Runs automatically on a schedule optimized for development cycles (weekday nights and weekend days).
+-   **Manual Trigger (`workflow_dispatch`)**: Can be run manually from the GitHub Actions tab to process specific issues immediately.
 
-### Setup
-```bash
-./scripts/setup-ultimate-automation.sh <owner> <repo>
-```
-
-### ⚠️ Considerations
-- **High GitHub Actions usage** - Monitor your consumption
-- **Resource intensive** - Best for critical projects only
-- **Premium tier** - Requires careful usage monitoring
+### Key Features
+-   **Issue Detection**: Finds open issues with labels like `claude-processed`, `claude-ready`, or `automation-ready`.
+-   **Branch Matching**: Automatically finds the corresponding feature branch for an issue (e.g., `feature/issue-123`).
+-   **Pull Request Creation**: If a PR doesn't exist, it creates one automatically.
+-   **Auto-Merging**: Merges the pull request using the squash and merge strategy.
+-   **Cleanup**: Closes the issue and deletes the feature branch after a successful merge.
 
 ---
 
-## ⚡ Rapid Automation
+## 🎯 `claude-code-review.yml`
 
-### When to Use
-- **Fast-paced development** requiring quick feedback
-- **Balanced performance** between speed and efficiency
-- **Regular development** with moderate urgency
-- **Optimal resource usage** with good responsiveness
+### Purpose
+This workflow acts as a gatekeeper for all new pull requests, ensuring they meet quality and security standards before they can be merged.
 
-### Features
-- ⚡ **5-minute intervals** - Fast and efficient
-- 🚀 **Quick response time** - Rapid issue resolution
-- 🎯 **Optimized processing** - Balanced performance
-- 💡 **Smart resource usage** - Efficient consumption
-- ⚡ **Enhanced detection** - Multiple label support
+### Triggers
+-   **Pull Request Creation/Update**: Runs automatically whenever a pull request is opened, updated, or marked as ready for review.
 
-### Setup
-```bash
-./scripts/setup-rapid-automation.sh <owner> <repo>
-```
-
-### ✅ Recommendations
-- **Ideal for most projects** - Great balance of speed and efficiency
-- **Production-ready** - Proven performance
-- **Cost-effective** - Optimized resource consumption
+### Key Features
+-   **Quality Gate**: Performs automated checks on new pull requests:
+    -   **PR Size**: Ensures that pull requests are not too large.
+    -   **Static Analysis**: Scans for hardcoded secrets, `console.log` statements, and other common issues.
+-   **AI-Powered Code Review**: After passing the quality gate, it runs an AI-powered code review to provide feedback and suggestions.
+-   **Status Checks**: Sets the commit status on the pull request to indicate whether the checks have passed or failed, blocking merges if necessary.
 
 ---
 
-## 🧠 Smart Automation
+## 🔄 How They Work Together
 
-### When to Use
-- **Standard development projects** with regular workflows
-- **Resource-conscious environments** requiring efficiency
-- **Scheduled development** with predictable patterns
-- **Long-term stability** over immediate response
-
-### Features
-- 🧠 **Intelligent scheduling** - Weekday nights, weekend days
-- 📅 **Time-zone optimized** - JST-based scheduling
-- 🎯 **Resource efficient** - Minimal Actions usage
-- 🔄 **Stable and reliable** - Battle-tested workflow
-- 📊 **Comprehensive logging** - Detailed process tracking
-
-### Setup
-```bash
-./scripts/setup-smart-automation.sh <owner> <repo>
-```
-
-### 💡 Benefits
-- **Most resource-efficient** - Minimal GitHub Actions usage
-- **Stable and reliable** - Production-proven
-- **Timezone-aware** - Optimized for global teams
-
----
-
-## 🎯 Decision Tree
-
-### Start Here: What's Your Priority?
+1.  A developer creates a pull request.
+2.  The **`claude-code-review.yml`** workflow is triggered automatically.
+    -   It runs the quality gate and AI review.
+    -   If the checks fail, the PR is marked as blocked.
+    -   If the checks pass, the PR is marked as ready for merge.
+3.  The **`claude-smart-automation.yml`** workflow runs on its schedule.
+    -   It finds the approved pull request associated with a labeled issue.
+    -   It merges the pull request.
+    -   It closes the issue and deletes the branch.
 
 ```mermaid
 graph TD
-    A[What's your main priority?] --> B[Maximum Speed]
-    A --> C[Balanced Performance]
-    A --> D[Resource Efficiency]
-    
-    B --> E[🔥 Ultimate Automation]
-    C --> F[⚡ Rapid Automation]
-    D --> G[🧠 Smart Automation]
-    
-    E --> H[Every minute execution<br/>< 1 min response]
-    F --> I[5-minute intervals<br/>< 5 min response]
-    G --> J[Scheduled execution<br/>Hours response]
+    A[📝 Pull Request Created] --> B{🤖 `claude-code-review.yml` Triggered};
+    B --> C{🔍 Quality Gate & AI Review};
+    C -->|❌ Failed| D[PR Blocked];
+    C -->|✅ Passed| E[PR Approved];
+    E --> F{🤖 `claude-smart-automation.yml` Triggered};
+    F --> G[🚀 Auto-Merge PR];
+    G --> H[🎉 Close Issue & Clean Up];
 ```
 
-### Quick Selection Guide
-
-1. **🔥 Choose Ultimate if:**
-   - You need instant issue resolution
-   - GitHub Actions usage isn't a concern
-   - Working on critical/time-sensitive projects
-   - Maximum productivity is essential
-
-2. **⚡ Choose Rapid if:**
-   - You want fast response with good efficiency
-   - Looking for the best balance
-   - Working on active development projects
-   - Need quick feedback cycles
-
-3. **🧠 Choose Smart if:**
-   - Resource efficiency is important
-   - Working on standard development projects
-   - Prefer scheduled, predictable automation
-   - GitHub Actions usage needs to be minimal
-
 ---
 
-## 🛠️ Implementation Guide
+## 🔧 Customization
 
-### Step 1: Choose Your Tier
-Use the decision tree and comparison matrix above to select your preferred automation tier.
-
-### Step 2: Run Setup Script
-Execute the appropriate setup script for your chosen tier:
-
-```bash
-# Ultimate (every minute)
-./scripts/setup-ultimate-automation.sh <owner> <repo>
-
-# Rapid (every 5 minutes)
-./scripts/setup-rapid-automation.sh <owner> <repo>
-
-# Smart (scheduled)
-./scripts/setup-smart-automation.sh <owner> <repo>
-```
-
-### Step 3: Configure Labels
-Each tier supports multiple label patterns:
-- `claude-processed` - Standard processing
-- `claude-ready` - Ready for automation
-- `automation-ready` - General automation
-- `rapid-process` - Rapid tier specific
-
-### Step 4: Test Your Setup
-Create a test issue with appropriate labels and verify automation works as expected.
-
----
-
-## 📈 Monitoring & Optimization
-
-### GitHub Actions Usage
-Monitor your GitHub Actions usage in repository settings:
-- **Ultimate**: High usage (every minute)
-- **Rapid**: Medium usage (every 5 minutes)
-- **Smart**: Low usage (scheduled)
-
-### Performance Metrics
-Each tier provides different performance characteristics:
-- **Response Time**: Ultimate < Rapid < Smart
-- **Resource Usage**: Ultimate > Rapid > Smart
-- **Reliability**: All tiers are equally reliable
-
-### Switching Tiers
-You can easily switch between tiers by:
-1. Running a different setup script
-2. Updating the workflow file
-3. Adjusting labels as needed
-
----
-
-## 🚀 Advanced Configuration
-
-### Custom Schedules
-You can customize the execution schedule in the workflow files:
+### Changing the Automation Schedule
+To change how often the `claude-smart-automation.yml` workflow runs, you can edit the `cron` schedule in the workflow file:
 
 ```yaml
-# Ultimate - Every minute
-- cron: '* * * * *'
-
-# Rapid - Every 5 minutes
-- cron: '*/5 * * * *'
-
-# Smart - Weekday nights, weekend days
-- cron: '0 14,17,20 * * 1-5'  # Weekdays
-- cron: '0 1,5,9,13 * * 0,6'   # Weekends
+# .github/workflows/claude-smart-automation.yml
+schedule:
+  # Example: Run every 6 hours
+  - cron: '0 */6 * * *'
 ```
 
-### Branch Patterns
-All tiers support advanced branch detection:
-- `issue-{number}`
-- `claude-{number}`
-- `feature/issue-{number}`
-- `fix/issue-{number}`
-- `claude/issue-{number}`
-- `automation-{number}`
+### Adjusting Quality Gates
+The quality gate thresholds in `claude-code-review.yml` can be adjusted to fit your project's needs. For example, to change the maximum number of lines allowed in a PR:
 
-### Multiple Workflows
-You can run multiple automation tiers simultaneously for different types of issues by using different labels.
+```javascript
+// .github/workflows/claude-code-review.yml
+// ...
+if (pr.data.additions + pr.data.deletions > 1000) { // Changed from 500 to 1000
+  issues.push('❌ PR is too large (> 1000 lines changed).');
+}
+// ...
+```
 
 ---
 
 ## 🎉 Conclusion
 
-Choose the automation tier that best fits your project needs:
-
-- **🔥 Ultimate** for maximum speed and instant response
-- **⚡ Rapid** for balanced performance and efficiency
-- **🧠 Smart** for resource-conscious, scheduled automation
-
-Each tier is production-ready and offers unique advantages. Start with **Rapid** if you're unsure - it provides the best balance for most use cases.
+This streamlined, two-workflow system provides a powerful and maintainable way to automate your development process. It combines the proactive quality assurance of a dedicated review workflow with the efficiency of a scheduled automation workflow.

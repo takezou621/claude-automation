@@ -1,160 +1,106 @@
-# Claude Smart Automation System
+# Claudeスマート自動化システム
 
-## 🚀 概要
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Claude Codeを使用したスマート自動化システムです。Issue作成からClaude Code実装、PR作成、マージ、クローズまでの完全自動化を実現します。
+**GitHubのIssueを、マージ済みのプルリクエストに自動で変換します。**
 
-## ✨ 特徴
-
-- **100%完全自動化**: 人的介入なしの完全なワークフロー
-- **スマートスケジュール**: 平日夜間・土日昼間の最適な時間帯での実行
-- **GitHub Actions統合**: GitHub標準機能を使用した安全な自動化
-- **エラーハンドリング**: 堅牢な例外処理とログ出力
-
-## 📋 実現できること
-
-1. **Issue検知**: `claude-processed`ラベル付きIssueの自動検知
-2. **ブランチ検索**: Claude Code実装ブランチの自動発見
-3. **PR作成**: 自動でPull Request作成
-4. **自動マージ**: 即座にマージ実行
-5. **Issue完了**: 自動でIssueクローズとラベル付け
-6. **クリーンアップ**: ブランチ自動削除
-
-## ⏰ 実行スケジュール
-
-### 平日（月-金）
-- **23:00 JST** - 業務終了後の夜間実行
-- **02:00 JST** - 深夜バッチ実行
-- **05:00 JST** - 早朝準備実行
-
-### 土日
-- **10:00 JST** - 朝の開発時間
-- **14:00 JST** - 午後の開発時間
-- **18:00 JST** - 夕方の開発時間
-- **22:00 JST** - 夜の開発時間
-
-## 🛠️ セットアップ
-
-### クイックセットアップ
-
-```bash
-# セットアップスクリプト実行
-./scripts/setup-smart-automation.sh <owner> <repo>
-```
-
-### 手動セットアップ
-
-詳細は [セットアップガイド](docs/smart-automation-setup-guide.md) を参照してください。
-
-## 📊 使用方法
-
-### 1. Issueの作成
-
-```bash
-gh issue create --title "機能追加: 新機能実装" \
-  --body "@claude 実装をお願いします。" \
-  --label "claude-processed,priority:high"
-```
-
-### 2. Claude Codeでの実装
-
-1. 実装用ブランチ作成
-2. 機能実装
-3. コミット・プッシュ
-
-### 3. 自動化実行
-
-スケジュール通りに自動実行されます。手動実行も可能：
-
-```bash
-gh workflow run claude-smart-automation.yml
-```
-
-## 📋 ファイル構成
-
-```
-.
-├── .github/workflows/
-│   └── claude-smart-automation.yml    # メインワークフロー
-├── docs/
-│   └── smart-automation-setup-guide.md # 詳細セットアップガイド
-├── scripts/
-│   └── setup-smart-automation.sh       # 自動セットアップスクリプト
-├── templates/
-│   └── claude-smart-automation.yml     # テンプレートファイル
-└── README-smart-automation.md          # このファイル
-```
-
-## 🔧 カスタマイズ
-
-### スケジュール変更
-
-`.github/workflows/claude-smart-automation.yml` の `cron` 設定を変更：
-
-```yaml
-schedule:
-  # 毎日6時間ごと
-  - cron: '0 0,6,12,18 * * *'
-```
-
-### ブランチ命名規則
-
-ワークフロー内の検索条件を調整：
-
-```javascript
-const claudeBranches = branches.data.filter(branch => 
-  branch.name.includes(`feature/issue-${issue.number}`) ||
-  branch.name.includes(`fix/${issue.number}`)
-);
-```
-
-## 🔍 監視・トラブルシューティング
-
-### 実行ログ確認
-
-```bash
-# 最新の実行状況
-gh run list --workflow="claude-smart-automation.yml" --limit 5
-
-# 詳細ログ
-gh run view <run-id> --log
-```
-
-### よくある問題
-
-1. **権限エラー**: GitHub Actions権限設定を確認
-2. **ブランチ未検出**: ブランチ命名規則の確認
-3. **ラベル不足**: 必要なラベルの作成
-
-詳細は [トラブルシューティングガイド](docs/smart-automation-setup-guide.md#トラブルシューティング) を参照。
-
-## 📊 統計・実績
-
-- **成功率**: 100% (テスト済み環境)
-- **平均実行時間**: 10-20秒
-- **対応Issue数**: 無制限（バッチ処理）
-
-## 🎯 ベストプラクティス
-
-1. **段階的導入**: テスト環境での事前確認
-2. **ログ監視**: 定期的な実行状況確認
-3. **権限管理**: 最小限の権限での運用
-4. **バックアップ**: 重要なブランチの事前保護
-
-## 📚 関連ドキュメント
-
-- [詳細セットアップガイド](docs/smart-automation-setup-guide.md)
-- [GitHub Actions公式ドキュメント](https://docs.github.com/en/actions)
-- [Claude Code公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
-
-## 🤝 貢献
-
-バグ報告や機能改善の提案は Issue または Pull Request でお願いします。
-
-## 📄 ライセンス
-
-MIT License
+このシステムは、Issueの検知からブランチのクリーンアップまで、開発サイクル全体を自動化する完全なハンズオフワークフローを提供します。AIによるコードレビューと品質ゲートも組み込まれています。
 
 ---
 
-**Claude Smart Automation System** - 完全自動化による開発効率の最大化
+### ワークフロー図
+
+```mermaid
+graph TD
+    A[📝 プルリクエスト作成] --> B{🤖 コードレビューと品質ゲート};
+    B --> |❌ 失敗| C[PRブロック];
+    B --> |✅ 成功| D[PRマージ承認];
+    E[⏰ スケジュール実行] --> F{🤖 スマートオートメーション起動};
+    F --> G{🔍 承認済みPRとラベル付きIssueを検索};
+    G --> H[🚀 PRを自動マージ];
+    H --> I[🎉 Issueをクローズしてクリーンアップ];
+```
+
+---
+
+## ✨ このシステムの利点
+
+-   **効率を最大化**: PRの作成、マージ、クリーンアップといった反復的なタスクを自動化します。AIが手作業を代行するため、あなたはコーディングに集中できます。
+-   **品質を確保**: すべてのプルリクエストで品質ゲートとAIによるコードレビューを自動的に実行し、問題を早期に発見して高いコード標準を維持します。
+-   **一貫性を確保**: コード統合のための一貫したエラーのないワークフローで、開発プロセスを標準化します。
+-   **本番環境に対応**: 明確で保守性の高いワークフローを備えた、堅牢な本番グレードの自動化システムです。
+
+## 🚀 3ステップで開始
+
+### ステップ1: ワークフローのコピー
+
+このリポジトリの `.github/workflows` ディレクトリから、あなたのプロジェクトの `.github/workflows` ディレクトリに2つのワークフローファイルをコピーします。
+
+1.  `claude-smart-automation.yml`
+2.  `claude-code-review.yml`
+
+### ステップ2: シークレットの設定
+
+リポジトリの `Settings > Secrets and variables > Actions` に移動し、以下のシークレットを追加します。
+
+-   `GITHUB_TOKEN`: `repo` と `workflow` スコープを持つGitHubトークン。ほとんどの操作では、デフォルトの `secrets.GITHUB_TOKEN` で動作します。
+-   `CLAUDE_API_KEY`: Claude AIモデルのAPIキー。
+
+### ステップ3: 動作確認
+
+1.  **Issueを作成**し、`claude-ready` ラベルを追加します。
+    ```bash
+    gh issue create --title "新機能の追加" --body "議論した通りに機能実装をお願いします。" --label "claude-ready"
+    # Issue番号（例: #1）をメモしておきます
+    ```
+
+2.  **ブランチを作成して変更をプッシュ**します。ブランチ名にはIssue番号を含める必要があります（例: `feature/issue-1`）。
+    ```bash
+    git checkout -b feature/issue-1
+    echo "新機能" > new-feature.txt
+    git add .
+    git commit -m "feat: #1 のための新機能実装"
+    git push --set-upstream origin feature/issue-1
+    ```
+
+3.  **プルリクエストを作成**します。
+    ```bash
+    gh pr create --title "feat: 新機能の実装" --body "Closes #1"
+    ```
+
+**これで完了です！** システムは以下の動作を自動的に行います。
+1.  あなたのPRで**コードレビューと品質ゲート**を実行します。
+2.  次回のスケジュール実行時に、**スマートオートメーション**ワークフローがPRをマージし、Issueをクローズして、ブランチを削除します。
+
+---
+
+## 🔍 ワークフローの内訳
+
+このリポジトリは、2つのコアワークフローを使用して自動化プロセスを管理します。
+
+### 1. `claude-code-review.yml` (コードレビューと品質ゲート)
+
+-   **トリガー**: プルリクエストがオープンまたは更新されたときに実行されます。
+-   **目的**: コードの品質を保証するゲートキーパーとして機能します。
+-   **ジョブ**:
+    -   **品質ゲート**: PRのサイズやハードコードされたシークレットの有無など、基本的なチェックを実行します。重大な問題が見つかった場合、PRをブロックします。
+    -   **AIレビュー**: 品質ゲートを通過すると、このジョブが `npm run cli review` コマンドを実行してAIによるコード分析を行い、結果をコメントとして投稿します。
+
+### 2. `claude-smart-automation.yml` (スマートオートメーション)
+
+-   **トリガー**: スケジュール（平日夜、土日昼）または手動で実行されます。
+-   **目的**: 開発ライフサイクルを自動化するメインエンジンです。
+-   **プロセス**:
+    1.  `claude-ready` などのラベルが付いたオープンなIssueを検索します。
+    2.  各Issueに対応するブランチを見つけます。
+    3.  プルリクエストが存在しない場合は作成します。
+    4.  PRが必要なステータスチェック（品質ゲートを含む）をすべてパスしたか確認します。
+    5.  PRをマージし、Issueをクローズして、ブランチを削除します。
+
+## 🤝 コントリビューション
+
+コントリビューションを歓迎します！プルリクエストの送信、バグ報告、機能提案の方法については、[**コントリビューションガイド**](CONTRIBUTING.md)をご覧ください。
+
+## 📄 ライセンス
+
+このプロジェクトは[MITライセンス](LICENSE)の下でライセンスされています。

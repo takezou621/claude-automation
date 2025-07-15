@@ -4,7 +4,7 @@
 
 **Turn your GitHub Issues into Merged Pull Requests, automatically.**
 
-This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Focus on writing code and let the automation handle the rest.
+This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup, with built-in AI-powered code reviews and quality gates.
 
 ---
 
@@ -12,195 +12,90 @@ This system provides a complete, hands-off workflow that automates the entire de
 
 ```mermaid
 graph TD
-    A[📝 Issue Created with `claude-processed` label] --> B{🤖 Automation Triggered};
-    B --> C{🔍 Find associated branch, e.g., `feature/issue-123`};
-    C --> D[✅ Create Pull Request];
-    D --> E[🚀 Auto-Merge PR];
-    E --> F[🎉 Close Issue & Apply `claude-completed` label];
-    F --> G[🧹 Delete Branch];
+    A[📝 Pull Request Created] --> B{🤖 Code Review & Quality Gate};
+    B --> |❌ Failed| C[PR Blocked];
+    B --> |✅ Passed| D[PR Approved for Merge];
+    E[⏰ Scheduled Automation] --> F{🤖 Smart Automation Triggered};
+    F --> G{🔍 Finds Approved PRs for labeled issues};
+    G --> H[🚀 Auto-Merge PR];
+    H --> I[🎉 Close Issue & Clean Up];
 ```
 
 ---
 
 ## ✨ Why Use This System?
 
-### 🚀 **RepairGPT Enhanced Technology**
-Built on insights from the sophisticated RepairGPT automation system, our implementation offers:
+-   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup. Let the AI handle the manual work so you can focus on coding.
+-   **Ensure Quality**: Automatically run quality gates and AI-powered code reviews on every pull request to catch issues early and maintain high code standards.
+-   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow for code integration.
+-   **Production Ready**: A robust, production-grade automation system with clear, maintainable workflows.
 
--   **6 Automation Tiers**: From Simple to Ultimate with Full and Perfect automation modes
--   **RepairGPT Intelligence**: Advanced patterns, scheduling, and error handling
--   **AI Code Review**: Automated security scanning and quality assessment
--   **Issue Processing**: Intelligent categorization and automation detection
--   **Zero Latency Processing**: Lightning-fast issue resolution with minimal human intervention
--   **Advanced AI Detection**: Enhanced branch pattern matching with 9+ naming conventions
--   **Intelligent Scheduling**: Timezone-optimized execution (weekday nights + weekend days)
--   **Enhanced Label System**: 25+ specialized labels for comprehensive project management
--   **Maximize Efficiency**: Automate the repetitive tasks of PR creation, merging, and cleanup
--   **Ensure Consistency**: Standardize your development process with a consistent, error-free workflow
--   **Production Ready**: Production-grade automation with comprehensive monitoring and metrics
+## 🚀 Get Started in 3 Steps
 
-## 🚀 Get Started in 5 Minutes
+### Step 1: Copy the Workflows
 
-Follow this guide to set up the automation in a safe sandbox repository.
+Copy the two workflow files from this repository's `.github/workflows` directory into your own project's `.github/workflows` directory:
 
-### Prerequisites
+1.  `claude-smart-automation.yml`
+2.  `claude-code-review.yml`
 
--   You have a GitHub account.
--   You have the [**GitHub CLI (`gh`)**](https://cli.github.com/) installed and authenticated (`gh auth login`).
+### Step 2: Configure Secrets
 
-### Step 1: Clone This Repository
+Go to your repository's `Settings > Secrets and variables > Actions` and add the following secrets:
 
-This repository contains the setup scripts and workflow templates. Clone it to your local machine.
+-   `GITHUB_TOKEN`: A GitHub token with `repo` and `workflow` scopes. The default `secrets.GITHUB_TOKEN` should work for most operations.
+-   `CLAUDE_API_KEY`: Your API key for the Claude AI model.
 
-```bash
-git clone https://github.com/takezou621/claude-automation.git
-cd claude-automation
-```
+### Step 3: See the Magic Happen!
 
-### Step 2: Create a Sandbox Repository
-
-Let's create a new, empty repository on your GitHub account to serve as our test environment.
-
-```bash
-# Creates a new public repository under your username
-gh repo create my-sandbox-project --public
-```
-
-### Step 3: Run the Automated Setup
-
-The setup script will configure your new sandbox repository by creating the necessary labels and setting the required `GITHUB_TOKEN` secret.
-
--   `<owner>`: Your GitHub username (e.g., `takezou621`)
--   `<repo>`: The name of your sandbox repository (`my-sandbox-project`)
-
-```bash
-# This script is interactive and will guide you
-./scripts/setup-smart-automation.sh <owner> <repo>
-```
-The script will ask for a `GITHUB_TOKEN`. You can create one [**here**](https://github.com/settings/tokens/new) with the `repo` and `workflow` scopes.
-
-### Step 4: See the Magic Happen!
-
-Now, let's simulate a full development cycle in your new `my-sandbox-project` repository.
-
-1.  **Go to your sandbox project directory.**
+1.  **Create an issue** and add the `claude-ready` label to it.
     ```bash
-    cd ../my-sandbox-project
-    # Or clone it if you don't have it locally
-    # gh repo clone <owner>/my-sandbox-project
-    # cd my-sandbox-project
+    gh issue create --title "Add a new feature" --body "Implement the feature as discussed." --label "claude-ready"
+    # Note the issue number (e.g., #1)
     ```
 
-2.  **Create a new issue to be automated.**
+2.  **Create a branch and push a change.** The branch name must contain the issue number (e.g., `feature/issue-1`).
     ```bash
-    gh issue create --title "Add a test file" \
-      --body "This is a test issue for the automation." \
-      --label "claude-processed"
-    # Note the issue number that is created (e.g., #1)
-    ```
-
-3.  **Create a branch and push a change.** (Replace `1` with your issue number).
-    ```bash
-    # The branch name MUST contain the issue number
     git checkout -b feature/issue-1
-    
-    # Create a dummy file
-    echo "Hello, World!" > test.txt
-    
-    # Commit and push the change
+    echo "New feature" > new-feature.txt
     git add .
-    git commit -m "feat: Add test file for issue #1"
+    git commit -m "feat: Implement new feature for #1"
     git push --set-upstream origin feature/issue-1
     ```
 
-4.  **Manually trigger the workflow** to see the result instantly.
+3.  **Create a Pull Request.**
     ```bash
-    gh workflow run claude-smart-automation.yml
+    gh pr create --title "feat: Implement new feature" --body "Closes #1"
     ```
 
-**That's it!** Check your repository. You will see that the system has automatically created a PR, merged it, closed the issue, and deleted the branch.
+**That's it!** The system will now:
+1.  Run the **Code Review & Quality Gate** on your PR.
+2.  On its next scheduled run, the **Smart Automation** workflow will merge the PR, close the issue, and delete the branch.
 
 ---
 
-## 🔧 Configuration & Workflow Selection
-
-Choose the automation tier that best fits your needs:
-
-### 🚀 Automation Tiers (RepairGPT Enhanced)
-
-| Tier | Schedule | Best For | Features |
-|------|----------|----------|----------|
-| **🔥 Ultimate** | Every minute | Critical projects | ⚡ Zero latency, lightning processing, 9+ patterns |
-| **🚀 Full** | RepairGPT Schedule | Large-scale projects | 🏢 Multi-trigger, AI review, metrics tracking |
-| **⚡ Rapid** | Every 5 minutes | Fast development | 🚀 Quick response, optimized efficiency |
-| **🧠 Smart** | Intelligent schedule | Standard projects | 🧠 Timezone-aware, resource efficient |
-| **🤖 Code Review** | PR-triggered | Quality assurance | 🔍 AI analysis, security scanning, risk assessment |
-| **🔄 Issue Processor** | Every 15 minutes | Project management | 🏷️ Auto-categorization, staleness detection |
-
-### Schedule Configuration
-
-Choose your preferred automation workflow:
-
-#### Ultimate Automation (claude-ultimate-automation.yml)
-```yaml
-on:
-  schedule:
-    - cron: '* * * * *'  # Every minute - Maximum Speed
-```
-
-#### Rapid Automation (claude-rapid-automation.yml)
-```yaml
-on:
-  schedule:
-    - cron: '*/5 * * * *'  # Every 5 minutes - Fast Processing
-```
-
-#### Smart Automation (claude-smart-automation.yml)
-```yaml
-on:
-  schedule:
-    # Weekday nights (23:00, 02:00, 05:00 JST)
-    - cron: '0 14,17,20 * * 1-5'
-    # Weekend days (10:00, 14:00, 18:00, 22:00 JST)
-    - cron: '0 1,5,9,13 * * 0,6'
-```
-
-### 🎯 Enhanced Branch Detection
-
-Our system now supports multiple branch naming patterns for maximum compatibility:
-
-```javascript
-// Advanced branch matching patterns
-const branchPatterns = [
-  `issue-${issue.number}`,           // Standard: issue-123
-  `claude-${issue.number}`,          // Claude: claude-123
-  `feature/issue-${issue.number}`,   // Feature: feature/issue-123
-  `fix/issue-${issue.number}`,       // Fix: fix/issue-123
-  `claude/issue-${issue.number}`,    // Claude namespace: claude/issue-123
-  `automation-${issue.number}`       // Automation: automation-123
-];
-```
-
-### 🏷️ Supported Labels
-
-The system detects issues with any of these labels:
-- `claude-processed` - Standard Claude processing
-- `claude-ready` - Ready for automation
-- `automation-ready` - General automation ready
-- `rapid-process` - Rapid processing mode
-
 ## 🔍 Workflow Breakdown
 
-The main workflow file `claude-smart-automation.yml` performs the following steps:
+This repository uses two core workflows to manage the automation process.
 
-1.  **Triggers**: Runs on a schedule or can be manually triggered.
-2.  **Finds Issues**: Fetches all open issues with the `claude-processed` label.
-3.  **Loops Through Issues**: For each issue, it performs the following actions.
-4.  **Finds Branch**: Searches for a branch whose name contains the issue number.
-5.  **Creates PR**: Creates a pull request from the found branch to `main`.
-6.  **Merges PR**: Merges the pull request using the `automerge` feature.
-7.  **Closes Issue**: Closes the processed issue and adds the `claude-completed` label.
-8.  **Deletes Branch**: Cleans up by deleting the feature branch.
+### 1. `claude-code-review.yml` (Code Review & Quality Gate)
+
+-   **Trigger**: Runs whenever a pull request is opened or updated.
+-   **Purpose**: Acts as a gatekeeper to ensure code quality.
+-   **Jobs**:
+    -   **Quality Gate**: Performs basic checks, such as PR size and scanning for hardcoded secrets. It will block the PR if critical issues are found.
+    -   **AI Review**: If the quality gate passes, this job runs the `npm run cli review` command to perform an AI-powered code analysis and posts the results as a comment.
+
+### 2. `claude-smart-automation.yml` (Smart Automation)
+
+-   **Trigger**: Runs on a schedule (weekday nights, weekend days) or can be triggered manually.
+-   **Purpose**: The main engine that automates the development lifecycle.
+-   **Process**:
+    1.  Finds open issues with a `claude-ready` (or similar) label.
+    2.  Finds the associated branch for each issue.
+    3.  Creates a pull request if one doesn't already exist.
+    4.  Checks if the PR has passed all required status checks (including the quality gate).
+    5.  Merges the PR, closes the issue, and deletes the branch.
 
 ## 🤝 Contributing
 
