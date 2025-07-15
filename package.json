@@ -1,0 +1,178 @@
+{
+  "name": "claude-automation",
+  "version": "1.0.0",
+  "description": "AI-powered automation system using Claude for intelligent code analysis and repository management",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "security:scan": "node src/security-analyzer.js",
+    "config:init": "node src/config-manager.js --init",
+    "config:validate": "node src/config-manager.js --validate",
+    "analyze:code": "node src/intelligent-code-analyzer.js",
+    "claude:test": "node src/claude-api-client.js --test",
+    "build": "npm run lint && npm run test",
+    "dev": "nodemon src/index.js",
+    "docs:generate": "jsdoc src/ -d docs/",
+    "performance:test": "node src/performance-test.js"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "automation",
+    "code-analysis",
+    "security",
+    "github",
+    "workflow",
+    "intelligent",
+    "machine-learning"
+  ],
+  "author": "Claude Automation Team",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.3.1",
+    "yaml": "^2.3.4",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12",
+    "ora": "^7.0.1",
+    "boxen": "^7.1.1",
+    "glob": "^10.3.10",
+    "minimatch": "^9.0.3",
+    "semver": "^7.5.4",
+    "lodash": "^4.17.21",
+    "axios": "^1.6.2",
+    "winston": "^3.11.0",
+    "moment": "^2.29.4",
+    "crypto": "^1.0.1",
+    "fs-extra": "^11.1.1",
+    "path": "^0.12.7",
+    "os": "^0.1.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "nodemon": "^3.0.2",
+    "jsdoc": "^4.0.2",
+    "supertest": "^6.3.3",
+    "nock": "^13.4.0",
+    "@types/jest": "^29.5.8",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takezou621/claude-automation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/takezou621/claude-automation/issues"
+  },
+  "homepage": "https://github.com/takezou621/claude-automation#readme",
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/index.js",
+      "!src/**/*.test.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/?(*.)+(spec|test).js"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "standard"
+    ],
+    "env": {
+      "node": true,
+      "jest": true
+    },
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ],
+      "semi": [
+        "error",
+        "always"
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ]
+    }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run build"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "config": {
+    "claude": {
+      "model": "claude-3-sonnet-20240229",
+      "maxTokens": 4000,
+      "temperature": 0.1,
+      "apiVersion": "2023-06-01"
+    },
+    "analysis": {
+      "timeout": 300000,
+      "maxFileSize": 1048576,
+      "supportedExtensions": [
+        ".js",
+        ".ts",
+        ".py",
+        ".java",
+        ".cpp",
+        ".c",
+        ".go",
+        ".rs",
+        ".php",
+        ".rb",
+        ".swift",
+        ".kt"
+      ]
+    },
+    "security": {
+      "enableVulnerabilityScanning": true,
+      "reportingLevel": "medium",
+      "excludePatterns": [
+        "node_modules",
+        "vendor",
+        "dist",
+        "build"
+      ]
+    }
+  }
+}
