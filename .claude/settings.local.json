@@ -40,7 +40,11 @@
       "Bash(npm run lint:*)",
       "Bash(docker:*)",
       "Bash(npm run docker:build:*)",
-      "Bash(npm run cli:*)"
+      "Bash(npm run cli:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
     ],
     "deny": []
   }
