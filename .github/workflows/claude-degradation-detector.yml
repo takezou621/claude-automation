@@ -1,0 +1,660 @@
+name: Claude Service Degradation Detection & Alerting
+
+on:
+  workflow_run:
+    workflows: ["Claude Health Monitor", "Claude Performance Analytics", "Claude Error Recovery", "Claude Observability"]
+    types: [completed]
+  schedule:
+    # Degradation detection every 10 minutes during business hours
+    - cron: '*/10 6-18 * * 1-5'  # Every 10min, 6-18 UTC (15-03 JST), Mon-Fri
+    # Every 30 minutes during off-hours
+    - cron: '*/30 18-6 * * *'     # Every 30min, 18-6 UTC (off-hours)
+  workflow_dispatch:
+    inputs:
+      detection_sensitivity:
+        description: 'Detection sensitivity level'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+          - 'low'
+          - 'standard'
+          - 'high'
+          - 'maximum'
+      analysis_depth:
+        description: 'Analysis depth'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'quick'
+          - 'standard'
+          - 'comprehensive'
+          - 'deep'
+
+jobs:
+  degradation-detection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+      checks: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ github.token }}
+        
+    - name: Service Degradation Detection Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          console.log('🔍 CLAUDE SERVICE DEGRADATION DETECTION ENGINE ACTIVATED');
+          const startTime = Date.now();
+          const executionId = Math.random().toString(36).substring(7);
+          const timestamp = new Date().toISOString();
+          
+          const sensitivity = context.payload.inputs?.detection_sensitivity || 'standard';
+          const analysisDepth = context.payload.inputs?.analysis_depth || 'comprehensive';
+          
+          console.log(`🎯 Detection Sensitivity: ${sensitivity}`);
+          console.log(`🔍 Analysis Depth: ${analysisDepth}`);
+          console.log(`⚡ Execution ID: ${executionId}`);
+          
+          // Degradation detection thresholds by sensitivity level
+          const degradationThresholds = {
+            low: {
+              successRateThreshold: 85,    // Alert if <85% success
+              responseTimeThreshold: 120,  // Alert if >2 minutes
+              errorRateThreshold: 15,      // Alert if >15% errors
+              throughputThreshold: -50,    // Alert if 50% decrease
+              availabilityThreshold: 90    // Alert if <90% availability
+            },
+            standard: {
+              successRateThreshold: 90,    // Alert if <90% success
+              responseTimeThreshold: 90,   // Alert if >1.5 minutes
+              errorRateThreshold: 10,      // Alert if >10% errors
+              throughputThreshold: -30,    // Alert if 30% decrease
+              availabilityThreshold: 95    // Alert if <95% availability
+            },
+            high: {
+              successRateThreshold: 95,    // Alert if <95% success
+              responseTimeThreshold: 60,   // Alert if >1 minute
+              errorRateThreshold: 5,       // Alert if >5% errors
+              throughputThreshold: -20,    // Alert if 20% decrease
+              availabilityThreshold: 98    // Alert if <98% availability
+            },
+            maximum: {
+              successRateThreshold: 98,    // Alert if <98% success
+              responseTimeThreshold: 30,   // Alert if >30 seconds
+              errorRateThreshold: 2,       // Alert if >2% errors
+              throughputThreshold: -10,    // Alert if 10% decrease
+              availabilityThreshold: 99    // Alert if <99% availability
+            }
+          };
+          
+          const thresholds = degradationThresholds[sensitivity];
+          console.log(`⚙️ Using ${sensitivity} sensitivity thresholds:`, JSON.stringify(thresholds, null, 2));
+          
+          // Degradation metrics tracking
+          const degradationMetrics = {
+            currentPeriod: {
+              successRate: 0,
+              averageResponseTime: 0,
+              errorRate: 0,
+              throughput: 0,
+              availability: 0,
+              workflowCount: 0
+            },
+            previousPeriod: {
+              successRate: 0,
+              averageResponseTime: 0,
+              errorRate: 0,
+              throughput: 0,
+              availability: 0,
+              workflowCount: 0
+            },
+            degradationDetected: false,
+            degradationSeverity: 'none',
+            degradationAreas: [],
+            anomalies: [],
+            trends: {},
+            recommendations: [],
+            alertLevel: 'none',
+            startTime: startTime
+          };
+          
+          try {
+            console.log('\n📊 === PHASE 1: CURRENT PERIOD METRICS COLLECTION ===');
+            
+            // Define analysis periods
+            const currentPeriodStart = new Date(Date.now() - 60 * 60 * 1000); // Last 1 hour
+            const previousPeriodStart = new Date(Date.now() - 2 * 60 * 60 * 1000); // Previous 1 hour
+            const previousPeriodEnd = currentPeriodStart;
+            
+            console.log(`🕒 Current period: ${currentPeriodStart.toISOString()} - ${timestamp}`);
+            console.log(`🕒 Previous period: ${previousPeriodStart.toISOString()} - ${previousPeriodEnd.toISOString()}`);
+            
+            // Get current period workflow runs
+            const currentRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              created: `>${currentPeriodStart.toISOString()}`
+            });
+            
+            const currentWorkflows = currentRuns.data.workflow_runs;
+            console.log(`📈 Current period workflows: ${currentWorkflows.length}`);
+            
+            // Analyze current period metrics
+            if (currentWorkflows.length > 0) {
+              const successfulCurrent = currentWorkflows.filter(w => w.conclusion === 'success').length;
+              const failedCurrent = currentWorkflows.filter(w => w.conclusion === 'failure').length;
+              
+              degradationMetrics.currentPeriod.workflowCount = currentWorkflows.length;
+              degradationMetrics.currentPeriod.successRate = (successfulCurrent / currentWorkflows.length) * 100;
+              degradationMetrics.currentPeriod.errorRate = (failedCurrent / currentWorkflows.length) * 100;
+              degradationMetrics.currentPeriod.throughput = currentWorkflows.length; // workflows per hour
+              
+              // Calculate response times
+              const currentResponseTimes = currentWorkflows
+                .filter(w => w.run_started_at && w.updated_at)
+                .map(w => (new Date(w.updated_at) - new Date(w.run_started_at)) / 1000);
+              
+              if (currentResponseTimes.length > 0) {
+                degradationMetrics.currentPeriod.averageResponseTime = 
+                  currentResponseTimes.reduce((a, b) => a + b, 0) / currentResponseTimes.length;
+              }
+              
+              // Simple availability calculation
+              degradationMetrics.currentPeriod.availability = degradationMetrics.currentPeriod.successRate;
+            }
+            
+            console.log(`📊 Current period metrics:`);
+            console.log(`  Success rate: ${degradationMetrics.currentPeriod.successRate.toFixed(2)}%`);
+            console.log(`  Error rate: ${degradationMetrics.currentPeriod.errorRate.toFixed(2)}%`);
+            console.log(`  Avg response time: ${degradationMetrics.currentPeriod.averageResponseTime.toFixed(2)}s`);
+            console.log(`  Throughput: ${degradationMetrics.currentPeriod.throughput} workflows/hour`);
+            
+            console.log('\n📊 === PHASE 2: HISTORICAL BASELINE COLLECTION ===');
+            
+            // Get previous period workflow runs for comparison
+            const previousRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              created: `>${previousPeriodStart.toISOString()}`,
+              created: `<${previousPeriodEnd.toISOString()}`
+            });
+            
+            const previousWorkflows = previousRuns.data.workflow_runs;
+            console.log(`📈 Previous period workflows: ${previousWorkflows.length}`);
+            
+            // Analyze previous period metrics
+            if (previousWorkflows.length > 0) {
+              const successfulPrevious = previousWorkflows.filter(w => w.conclusion === 'success').length;
+              const failedPrevious = previousWorkflows.filter(w => w.conclusion === 'failure').length;
+              
+              degradationMetrics.previousPeriod.workflowCount = previousWorkflows.length;
+              degradationMetrics.previousPeriod.successRate = (successfulPrevious / previousWorkflows.length) * 100;
+              degradationMetrics.previousPeriod.errorRate = (failedPrevious / previousWorkflows.length) * 100;
+              degradationMetrics.previousPeriod.throughput = previousWorkflows.length; // workflows per hour
+              
+              // Calculate response times
+              const previousResponseTimes = previousWorkflows
+                .filter(w => w.run_started_at && w.updated_at)
+                .map(w => (new Date(w.updated_at) - new Date(w.run_started_at)) / 1000);
+              
+              if (previousResponseTimes.length > 0) {
+                degradationMetrics.previousPeriod.averageResponseTime = 
+                  previousResponseTimes.reduce((a, b) => a + b, 0) / previousResponseTimes.length;
+              }
+              
+              degradationMetrics.previousPeriod.availability = degradationMetrics.previousPeriod.successRate;
+            }
+            
+            console.log(`📊 Previous period metrics:`);
+            console.log(`  Success rate: ${degradationMetrics.previousPeriod.successRate.toFixed(2)}%`);
+            console.log(`  Error rate: ${degradationMetrics.previousPeriod.errorRate.toFixed(2)}%`);
+            console.log(`  Avg response time: ${degradationMetrics.previousPeriod.averageResponseTime.toFixed(2)}s`);
+            console.log(`  Throughput: ${degradationMetrics.previousPeriod.throughput} workflows/hour`);
+            
+            console.log('\n🔍 === PHASE 3: DEGRADATION ANALYSIS ===');
+            
+            // Compare current vs previous metrics
+            const degradationAreas = [];
+            let maxSeverity = 0;
+            
+            // Success rate degradation
+            if (degradationMetrics.currentPeriod.successRate < thresholds.successRateThreshold) {
+              const severity = thresholds.successRateThreshold - degradationMetrics.currentPeriod.successRate;
+              degradationAreas.push({
+                area: 'Success Rate',
+                current: degradationMetrics.currentPeriod.successRate,
+                threshold: thresholds.successRateThreshold,
+                severity: severity,
+                impact: 'HIGH'
+              });
+              maxSeverity = Math.max(maxSeverity, severity);
+            }
+            
+            // Response time degradation
+            if (degradationMetrics.currentPeriod.averageResponseTime > thresholds.responseTimeThreshold) {
+              const severity = degradationMetrics.currentPeriod.averageResponseTime - thresholds.responseTimeThreshold;
+              degradationAreas.push({
+                area: 'Response Time',
+                current: degradationMetrics.currentPeriod.averageResponseTime,
+                threshold: thresholds.responseTimeThreshold,
+                severity: severity,
+                impact: 'MEDIUM'
+              });
+              maxSeverity = Math.max(maxSeverity, severity / 10); // Scale down for comparison
+            }
+            
+            // Error rate degradation
+            if (degradationMetrics.currentPeriod.errorRate > thresholds.errorRateThreshold) {
+              const severity = degradationMetrics.currentPeriod.errorRate - thresholds.errorRateThreshold;
+              degradationAreas.push({
+                area: 'Error Rate',
+                current: degradationMetrics.currentPeriod.errorRate,
+                threshold: thresholds.errorRateThreshold,
+                severity: severity,
+                impact: 'HIGH'
+              });
+              maxSeverity = Math.max(maxSeverity, severity);
+            }
+            
+            // Throughput degradation (compared to previous period)
+            if (degradationMetrics.previousPeriod.throughput > 0) {
+              const throughputChange = ((degradationMetrics.currentPeriod.throughput - degradationMetrics.previousPeriod.throughput) / degradationMetrics.previousPeriod.throughput) * 100;
+              
+              if (throughputChange < thresholds.throughputThreshold) {
+                const severity = Math.abs(throughputChange - thresholds.throughputThreshold);
+                degradationAreas.push({
+                  area: 'Throughput',
+                  current: throughputChange,
+                  threshold: thresholds.throughputThreshold,
+                  severity: severity,
+                  impact: 'MEDIUM'
+                });
+                maxSeverity = Math.max(maxSeverity, severity / 10); // Scale down for comparison
+              }
+            }
+            
+            // Availability degradation
+            if (degradationMetrics.currentPeriod.availability < thresholds.availabilityThreshold) {
+              const severity = thresholds.availabilityThreshold - degradationMetrics.currentPeriod.availability;
+              degradationAreas.push({
+                area: 'Availability',
+                current: degradationMetrics.currentPeriod.availability,
+                threshold: thresholds.availabilityThreshold,
+                severity: severity,
+                impact: 'CRITICAL'
+              });
+              maxSeverity = Math.max(maxSeverity, severity * 2); // Scale up for critical impact
+            }
+            
+            degradationMetrics.degradationAreas = degradationAreas;
+            degradationMetrics.degradationDetected = degradationAreas.length > 0;
+            
+            // Determine overall degradation severity
+            if (maxSeverity >= 20) {
+              degradationMetrics.degradationSeverity = 'critical';
+              degradationMetrics.alertLevel = 'critical';
+            } else if (maxSeverity >= 10) {
+              degradationMetrics.degradationSeverity = 'high';
+              degradationMetrics.alertLevel = 'high';
+            } else if (maxSeverity >= 5) {
+              degradationMetrics.degradationSeverity = 'medium';
+              degradationMetrics.alertLevel = 'medium';
+            } else if (degradationAreas.length > 0) {
+              degradationMetrics.degradationSeverity = 'low';
+              degradationMetrics.alertLevel = 'low';
+            }
+            
+            console.log(`🔍 Degradation detected: ${degradationMetrics.degradationDetected}`);
+            console.log(`📊 Degradation severity: ${degradationMetrics.degradationSeverity}`);
+            console.log(`🚨 Alert level: ${degradationMetrics.alertLevel}`);
+            console.log(`📈 Degradation areas: ${degradationAreas.length}`);
+            
+            console.log('\n📈 === PHASE 4: TREND & ANOMALY ANALYSIS ===');
+            
+            // Calculate trends
+            const trends = {};
+            
+            if (degradationMetrics.previousPeriod.workflowCount > 0) {
+              trends.successRateTrend = degradationMetrics.currentPeriod.successRate - degradationMetrics.previousPeriod.successRate;
+              trends.responseTimeTrend = degradationMetrics.currentPeriod.averageResponseTime - degradationMetrics.previousPeriod.averageResponseTime;
+              trends.errorRateTrend = degradationMetrics.currentPeriod.errorRate - degradationMetrics.previousPeriod.errorRate;
+              trends.throughputTrend = degradationMetrics.currentPeriod.throughput - degradationMetrics.previousPeriod.throughput;
+            }
+            
+            degradationMetrics.trends = trends;
+            
+            console.log(`📈 Trends analysis:`);
+            console.log(`  Success rate trend: ${trends.successRateTrend?.toFixed(2) || 'N/A'}%`);
+            console.log(`  Response time trend: ${trends.responseTimeTrend?.toFixed(2) || 'N/A'}s`);
+            console.log(`  Error rate trend: ${trends.errorRateTrend?.toFixed(2) || 'N/A'}%`);
+            console.log(`  Throughput trend: ${trends.throughputTrend?.toFixed(2) || 'N/A'} workflows`);
+            
+            // Detect anomalies
+            const anomalies = [];
+            
+            // Sudden spikes or drops
+            if (Math.abs(trends.responseTimeTrend || 0) > 30) {
+              anomalies.push({
+                type: 'Response Time Anomaly',
+                description: `Sudden ${trends.responseTimeTrend > 0 ? 'increase' : 'decrease'} in response time`,
+                value: trends.responseTimeTrend,
+                severity: Math.abs(trends.responseTimeTrend) > 60 ? 'high' : 'medium'
+              });
+            }
+            
+            if (Math.abs(trends.errorRateTrend || 0) > 5) {
+              anomalies.push({
+                type: 'Error Rate Anomaly',
+                description: `Significant ${trends.errorRateTrend > 0 ? 'increase' : 'decrease'} in error rate`,
+                value: trends.errorRateTrend,
+                severity: Math.abs(trends.errorRateTrend) > 10 ? 'high' : 'medium'
+              });
+            }
+            
+            if (Math.abs(trends.throughputTrend || 0) > degradationMetrics.previousPeriod.throughput * 0.3) {
+              anomalies.push({
+                type: 'Throughput Anomaly',
+                description: `Significant ${trends.throughputTrend > 0 ? 'increase' : 'decrease'} in throughput`,
+                value: trends.throughputTrend,
+                severity: Math.abs(trends.throughputTrend) > degradationMetrics.previousPeriod.throughput * 0.5 ? 'high' : 'medium'
+              });
+            }
+            
+            degradationMetrics.anomalies = anomalies;
+            
+            console.log(`🔍 Anomalies detected: ${anomalies.length}`);
+            
+            console.log('\n💡 === PHASE 5: RECOMMENDATIONS GENERATION ===');
+            
+            const recommendations = [];
+            
+            if (degradationMetrics.degradationDetected) {
+              // Area-specific recommendations
+              for (const area of degradationAreas) {
+                switch (area.area) {
+                  case 'Success Rate':
+                    recommendations.push('🔴 Investigate workflow failures and error patterns');
+                    recommendations.push('🔍 Review recent code changes and deployments');
+                    break;
+                  case 'Response Time':
+                    recommendations.push('⚡ Analyze performance bottlenecks and optimize workflows');
+                    recommendations.push('🔧 Consider scaling resources or optimizing algorithms');
+                    break;
+                  case 'Error Rate':
+                    recommendations.push('🚨 Immediate investigation of error causes required');
+                    recommendations.push('🛠️ Implement additional error handling and recovery');
+                    break;
+                  case 'Throughput':
+                    recommendations.push('📈 Review capacity planning and resource allocation');
+                    recommendations.push('🔄 Consider load balancing or horizontal scaling');
+                    break;
+                  case 'Availability':
+                    recommendations.push('🚨 CRITICAL: Immediate availability restoration required');
+                    recommendations.push('🔧 Activate incident response procedures');
+                    break;
+                }
+              }
+              
+              // General recommendations
+              recommendations.push('📊 Increase monitoring frequency for affected services');
+              recommendations.push('🔍 Conduct detailed root cause analysis');
+              recommendations.push('📞 Consider escalating to on-call engineer');
+            } else {
+              recommendations.push('✅ System operating within normal parameters');
+              recommendations.push('📊 Continue regular monitoring and optimization');
+              recommendations.push('🔄 Maintain current service levels');
+            }
+            
+            degradationMetrics.recommendations = recommendations;
+            
+            console.log('\n📋 === PHASE 6: DEGRADATION REPORT GENERATION ===');
+            
+            const executionTime = Math.round((Date.now() - startTime) / 1000);
+            
+            // Generate comprehensive degradation report
+            const degradationReport = `## 🔍 Service Degradation Detection Report
+
+### 🎯 Detection Summary
+**Degradation Status**: ${degradationMetrics.degradationDetected ? '❌ **DEGRADATION DETECTED**' : '✅ **SYSTEM HEALTHY**'}
+**Severity Level**: ${getDegradationEmoji(degradationMetrics.degradationSeverity)} **${degradationMetrics.degradationSeverity.toUpperCase()}**
+**Alert Level**: ${getAlertEmoji(degradationMetrics.alertLevel)} **${degradationMetrics.alertLevel.toUpperCase()}**
+**Detection Sensitivity**: ${sensitivity.toUpperCase()}
+**Analysis Depth**: ${analysisDepth.toUpperCase()}
+**Execution ID**: \`${executionId}\`
+**Detection Time**: ${executionTime}s
+
+### 📊 Current vs Previous Period Comparison
+| Metric | Current Period | Previous Period | Change | Status |
+|--------|----------------|-----------------|--------|--------|
+| ✅ **Success Rate** | ${degradationMetrics.currentPeriod.successRate.toFixed(2)}% | ${degradationMetrics.previousPeriod.successRate.toFixed(2)}% | ${(degradationMetrics.trends.successRateTrend || 0) > 0 ? '+' : ''}${(degradationMetrics.trends.successRateTrend || 0).toFixed(2)}% | ${degradationMetrics.currentPeriod.successRate >= thresholds.successRateThreshold ? '✅' : '❌'} |
+| ⚡ **Response Time** | ${degradationMetrics.currentPeriod.averageResponseTime.toFixed(2)}s | ${degradationMetrics.previousPeriod.averageResponseTime.toFixed(2)}s | ${(degradationMetrics.trends.responseTimeTrend || 0) > 0 ? '+' : ''}${(degradationMetrics.trends.responseTimeTrend || 0).toFixed(2)}s | ${degradationMetrics.currentPeriod.averageResponseTime <= thresholds.responseTimeThreshold ? '✅' : '❌'} |
+| ❌ **Error Rate** | ${degradationMetrics.currentPeriod.errorRate.toFixed(2)}% | ${degradationMetrics.previousPeriod.errorRate.toFixed(2)}% | ${(degradationMetrics.trends.errorRateTrend || 0) > 0 ? '+' : ''}${(degradationMetrics.trends.errorRateTrend || 0).toFixed(2)}% | ${degradationMetrics.currentPeriod.errorRate <= thresholds.errorRateThreshold ? '✅' : '❌'} |
+| 🚀 **Throughput** | ${degradationMetrics.currentPeriod.throughput}/h | ${degradationMetrics.previousPeriod.throughput}/h | ${(degradationMetrics.trends.throughputTrend || 0) > 0 ? '+' : ''}${(degradationMetrics.trends.throughputTrend || 0).toFixed(0)} | ${Math.abs(degradationMetrics.trends.throughputTrend || 0) < Math.abs(thresholds.throughputThreshold) ? '✅' : '❌'} |
+| 📊 **Availability** | ${degradationMetrics.currentPeriod.availability.toFixed(2)}% | ${degradationMetrics.previousPeriod.availability.toFixed(2)}% | ${((degradationMetrics.currentPeriod.availability - degradationMetrics.previousPeriod.availability) || 0) > 0 ? '+' : ''}${((degradationMetrics.currentPeriod.availability - degradationMetrics.previousPeriod.availability) || 0).toFixed(2)}% | ${degradationMetrics.currentPeriod.availability >= thresholds.availabilityThreshold ? '✅' : '❌'} |
+
+### 🔍 Analysis Periods
+- **Current Period**: ${currentPeriodStart.toISOString()} - ${timestamp} (${degradationMetrics.currentPeriod.workflowCount} workflows)
+- **Previous Period**: ${previousPeriodStart.toISOString()} - ${previousPeriodEnd.toISOString()} (${degradationMetrics.previousPeriod.workflowCount} workflows)
+- **Detection Window**: 1 hour sliding window
+
+${degradationAreas.length > 0 ? `### 🚨 Degradation Areas Detected
+${degradationAreas.map(area => 
+  `#### ${getDegradationEmoji(area.severity > 10 ? 'critical' : area.severity > 5 ? 'high' : 'medium')} ${area.area} - ${area.impact} Impact
+**Current Value**: ${area.current.toFixed(2)}${area.area.includes('Rate') || area.area.includes('Availability') ? '%' : area.area.includes('Time') ? 's' : ''}
+**Threshold**: ${area.threshold}${area.area.includes('Rate') || area.area.includes('Availability') ? '%' : area.area.includes('Time') ? 's' : ''}
+**Severity Score**: ${area.severity.toFixed(2)}
+**Status**: Exceeds ${sensitivity} sensitivity threshold`
+).join('\n\n')}
+` : '### ✅ No Service Degradation Detected\n- All metrics within acceptable thresholds\n- System operating normally'}
+
+${anomalies.length > 0 ? `### 🔍 Anomalies & Unusual Patterns
+${anomalies.map(anomaly => 
+  `- **${anomaly.type}** (${anomaly.severity.toUpperCase()}): ${anomaly.description} (${anomaly.value > 0 ? '+' : ''}${anomaly.value.toFixed(2)})`
+).join('\n')}
+` : '### ✅ No Anomalies Detected\n- No unusual patterns or spikes detected'}
+
+### 📈 Trend Analysis
+${Object.keys(trends).length > 0 ? 
+  Object.entries(trends).map(([metric, value]) => 
+    `- **${metric.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}**: ${value > 0 ? '📈 +' : value < 0 ? '📉 ' : '➡️ '}${value.toFixed(2)}${metric.includes('Rate') ? '%' : metric.includes('Time') ? 's' : ''}`
+  ).join('\n') :
+  '- No trend data available (insufficient historical data)'
+}
+
+### 💡 Recommendations
+${recommendations.map(rec => `${rec}`).join('\n')}
+
+### 🚨 Immediate Actions
+${degradationMetrics.alertLevel === 'critical' ? 
+  `- 🚨 **CRITICAL**: Immediate investigation and response required
+- 📞 **ESCALATE**: Contact on-call engineer immediately
+- 🛑 **INCIDENT**: Declare service incident if not already done
+- 🔍 **INVESTIGATE**: Begin immediate root cause analysis` :
+  degradationMetrics.alertLevel === 'high' ?
+  `- ⚠️ **HIGH**: Investigation required within 15 minutes
+- 📊 **MONITOR**: Increase monitoring frequency
+- 🔍 **ANALYZE**: Review recent changes and deployments
+- 📞 **PREPARE**: Ready escalation procedures` :
+  degradationMetrics.alertLevel === 'medium' ?
+  `- 🟡 **MEDIUM**: Investigation required within 1 hour
+- 📈 **TRACK**: Monitor trend continuation
+- 🔧 **OPTIMIZE**: Consider performance optimizations
+- 📊 **REPORT**: Update stakeholders on status` :
+  `- ✅ **LOW/NONE**: Continue normal operations
+- 📊 **MONITOR**: Maintain regular monitoring schedule
+- 🔄 **OPTIMIZE**: Continue improvement initiatives`}
+
+### ⏰ Next Detection Cycle
+**Schedule**: Every 10 minutes (business hours) / 30 minutes (off-hours)
+**Sensitivity**: ${sensitivity} (adjustable via workflow_dispatch)
+**Analysis Depth**: ${analysisDepth} (adjustable via workflow_dispatch)
+
+---
+🔍 **Service Degradation Detection** | **${sensitivity.toUpperCase()} Sensitivity** | **Real-time Monitoring**
+⚡ **Automated Analysis** | **Intelligent Alerting** | **Proactive Detection**`;
+
+            // Post degradation report
+            const reportLabels = [
+              'degradation-detection',
+              'monitoring',
+              `sensitivity-${sensitivity}`,
+              `severity-${degradationMetrics.degradationSeverity}`,
+              degradationMetrics.degradationDetected ? 'degradation-detected' : 'system-healthy'
+            ];
+            
+            const reportIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔍 Degradation Detection Report - ${degradationMetrics.degradationDetected ? '❌ DEGRADATION' : '✅ HEALTHY'} - ${timestamp}`,
+              body: degradationReport,
+              labels: reportLabels
+            });
+            
+            // Create degradation alert if necessary
+            if (degradationMetrics.degradationDetected) {
+              const alertSeverity = degradationMetrics.alertLevel;
+              const alertTitle = `${alertSeverity === 'critical' ? '🚨 CRITICAL' : alertSeverity === 'high' ? '⚠️ HIGH' : alertSeverity === 'medium' ? '🟡 MEDIUM' : '🔵 LOW'} Service Degradation Alert`;
+              
+              const alertIssue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `${alertTitle} - ${degradationAreas.map(a => a.area).join(', ')}`,
+                body: `## ${alertTitle}
+
+**Alert Level**: ${alertSeverity.toUpperCase()}
+**Degradation Areas**: ${degradationAreas.length}
+**Affected Metrics**: ${degradationAreas.map(a => a.area).join(', ')}
+**Detection Time**: ${timestamp}
+
+### 🚨 Immediate Impact
+${degradationAreas.map(area => 
+  `- **${area.area}**: ${area.current.toFixed(2)}${area.area.includes('Rate') ? '%' : area.area.includes('Time') ? 's' : ''} (threshold: ${area.threshold}) - **${area.impact}** impact`
+).join('\n')}
+
+### 📊 Key Metrics
+- **Success Rate**: ${degradationMetrics.currentPeriod.successRate.toFixed(2)}% (${degradationMetrics.currentPeriod.successRate >= thresholds.successRateThreshold ? 'PASS' : 'FAIL'})
+- **Response Time**: ${degradationMetrics.currentPeriod.averageResponseTime.toFixed(2)}s (${degradationMetrics.currentPeriod.averageResponseTime <= thresholds.responseTimeThreshold ? 'PASS' : 'FAIL'})
+- **Error Rate**: ${degradationMetrics.currentPeriod.errorRate.toFixed(2)}% (${degradationMetrics.currentPeriod.errorRate <= thresholds.errorRateThreshold ? 'PASS' : 'FAIL'})
+
+### ⚡ Required Actions
+${alertSeverity === 'critical' ? 
+  `1. 🚨 **IMMEDIATE**: Stop all non-essential operations
+2. 📞 **ESCALATE**: Contact incident commander
+3. 🔍 **INVESTIGATE**: Begin emergency root cause analysis
+4. 🛑 **ISOLATE**: Consider service isolation if needed
+5. 📊 **COMMUNICATE**: Notify all stakeholders` :
+  alertSeverity === 'high' ?
+  `1. ⚠️ **URGENT**: Begin investigation within 15 minutes
+2. 📊 **MONITOR**: Switch to high-frequency monitoring
+3. 🔍 **ANALYZE**: Review recent deployments and changes
+4. 📞 **PREPARE**: Ready escalation procedures
+5. 📝 **DOCUMENT**: Track all investigation steps` :
+  `1. 🟡 **MEDIUM**: Investigate within 1 hour
+2. 📈 **TRACK**: Monitor for trend continuation
+3. 🔧 **OPTIMIZE**: Consider performance improvements
+4. 📊 **REPORT**: Update monitoring dashboard
+5. 💡 **PREVENT**: Implement preventive measures`}
+
+### 📞 Escalation Path
+- **L1 Response**: DevOps on-call engineer
+- **L2 Escalation**: Senior engineering team
+- **L3 Escalation**: Engineering manager and architects
+- **Executive**: CTO notification for critical issues
+
+---
+${alertTitle} | **Execution ID**: \`${executionId}\` | **Response Required**`,
+                labels: [
+                  'degradation-alert',
+                  `alert-${alertSeverity}`,
+                  'monitoring',
+                  'urgent',
+                  ...degradationAreas.map(a => `affected-${a.area.toLowerCase().replace(' ', '-')}`)
+                ]
+              });
+              
+              console.log(`🚨 DEGRADATION ALERT ISSUED: #${alertIssue.data.number} (${alertSeverity})`);
+            }
+            
+            console.log(`✅ CLAUDE DEGRADATION DETECTION ENGINE COMPLETED`);
+            console.log(`🔍 Degradation Status: ${degradationMetrics.degradationDetected ? 'DETECTED' : 'NONE'}`);
+            console.log(`📊 Severity: ${degradationMetrics.degradationSeverity} (${degradationAreas.length} areas affected)`);
+            console.log(`🚨 Alert Level: ${degradationMetrics.alertLevel}`);
+            console.log(`⚡ Execution Time: ${executionTime}s`);
+            
+          } catch (error) {
+            console.log(`❌ Degradation Detection Engine Error: ${error.message}`);
+            
+            // Create error alert
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Degradation Detection System Error - ${timestamp}`,
+              body: `## ❌ Degradation Detection System Error
+
+The Claude Service Degradation Detection Engine encountered a critical error and could not complete the analysis.
+
+**Error Details:**
+- **Message**: ${error.message}
+- **Execution ID**: \`${executionId}\`
+- **Detection Sensitivity**: ${sensitivity}
+- **Analysis Depth**: ${analysisDepth}
+
+**Impact:**
+- Service degradation detection temporarily unavailable
+- Automated alerting may be compromised
+- Manual monitoring recommended
+
+**Recovery Actions:**
+1. Review degradation detection workflow configuration
+2. Verify data access permissions and API availability
+3. Check system resources and monitoring infrastructure
+4. Implement manual monitoring procedures
+
+**Error Context:**
+\`\`\`
+${error.stack}
+\`\`\`
+
+---
+❌ **Degradation Detection Error** | **Monitoring System Down** | **Manual Oversight Required**`,
+              labels: ['degradation-detection-error', 'system-failure', 'monitoring-down', 'critical']
+            });
+            
+            throw error;
+          }
+          
+          // Helper functions
+          function getDegradationEmoji(severity) {
+            const emojis = {
+              'critical': '🚨',
+              'high': '⚠️',
+              'medium': '🟡',
+              'low': '🔵',
+              'none': '✅'
+            };
+            return emojis[severity] || '🔍';
+          }
+          
+          function getAlertEmoji(level) {
+            const emojis = {
+              'critical': '🚨',
+              'high': '⚠️',
+              'medium': '🟡',
+              'low': '🔵',
+              'none': '✅'
+            };
+            return emojis[level] || '🔍';
+          }
