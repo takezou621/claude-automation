@@ -69,6 +69,41 @@ jobs:
           
           console.log('🤖 Claude Code Full Automation Engine Starting...');
           
+          // Security and performance constants
+          const AUTOMATION_CONFIG = {
+            CLAUDE_TIMEOUT_MS: 120000,
+            MERGE_WAIT_MS: 5000,
+            MAX_BRANCH_NAME_LENGTH: 100,
+            ALLOWED_BRANCH_CHARS: /^[a-zA-Z0-9\-_\/]+$/,
+            SECURITY_PATTERNS: ['eval\\(', 'exec\\(', 'subprocess\\.call', '__import__']
+          };
+          
+          // Helper function to sanitize branch names
+          function sanitizeBranchName(branchName) {
+            if (!branchName || typeof branchName !== 'string') {
+              throw new Error('Invalid branch name');
+            }
+            
+            const sanitized = branchName
+              .slice(0, AUTOMATION_CONFIG.MAX_BRANCH_NAME_LENGTH)
+              .replace(/[^a-zA-Z0-9\-_\/]/g, '-');
+            
+            if (!AUTOMATION_CONFIG.ALLOWED_BRANCH_CHARS.test(sanitized)) {
+              throw new Error('Branch name contains invalid characters');
+            }
+            
+            return sanitized;
+          }
+          
+          // Helper function to validate issue number
+          function validateIssueNumber(issueNumber) {
+            const num = parseInt(issueNumber, 10);
+            if (isNaN(num) || num <= 0 || num > 999999) {
+              throw new Error('Invalid issue number');
+            }
+            return num;
+          }
+          
           try {
             // Find automation-ready issues
             const issues = await github.rest.issues.listForRepo({
@@ -105,18 +140,20 @@ jobs:
                 const issueAnalysis = await analyzeIssue(issue);
                 console.log('📊 Issue Analysis: ' + issueAnalysis.type);
                 
-                // Check if branch already exists
-                const branchName = 'claude-auto-impl-issue-' + issue.number;
+                // Check if branch already exists (with sanitization)
+                const validatedIssueNumber = validateIssueNumber(issue.number);
+                const rawBranchName = 'claude-auto-impl-issue-' + validatedIssueNumber;
+                const branchName = sanitizeBranchName(rawBranchName);
                 const branchExists = await checkBranchExists(branchName);
                 
                 if (!branchExists) {
                   // Create new branch
                   console.log('🌿 Creating branch: ' + branchName);
-                  await createBranch(branchName);
+                  await createBranch(sanitizeBranchName(branchName));
                 }
                 
-                // Switch to the feature branch
-                await execAsync('git checkout ' + branchName);
+                // Switch to the feature branch (safely)
+                await execAsync('git checkout "' + sanitizeBranchName(branchName) + '"');
                 
                 // Generate code using Claude Code CLI
                 console.log('🔄 Generating code with Claude Code...');
@@ -128,11 +165,11 @@ jobs:
                   // Commit changes
                   await commitChanges(issue, codeGenResult);
                   
-                  // Push branch
-                  await execAsync('git push origin ' + branchName);
+                  // Push branch (safely)
+                  await execAsync('git push origin "' + sanitizeBranchName(branchName) + '"');
                   console.log('📤 Pushed branch: ' + branchName);
                   
-                  // Switch back to main
+                  // Switch back to main (safely)
                   await execAsync('git checkout main');
                   
                   // Create or update PR
@@ -231,7 +268,8 @@ jobs:
           }
           
           async function createBranch(branchName) {
-            await execAsync('git checkout -b ' + branchName);
+            const safeBranchName = sanitizeBranchName(branchName);
+            await execAsync('git checkout -b "' + safeBranchName + '"');
           }
           
           async function generateCodeWithClaude(issue, analysis) {
@@ -246,7 +284,7 @@ jobs:
               // Execute Claude Code CLI with optimized timeout for 3-minute target
               const claudeCommand = 'claude-code --file ' + promptFile + ' --output-format json';
               const result = await execAsync(claudeCommand, { 
-                timeout: 120000, // Reduced to 2 minutes for faster processing
+                timeout: AUTOMATION_CONFIG.CLAUDE_TIMEOUT_MS,
                 env: { ...process.env, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
               });
               const stdout = result.stdout;
@@ -312,7 +350,7 @@ jobs:
                 '        logger.info(f"Applying bugfix for Issue #' + issue.number + '")\\n' +
                 '        \\n' +
                 '        # TODO: Implement actual fix logic here\\n' +
-                '        # Based on issue description: ' + (issue.title || 'No title') + '\\n' +
+                '        # Based on issue description: ' + issue.title + '\\n' +
                 '        \\n' +
                 '        logger.info("Bugfix #' + issue.number + ' applied successfully")\\n' +
                 '        return True\\n' +
@@ -456,7 +494,7 @@ jobs:
               console.log('✅ Claude quality review passed');
               
               // Optimized wait time for 3-minute target
-              await new Promise(resolve => setTimeout(resolve, 5000));
+              await new Promise(resolve => setTimeout(resolve, AUTOMATION_CONFIG.MERGE_WAIT_MS));
               
               // Attempt auto-merge with quality approval
               await github.rest.pulls.merge({
@@ -510,9 +548,8 @@ jobs:
                 qualityChecks.hasProperStructure = diffContent.includes('import logging') && diffContent.includes('logger');
               }
               
-              // Security checks
-              const securityPatterns = ['eval\\\\(', 'exec\\\\(', 'subprocess\\\\.call', '__import__'];
-              qualityChecks.isSecure = !securityPatterns.some(pattern => 
+              // Security checks with corrected patterns
+              qualityChecks.isSecure = !AUTOMATION_CONFIG.SECURITY_PATTERNS.some(pattern => 
                 new RegExp(pattern).test(diffContent)
               );
               
@@ -584,10 +621,11 @@ jobs:
               labels: ['claude-completed', 'claude-code-automated', 'fully-automated']
             });
             
-            // Clean up branch
+            // Clean up branch (safely)
             try {
-              await execAsync('git push origin --delete ' + branchName);
-              console.log('🗑️ Deleted branch: ' + branchName);
+              const safeBranchName = sanitizeBranchName(branchName);
+              await execAsync('git push origin --delete "' + safeBranchName + '"');
+              console.log('🗑️ Deleted branch: ' + safeBranchName);
             } catch (error) {
               console.log('⚠️ Branch cleanup warning: ' + error.message);
             }
