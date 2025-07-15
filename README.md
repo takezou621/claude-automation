@@ -4,6 +4,8 @@
 [![RepairGPT Enhanced](https://img.shields.io/badge/RepairGPT-Enhanced-blue.svg)](https://github.com/takezou621/repairgpt)
 [![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](./test_repairgpt_enhancements.js)
 
+> **Language**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
+
 **Turn your GitHub Issues into Merged Pull Requests, automatically - now with RepairGPT-level sophistication.**
 
 This system provides a complete, hands-off workflow that automates the entire development cycle from issue detection to branch cleanup. Built with insights from the advanced RepairGPT automation system, offering enterprise-grade automation with zero human intervention and built-in AI-powered code reviews and quality gates.
