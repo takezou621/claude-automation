@@ -23,7 +23,8 @@
       "Bash(TZ='Asia/Tokyo' date)",
       "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')",
       "Bash(node:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebFetch(domain:api.github.com)"
     ],
     "deny": []
   }
