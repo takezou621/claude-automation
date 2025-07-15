@@ -21,7 +21,9 @@
       "Bash(mv:*)",
       "Bash(cp:*)",
       "Bash(TZ='Asia/Tokyo' date)",
-      "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')"
+      "Bash(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S %Z')",
+      "Bash(node:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

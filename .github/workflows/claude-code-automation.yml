@@ -197,8 +197,8 @@ jobs:
           
           async function checkBranchExists(branchName) {
             try {
-              const { stdout } = await execAsync('git branch -r');
-              return stdout.includes(branchName);
+              const result = await execAsync('git branch -r');
+              return result.stdout.includes(branchName);
             } catch {
               return false;
             }
@@ -219,10 +219,12 @@ jobs:
               
               // Execute Claude Code CLI
               const claudeCommand = 'claude-code --file ' + promptFile + ' --output-format json';
-              const { stdout, stderr } = await execAsync(claudeCommand, { 
+              const result = await execAsync(claudeCommand, { 
                 timeout: 300000,
                 env: { ...process.env, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
               });
+              const stdout = result.stdout;
+              const stderr = result.stderr;
               
               if (stderr) {
                 console.log('Claude Code warnings: ' + stderr);
@@ -267,8 +269,8 @@ jobs:
           
           async function getModifiedFiles() {
             try {
-              const { stdout } = await execAsync('git diff --name-only');
-              return stdout.split('\\n').filter(file => file.trim());
+              const result = await execAsync('git diff --name-only');
+              return result.stdout.split('\\n').filter(file => file.trim());
             } catch {
               return [];
             }
