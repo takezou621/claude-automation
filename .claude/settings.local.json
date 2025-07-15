@@ -25,7 +25,14 @@
       "Bash(node:*)",
       "Bash(echo:*)",
       "WebFetch(domain:api.github.com)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git stash:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr show:*)"
     ],
     "deny": []
   }
