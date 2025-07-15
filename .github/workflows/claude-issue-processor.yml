@@ -1,0 +1,282 @@
+name: Claude Issue Processor
+
+on:
+  schedule:
+    # Daily at 23:00 JST (14:00 UTC) - RepairGPT inspired timing
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  claude-issue-processor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Claude Issue Processing Engine
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          console.log('🤖 Claude Issue Processor Starting...');
+          
+          // RepairGPT inspired issue processing configuration
+          const PROCESSOR_CONFIG = {
+            PRIORITY_LABELS: {
+              'critical': { priority: 0, auto_assign: true, escalate: true },
+              'urgent': { priority: 1, auto_assign: true, escalate: false },
+              'high': { priority: 2, auto_assign: false, escalate: false },
+              'medium': { priority: 3, auto_assign: false, escalate: false },
+              'low': { priority: 4, auto_assign: false, escalate: false }
+            },
+            AUTOMATION_KEYWORDS: [
+              'automate', 'claude', 'fix', 'bug', 'error', 'implement', 
+              'feature', 'enhancement', 'optimization', 'refactor'
+            ],
+            SKIP_PATTERNS: [
+              'discussion', 'question', 'help wanted', 'documentation',
+              'wontfix', 'duplicate', 'invalid'
+            ],
+            STALE_DAYS: 30,
+            MAX_ISSUES_PER_RUN: 20
+          };
+
+          try {
+            // Get all open issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: PROCESSOR_CONFIG.MAX_ISSUES_PER_RUN,
+              sort: 'created',
+              direction: 'desc'
+            });
+
+            console.log(`📊 Processing ${issues.data.length} issues`);
+
+            for (const issue of issues.data) {
+              console.log(`\\n🔍 Processing Issue #${issue.number}: ${issue.title}`);
+              
+              try {
+                // Analyze issue for automation potential
+                const analysis = await analyzeIssueForAutomation(issue);
+                console.log(`📈 Analysis result: ${analysis.type}, automation: ${analysis.canAutomate}`);
+
+                // Apply appropriate labels based on analysis
+                await applyAutomationLabels(issue, analysis);
+
+                // Handle priority assignment
+                await handlePriorityAssignment(issue, analysis);
+
+                // Check for staleness
+                await checkAndHandleStaleness(issue);
+
+                // Auto-assign reviewers for critical issues
+                if (analysis.priority === 'critical' || analysis.priority === 'urgent') {
+                  await autoAssignReviewers(issue, analysis);
+                }
+
+              } catch (error) {
+                console.log(`❌ Error processing Issue #${issue.number}: ${error.message}`);
+              }
+            }
+
+            console.log('✅ Claude Issue Processor Complete');
+
+          } catch (error) {
+            console.log(`❌ Issue processor error: ${error.message}`);
+            throw error;
+          }
+
+          // Analysis function
+          async function analyzeIssueForAutomation(issue) {
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const labels = issue.labels.map(label => label.name.toLowerCase());
+            
+            let analysis = {
+              type: 'unknown',
+              priority: 'medium',
+              complexity: 'simple',
+              canAutomate: false,
+              confidence: 0,
+              suggestedLabels: []
+            };
+
+            // Determine issue type
+            if (title.includes('bug') || title.includes('fix') || title.includes('error')) {
+              analysis.type = 'bugfix';
+              analysis.canAutomate = true;
+              analysis.confidence = 0.8;
+            } else if (title.includes('feature') || title.includes('add') || title.includes('implement')) {
+              analysis.type = 'feature';
+              analysis.canAutomate = true;
+              analysis.confidence = 0.7;
+            } else if (title.includes('test') || title.includes('spec')) {
+              analysis.type = 'test';
+              analysis.canAutomate = true;
+              analysis.confidence = 0.6;
+            } else if (title.includes('doc') || title.includes('readme')) {
+              analysis.type = 'documentation';
+              analysis.canAutomate = false;
+              analysis.confidence = 0.5;
+            }
+
+            // Determine priority
+            if (labels.includes('critical') || title.includes('critical') || title.includes('urgent')) {
+              analysis.priority = 'critical';
+              analysis.suggestedLabels.push('priority:critical');
+            } else if (labels.includes('high') || title.includes('important')) {
+              analysis.priority = 'high';
+              analysis.suggestedLabels.push('priority:high');
+            } else if (labels.includes('low') || title.includes('minor')) {
+              analysis.priority = 'low';
+              analysis.suggestedLabels.push('priority:low');
+            }
+
+            // Check automation keywords
+            const hasAutomationKeywords = PROCESSOR_CONFIG.AUTOMATION_KEYWORDS.some(keyword =>
+              title.includes(keyword) || body.includes(keyword)
+            );
+
+            // Check skip patterns
+            const hasSkipPatterns = PROCESSOR_CONFIG.SKIP_PATTERNS.some(pattern =>
+              title.includes(pattern) || labels.includes(pattern)
+            );
+
+            if (hasAutomationKeywords && !hasSkipPatterns && analysis.canAutomate) {
+              analysis.suggestedLabels.push('claude-ready', 'automation-ready');
+              analysis.confidence = Math.min(analysis.confidence + 0.2, 1.0);
+            }
+
+            return analysis;
+          }
+
+          // Apply automation labels
+          async function applyAutomationLabels(issue, analysis) {
+            if (analysis.suggestedLabels.length === 0) return;
+
+            const currentLabels = issue.labels.map(label => label.name);
+            const newLabels = analysis.suggestedLabels.filter(label => 
+              !currentLabels.includes(label)
+            );
+
+            if (newLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: newLabels
+              });
+
+              console.log(`🏷️ Added labels to #${issue.number}: ${newLabels.join(', ')}`);
+            }
+          }
+
+          // Handle priority assignment
+          async function handlePriorityAssignment(issue, analysis) {
+            const priorityConfig = PROCESSOR_CONFIG.PRIORITY_LABELS[analysis.priority];
+            if (!priorityConfig) return;
+
+            if (priorityConfig.auto_assign) {
+              // Get repository collaborators for assignment
+              const collaborators = await github.rest.repos.listCollaborators({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+
+              const availableAssignees = collaborators.data
+                .map(c => c.login)
+                .filter(login => login !== context.actor)
+                .slice(0, 2); // Max 2 assignees
+
+              if (availableAssignees.length > 0 && issue.assignees.length === 0) {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  assignees: [availableAssignees[0]]
+                });
+
+                console.log(`👤 Auto-assigned #${issue.number} to ${availableAssignees[0]}`);
+              }
+            }
+          }
+
+          // Check and handle staleness
+          async function checkAndHandleStaleness(issue) {
+            const createdDate = new Date(issue.created_at);
+            const daysSinceCreated = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysSinceCreated > PROCESSOR_CONFIG.STALE_DAYS) {
+              const hasStaleLabel = issue.labels.some(label => label.name === 'stale');
+
+              if (!hasStaleLabel) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['stale']
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🕰️ **Stale Issue Notice**\\n\\nThis issue has been open for ${daysSinceCreated} days without recent activity.\\n\\nPlease consider:\\n- Is this still relevant?\\n- Can it be closed?\\n- Does it need to be updated?\\n\\n---\\n🤖 Claude Issue Processor`
+                });
+
+                console.log(`⏰ Marked #${issue.number} as stale (${daysSinceCreated} days old)`);
+              }
+            }
+          }
+
+          // Auto-assign reviewers for critical issues
+          async function autoAssignReviewers(issue, analysis) {
+            if (issue.assignees.length > 0) return; // Already assigned
+
+            try {
+              const collaborators = await github.rest.repos.listCollaborators({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+
+              const availableReviewers = collaborators.data
+                .map(c => c.login)
+                .filter(login => login !== context.actor)
+                .slice(0, 1); // Single reviewer for issues
+
+              if (availableReviewers.length > 0) {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  assignees: availableReviewers
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🚨 **Critical Issue Auto-Assignment**\\n\\nThis ${analysis.priority} priority issue has been automatically assigned for immediate attention.\\n\\n@${availableReviewers[0]} please review this issue.\\n\\n---\\n🤖 Claude Issue Processor`
+                });
+
+                console.log(`🚨 Auto-assigned critical issue #${issue.number} to ${availableReviewers[0]}`);
+              }
+            } catch (error) {
+              console.log(`⚠️ Failed to auto-assign #${issue.number}: ${error.message}`);
+            }
+          }

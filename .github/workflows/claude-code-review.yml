@@ -44,6 +44,7 @@ jobs:
             if (pr.data.additions + pr.data.deletions > 500) {
               issues.push('❌ PR is too large (> 500 lines changed). Please split into smaller PRs.');
             }
+<<<<<<< HEAD
 
             // Check 2: Check for hardcoded secrets
             for (const file of files.data) {
@@ -59,6 +60,17 @@ jobs:
             const passed = issues.every(issue => issue.startsWith('⚠️')); // Only fail on ❌
             const criticalIssues = issues.filter(issue => issue.startsWith('❌'));
             const description = passed ? 'All quality gates passed.' : `${criticalIssues.length} critical issue(s) found.`;
+=======
+          }
+          
+          const riskLevel = riskScore > 5 ? 'HIGH' : riskScore > 2 ? 'MEDIUM' : 'LOW';
+          
+          const comment = '## 🤖 Code Review\\n\\n' +
+            '**Risk Level**: ' + riskLevel + '\\n' +
+            '**Files Changed**: ' + files.data.length + '\\n\\n' +
+            (issues.length > 0 ? '### Issues Found:\\n' + issues.map(i => '- ' + i).join('\\n') : '✅ No issues detected') + '\\n\\n' +
+            (riskLevel === 'LOW' ? '✅ Ready for merge' : '👀 Manual review recommended');
+>>>>>>> 2f2d9e4 (enhance: Implement RepairGPT-inspired automation system with comprehensive improvements)
 
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,

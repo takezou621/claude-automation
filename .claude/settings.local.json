@@ -44,7 +44,18 @@
       "Bash(gh pr edit:*)",
       "Bash(gh pr view:*)",
       "Bash(git fetch:*)",
+      "Bash(gh issue list:*)",
+      "Bash(git pull:*)",
       "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(gh run list:*)",
+      "Bash(yaml-validator:*)",
+      "Bash(gh:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
       "Bash(gh issue:*)"
     ],
     "deny": []
