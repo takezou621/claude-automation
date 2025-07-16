@@ -583,9 +583,9 @@ jobs:
               '            \\n' +
               '            # TODO: Implement feature logic\\n' +
               '            result = {\\n' +
-              '                \\'status\\': \\'success\\',\\n' +
-              '                \\'feature_id\\': ' + issue.number + ',\\n' +
-              '                \\'message\\': \\'Feature implemented successfully\\'\\n' +
+              '                \'status\': \'success\',\\n' +
+              '                \'feature_id\': ' + issue.number + ',\\n' +
+              '                \'message\': \'Feature implemented successfully\'\\n' +
               '            }\\n' +
               '            \\n' +
               '            self.logger.info(f"Feature #' + issue.number + ' executed successfully")\\n' +
@@ -594,15 +594,15 @@ jobs:
               '        except Exception as e:\\n' +
               '            self.logger.error(f"Feature #' + issue.number + ' execution failed: {e}")\\n' +
               '            return {\\n' +
-              '                \\'status\\': \\'error\\',\\n' +
-              '                \\'feature_id\\': ' + issue.number + ',\\n' +
-              '                \\'error\\': str(e)\\n' +
+              '                \'status\': \'error\',\\n' +
+              '                \'feature_id\': ' + issue.number + ',\\n' +
+              '                \'error\': str(e)\\n' +
               '            }\\n' +
               '\\n' +
               'if __name__ == "__main__":\\n' +
               '    feature = Feature' + issue.number + '()\\n' +
               '    result = feature.execute()\\n' +
-              '    sys.exit(0 if result[\\'status\\'] == \\'success\\' else 1)\\n';
+              '    sys.exit(0 if result[\'status\'] == \'success\' else 1)\\n';
           }
           
           function createTestTemplate(issue, analysis) {
