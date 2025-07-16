@@ -268,11 +268,12 @@ class WebhookServer {
    */
   verifySignature (signature, body) {
     if (!this.config.secret) {
-      this.logger.warn('No webhook secret configured, skipping signature verification');
-      return true;
+      this.logger.error('Webhook secret is required but not configured. Request rejected.');
+      return false;
     }
 
     if (!signature) {
+      this.logger.error('No signature provided in webhook request');
       return false;
     }
 
@@ -288,7 +289,30 @@ class WebhookServer {
       .update(bodyData)
       .digest('hex');
 
-    return signature === `sha256=${expectedSignature}`;
+    const expectedSignatureWithPrefix = `sha256=${expectedSignature}`;
+    
+    // Use constant-time comparison to prevent timing attacks
+    return this.constantTimeCompare(signature, expectedSignatureWithPrefix);
+  }
+
+  /**
+   * Constant-time string comparison to prevent timing attacks
+   */
+  constantTimeCompare (a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') {
+      return false;
+    }
+
+    if (a.length !== b.length) {
+      return false;
+    }
+
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+
+    return result === 0;
   }
 
   /**
