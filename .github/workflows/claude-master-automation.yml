@@ -20,6 +20,7 @@ jobs:
     
     - name: Workflow Coordination
       uses: actions/github-script@v7
+      id: controller
       with:
         script: |
           const issue = context.payload.issue;
@@ -96,8 +97,6 @@ jobs:
           core.setOutput('priority', priority);
           core.setOutput('should-process', true);
           core.setOutput('issue-number', issue.number);
-        
-        id: controller
     
     outputs:
       workflow-type: ${{ steps.controller.outputs.workflow-type }}
