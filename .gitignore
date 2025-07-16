@@ -31,3 +31,21 @@ test-automation/real-test-output/
 
 # Node modules in workflows (misplaced)
 .github/workflows/node_modules/
+
+# Generated documentation
+docs/*.html
+docs/fonts/
+docs/scripts/
+docs/styles/
+
+# Test coverage reports
+coverage/
+
+# Temporary test files
+create_test_*.js
+test_*.js
+create_*.js
+
+# Manual test files
+manual_test_*.md
+test_issue_content.txt
