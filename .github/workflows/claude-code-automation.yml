@@ -63,6 +63,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
+          (async function() {
           const fs = require('fs');
           const path = require('path');
           const { exec: childProcessExec } = require('child_process');
@@ -342,7 +343,7 @@ jobs:
               const prompt = createClaudePrompt(issue, analysis);
               
               // Write prompt to temporary file (with random name for security)
-              const promptFile = '/tmp/claude_prompt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.md';
+              const promptFile = '/tmp/claude_prompt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11) + '.md';
               fs.writeFileSync(promptFile, prompt);
               
               // Check if Claude Code CLI is available
@@ -1182,3 +1183,4 @@ jobs:
               labels: ['automation-failed']
             });
           }
+          })();
