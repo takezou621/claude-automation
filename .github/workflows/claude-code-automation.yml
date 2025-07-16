@@ -374,11 +374,11 @@ jobs:
               
             } catch (error) {
               console.log('⚠️ Claude Code CLI failed, attempting fallback');
-              return await generateCodeFallback(issue, analysis, promptFile);
+              return await generateCodeFallback(issue, analysis);
             }
           }
           
-          async function generateCodeFallback(issue, analysis, promptFile) {
+          async function generateCodeFallback(issue, analysis) {
             try {
               console.log('🔄 Using fallback code generation for Issue #' + issue.number);
               
