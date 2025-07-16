@@ -72,7 +72,8 @@
       "Bash(unzip:*)",
       "Bash(sed:*)",
       "Bash(git remote set-url:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(pip3 install:*)"
     ],
     "deny": []
   }
