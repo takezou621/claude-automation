@@ -86,6 +86,14 @@ jobs:
               // Commit directly to main
               await execAsync('git add .');
               await execAsync('git commit -m "fix: Automated fix for issue #' + issue.number + '"');
+              
+              // Pull latest changes and push with rebase
+              try {
+                await execAsync('git pull --rebase origin main');
+              } catch (pullError) {
+                console.log('Pull rebase failed, trying regular pull: ' + pullError.message);
+                await execAsync('git pull origin main');
+              }
               await execAsync('git push origin main');
               
               // Close issue

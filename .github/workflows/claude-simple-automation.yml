@@ -110,6 +110,15 @@ jobs:
                 
                 // Switch to main and merge
                 await execAsync('git checkout main');
+                
+                // Pull latest changes before merge
+                try {
+                  await execAsync('git pull --rebase origin main');
+                } catch (pullError) {
+                  console.log('Pull rebase failed, trying regular pull: ' + pullError.message);
+                  await execAsync('git pull origin main');
+                }
+                
                 await execAsync('git merge "' + branchName + '" --no-ff');
                 await execAsync('git push origin main');
                 
