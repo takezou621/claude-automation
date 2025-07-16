@@ -1,0 +1,217 @@
+name: Claude Master Automation Controller
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * *'  # Once daily at 14:00 UTC
+
+jobs:
+  workflow-controller:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Workflow Coordination
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issue = context.payload.issue;
+          
+          // Check if workflow is already running
+          const lockLabel = 'workflow-processing';
+          const completedLabel = 'claude-completed';
+          
+          if (!issue) {
+            console.log('No issue context, likely scheduled run');
+            return;
+          }
+          
+          console.log(`Processing Issue #${issue.number}: ${issue.title}`);
+          
+          // Check if already processing or completed
+          if (issue.labels.some(label => label.name === lockLabel)) {
+            console.log('⚠️ Workflow already processing this issue, skipping');
+            return;
+          }
+          
+          if (issue.labels.some(label => label.name === completedLabel)) {
+            console.log('✅ Issue already completed, skipping');
+            return;
+          }
+          
+          // Add processing lock
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            labels: [lockLabel]
+          });
+          
+          console.log('🔒 Workflow lock acquired');
+          
+          // Determine workflow priority based on issue characteristics
+          const labels = issue.labels.map(l => l.name);
+          const title = issue.title.toLowerCase();
+          const body = issue.body ? issue.body.toLowerCase() : '';
+          
+          let workflowType = 'simple';
+          let priority = 'medium';
+          
+          // Priority determination logic
+          if (labels.includes('priority:high') || labels.includes('urgent')) {
+            priority = 'high';
+          }
+          
+          if (labels.includes('bug')) {
+            workflowType = 'minimal';
+          } else if (labels.includes('enhancement') || labels.includes('feature')) {
+            workflowType = 'full';
+          }
+          
+          // Security issues get special handling
+          if (title.includes('security') || body.includes('security')) {
+            workflowType = 'full';
+            priority = 'high';
+          }
+          
+          console.log(`📊 Determined workflow: ${workflowType} (priority: ${priority})`);
+          
+          // Add workflow type label
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            labels: [`workflow-${workflowType}`, `priority-${priority}`]
+          });
+          
+          // Set output for conditional job execution
+          core.setOutput('workflow-type', workflowType);
+          core.setOutput('priority', priority);
+          core.setOutput('should-process', 'true');
+          core.setOutput('issue-number', issue.number);
+        
+        id: controller
+    
+    outputs:
+      workflow-type: ${{ steps.controller.outputs.workflow-type }}
+      priority: ${{ steps.controller.outputs.priority }}
+      should-process: ${{ steps.controller.outputs.should-process }}
+      issue-number: ${{ steps.controller.outputs.issue-number }}
+
+  execute-workflow:
+    needs: workflow-controller
+    if: needs.workflow-controller.outputs.should-process == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Execute Selected Workflow
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const workflowType = '${{ needs.workflow-controller.outputs.workflow-type }}';
+          const priority = '${{ needs.workflow-controller.outputs.priority }}';
+          const issueNumber = '${{ needs.workflow-controller.outputs.issue-number }}';
+          
+          console.log(`🚀 Executing ${workflowType} workflow for Issue #${issueNumber}`);
+          
+          // Execute appropriate workflow logic based on type
+          switch(workflowType) {
+            case 'minimal':
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'claude-minimal-automation.yml',
+                ref: 'main',
+                inputs: {
+                  issue_number: issueNumber,
+                  priority: priority
+                }
+              });
+              break;
+              
+            case 'simple':
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'claude-simple-automation.yml',
+                ref: 'main',
+                inputs: {
+                  issue_number: issueNumber,
+                  priority: priority
+                }
+              });
+              break;
+              
+            case 'full':
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'claude-code-automation.yml',
+                ref: 'main',
+                inputs: {
+                  issue_number: issueNumber,
+                  priority: priority
+                }
+              });
+              break;
+              
+            default:
+              console.log('Unknown workflow type, using simple automation');
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'claude-simple-automation.yml',
+                ref: 'main',
+                inputs: {
+                  issue_number: issueNumber,
+                  priority: priority
+                }
+              });
+          }
+          
+          console.log('✅ Workflow dispatch completed');
+
+  cleanup:
+    needs: [workflow-controller, execute-workflow]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    steps:
+    - name: Remove Processing Lock
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issueNumber = '${{ needs.workflow-controller.outputs.issue-number }}';
+          
+          if (!issueNumber) {
+            console.log('No issue number, skipping cleanup');
+            return;
+          }
+          
+          try {
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(issueNumber),
+              name: 'workflow-processing'
+            });
+            
+            console.log('🔓 Workflow lock removed');
+          } catch (error) {
+            console.log('⚠️ Lock removal failed (may not exist):', error.message);
+          }

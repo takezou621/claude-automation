@@ -1,22 +1,26 @@
 name: Claude Code Full Automation
 
 on:
-  schedule:
-    # RepairGPT inspired intelligent scheduling
-    - cron: '0 14,17,20 * * 1-5'  # UTC: 23:00, 02:00, 05:00 JST (weekdays)
-    - cron: '0 1,5,9,13 * * 0,6'   # UTC: 10:00, 14:00, 18:00, 22:00 JST (weekends)
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Claude Issue Processor"]
-    types:
-      - completed
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: string
+      priority:
+        description: 'Priority level'
+        required: false
+        type: string
+        default: 'medium'
+  # Removed overlapping triggers to prevent simultaneous execution
+  # schedule: # Disabled - managed by master controller
+  # workflow_run: # Disabled - managed by master controller  
+  # issues: # Disabled - managed by master controller
   push:
     branches:
       - main
     paths:
       - '.github/workflows/claude-code-automation.yml'
-  issues:
-    types: [opened, edited, labeled]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

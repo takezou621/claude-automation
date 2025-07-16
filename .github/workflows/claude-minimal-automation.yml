@@ -1,9 +1,18 @@
 name: Claude Minimal Automation
 
 on:
-  issues:
-    types: [opened, edited, labeled]
   workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: string
+      priority:
+        description: 'Priority level'
+        required: false
+        type: string
+        default: 'medium'
+  # issues: # Disabled - managed by master controller
 
 jobs:
   claude-minimal:

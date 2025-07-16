@@ -1,12 +1,12 @@
 name: Claude Issue Processor
 
 on:
-  schedule:
-    # Daily at 23:00 JST (14:00 UTC) - RepairGPT inspired timing
-    - cron: '0 14 * * *'
-  workflow_dispatch:
+  # Keep issue processing for labeling only - no automation triggers
   issues:
-    types: [opened, edited, labeled, unlabeled]
+    types: [opened, edited]  # Removed labeled/unlabeled to prevent cascades
+  schedule:
+    - cron: '0 13 * * *'  # Daily at 13:00 UTC (before master controller)
+  workflow_dispatch:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
