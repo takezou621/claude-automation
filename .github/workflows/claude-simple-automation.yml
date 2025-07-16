@@ -55,9 +55,9 @@ jobs:
               
               try {
                 // Configure git
-                const { exec } = require('child_process');
+                const { exec: childProcessExec } = require('child_process');
                 const util = require('util');
-                const execAsync = util.promisify(exec);
+                const execAsync = util.promisify(childProcessExec);
                 
                 await execAsync('git config user.email "claude-automation@github.com"');
                 await execAsync('git config user.name "Claude Automation Bot"');

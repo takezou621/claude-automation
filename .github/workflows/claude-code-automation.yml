@@ -70,8 +70,18 @@ jobs:
           const util = require('util');
           const execAsync = util.promisify(childProcessExec);
           
-          // Import secure execution utilities
-          const { secureGit, sanitizeBranchName, sanitizeCommitMessage } = require('./lib/secure-exec');
+          // Import secure execution utilities (with fallback)
+          let secureGit, sanitizeBranchName, sanitizeCommitMessage;
+          try {
+            const secureExec = require('./lib/secure-exec');
+            secureGit = secureExec.secureGit;
+            sanitizeBranchName = secureExec.sanitizeBranchName;
+            sanitizeCommitMessage = secureExec.sanitizeCommitMessage;
+            console.log('✅ Secure execution utilities loaded');
+          } catch (error) {
+            console.log('⚠️ Secure execution utilities not available, using fallback functions');
+            secureGit = null; // Will use fallback functions
+          }
           
           console.log('🤖 Claude Code Full Automation Engine Starting...');
           
@@ -108,21 +118,23 @@ jobs:
             FORBIDDEN_PATTERNS: ['password', 'secret', 'token', 'key', 'auth']
           };
           
-          // Helper function to sanitize branch names
-          function sanitizeBranchName(branchName) {
-            if (!branchName || typeof branchName !== 'string') {
-              throw new Error('Invalid branch name');
-            }
-            
-            const sanitized = branchName
-              .slice(0, AUTOMATION_CONFIG.MAX_BRANCH_NAME_LENGTH)
-              .replace(/[^a-zA-Z0-9\-_\/]/g, '-');
-            
-            if (!AUTOMATION_CONFIG.ALLOWED_BRANCH_CHARS.test(sanitized)) {
-              throw new Error('Branch name contains invalid characters');
-            }
-            
-            return sanitized;
+          // Fallback function to sanitize branch names (only if secure-exec not available)
+          if (!sanitizeBranchName) {
+            sanitizeBranchName = function(branchName) {
+              if (!branchName || typeof branchName !== 'string') {
+                throw new Error('Invalid branch name');
+              }
+              
+              const sanitized = branchName
+                .slice(0, AUTOMATION_CONFIG.MAX_BRANCH_NAME_LENGTH)
+                .replace(/[^a-zA-Z0-9\-_\/]/g, '-');
+              
+              if (!AUTOMATION_CONFIG.ALLOWED_BRANCH_CHARS.test(sanitized)) {
+                throw new Error('Branch name contains invalid characters');
+              }
+              
+              return sanitized;
+            };
           }
           
           // Helper function to validate issue number
@@ -221,7 +233,11 @@ jobs:
                 }
                 
                 // Switch to the feature branch (safely)
-                await secureGit.checkout(branchName);
+                if (secureGit) {
+                  await secureGit.checkout(branchName);
+                } else {
+                  await execAsync('git checkout "' + sanitizeBranchName(branchName) + '"');
+                }
                 
                 // Generate code using Claude Code CLI
                 console.log('🔄 Generating code with Claude Code...');
@@ -240,9 +256,15 @@ jobs:
                     console.log('✅ Quality check passed, merging directly to main');
                     
                     // Switch back to main and merge
-                    await secureGit.checkout('main');
-                    await secureGit.merge(branchName);
-                    await secureGit.push('origin', 'main');
+                    if (secureGit) {
+                      await secureGit.checkout('main');
+                      await secureGit.merge(branchName);
+                      await secureGit.push('origin', 'main');
+                    } else {
+                      await execAsync('git checkout main');
+                      await execAsync('git merge "' + sanitizeBranchName(branchName) + '" --no-ff');
+                      await execAsync('git push origin main');
+                    }
                     
                     // Mark issue as completed
                     await completeIssueDirectMerge(issue, branchName, codeGenResult);
@@ -250,7 +272,11 @@ jobs:
                     
                     // Clean up branch
                     try {
-                      await secureGit.deleteBranch(branchName);
+                      if (secureGit) {
+                        await secureGit.deleteBranch(branchName);
+                      } else {
+                        await execAsync('git branch -d "' + sanitizeBranchName(branchName) + '"');
+                      }
                       console.log('🗑️ Cleaned up branch: ' + branchName);
                     } catch (error) {
                       console.log('⚠️ Branch cleanup warning: ' + error.message);
@@ -258,8 +284,13 @@ jobs:
                   } else {
                     console.log('❌ Quality check failed for Issue #' + issue.number);
                     // Push branch for manual review
-                    await secureGit.push('origin', branchName);
-                    await secureGit.checkout('main');
+                    if (secureGit) {
+                      await secureGit.push('origin', branchName);
+                      await secureGit.checkout('main');
+                    } else {
+                      await execAsync('git push origin "' + sanitizeBranchName(branchName) + '"');
+                      await execAsync('git checkout main');
+                    }
                     await addQualityFailureComment(issue, branchName, qualityCheck);
                   }
                 } else {
@@ -347,7 +378,11 @@ jobs:
           
           async function createBranch(branchName) {
             const safeBranchName = sanitizeBranchName(branchName);
-            await secureGit.checkoutNewBranch(safeBranchName);
+            if (secureGit) {
+              await secureGit.checkoutNewBranch(safeBranchName);
+            } else {
+              await execAsync('git checkout -b "' + safeBranchName + '"');
+            }
           }
           
           async function generateCodeWithClaude(issue, analysis) {
@@ -842,7 +877,12 @@ jobs:
           
           async function commitChanges(issue, codeGenResult) {
             // Configure git user for commits
-            await secureGit.configUser('claude-automation@github.com', 'Claude Automation Bot');
+            if (secureGit) {
+              await secureGit.configUser('claude-automation@github.com', 'Claude Automation Bot');
+            } else {
+              await execAsync('git config user.email "claude-automation@github.com"');
+              await execAsync('git config user.name "Claude Automation Bot"');
+            }
             
             const commitMessage = 'feat: Implement solution for issue #' + issue.number + '\\n\\n' +
               issue.title + '\\n\\n' +
@@ -850,8 +890,14 @@ jobs:
               '🤖 Generated with Claude Code\\n' +
               'Co-Authored-By: Claude <noreply@anthropic.com>';
 
-            await secureGit.add(['.']);
-            await secureGit.commit(commitMessage);
+            if (secureGit) {
+              await secureGit.add(['.']);
+              await secureGit.commit(commitMessage);
+            } else {
+              await execAsync('git add .');
+              const escapedMessage = commitMessage.replace(/"/g, '\\\\"').replace(/'/g, '\\\'');
+              await execAsync('git commit -m "' + escapedMessage + '"');
+            }
           }
           
           async function createOrUpdatePR(issue, branchName, codeGenResult) {

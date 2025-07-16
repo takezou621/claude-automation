@@ -21,9 +21,9 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const { exec } = require('child_process');
+          const { exec: childProcessExec } = require('child_process');
           const util = require('util');
-          const execAsync = util.promisify(exec);
+          const execAsync = util.promisify(childProcessExec);
           
           console.log('🤖 Claude Minimal Automation Starting');
           
