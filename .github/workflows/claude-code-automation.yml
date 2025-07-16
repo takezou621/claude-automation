@@ -847,10 +847,9 @@ jobs:
               'Co-Authored-By: Claude <noreply@anthropic.com>';
 
             await execAsync('git add .');
-            // Use heredoc to safely handle commit message with special characters
-            const commitScript = 'git commit -m "$(cat <<\\\'EOF\\\'\\n' +
-              commitMessage + '\\nEOF\\n)"';
-            await execAsync(commitScript);
+            // Simple commit with escaped message
+            const escapedMessage = commitMessage.replace(/"/g, '\\\\"').replace(/'/g, '\\\'');
+            await execAsync('git commit -m "' + escapedMessage + '"');
           }
           
           async function createOrUpdatePR(issue, branchName, codeGenResult) {
