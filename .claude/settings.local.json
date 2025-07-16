@@ -67,7 +67,12 @@
       "Bash(for f in .github/workflows/*.yml)",
       "Bash(do echo \"=== Checking $f ===\")",
       "Bash(done)",
-      "Bash(claude-code --version)"
+      "Bash(claude-code --version)",
+      "Bash(ruby:*)",
+      "Bash(unzip:*)",
+      "Bash(sed:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }
