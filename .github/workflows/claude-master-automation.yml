@@ -94,7 +94,7 @@ jobs:
           // Set output for conditional job execution
           core.setOutput('workflow-type', workflowType);
           core.setOutput('priority', priority);
-          core.setOutput('should-process', 'true');
+          core.setOutput('should-process', true);
           core.setOutput('issue-number', issue.number);
         
         id: controller
@@ -107,7 +107,7 @@ jobs:
 
   execute-workflow:
     needs: workflow-controller
-    if: needs.workflow-controller.outputs.should-process == 'true'
+    if: needs.workflow-controller.outputs.should-process
     runs-on: ubuntu-latest
     permissions:
       contents: write
