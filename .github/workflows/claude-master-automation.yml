@@ -92,7 +92,6 @@ jobs:
           });
           
           // Set output for conditional job execution
-          const core = require('@actions/core');
           core.setOutput('workflow-type', workflowType);
           core.setOutput('priority', priority);
           core.setOutput('should-process', 'true');
