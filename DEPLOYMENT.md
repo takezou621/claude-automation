@@ -22,7 +22,8 @@ Claude Automation の本番環境への展開方法を説明します。
 1. **Secretsの設定**
 ```bash
 # GitHub リポジトリの Settings → Secrets and variables → Actions
-CLAUDE_API_KEY=your_claude_api_key_here
+# CLAUDE_API_KEY=claude_code_maxでは不要
+# Claude Code Maxユーザーの場合、APIキーの設定は不要です
 ```
 
 2. **ワークフローファイル**
@@ -123,7 +124,7 @@ npm run docker:compose
 ```bash
 # .env.docker
 GITHUB_TOKEN=your_token
-CLAUDE_API_KEY=your_key
+# CLAUDE_API_KEY=your_key  # Claude Code Maxでは不要
 GITHUB_OWNER=your_username
 GITHUB_REPO=your_repo
 WEBHOOK_SECRET=your_secret
@@ -220,7 +221,7 @@ web: node src/webhook-server.js
 ```bash
 # 必須
 GITHUB_TOKEN=ghp_xxxxxxxxxxxx
-CLAUDE_API_KEY=sk-ant-xxxxxxxxxxxx
+# CLAUDE_API_KEY=Claude Code Maxでは不要
 
 # 推奨
 WEBHOOK_SECRET=random_secret_string

@@ -16,7 +16,7 @@ class SimpleAutomationSystem {
         repo: config.github?.repo
       },
       claude: {
-        apiKey: config.claude?.apiKey || process.env.CLAUDE_API_KEY,
+        // Claude Code Max doesn't require API keys
         model: config.claude?.model || 'claude-3-haiku-20240307' // 安価なモデル
       },
       automation: {
@@ -32,7 +32,7 @@ class SimpleAutomationSystem {
       transports: [new winston.transports.Console()]
     });
 
-    this.claudeClient = new ClaudeAPIClient(this.config.claude.apiKey, {
+    this.claudeClient = new ClaudeAPIClient(null, { // Claude Code Max doesn't require API keys
       model: this.config.claude.model,
       maxTokens: 1000, // コストを抑制
       temperature: 0.1

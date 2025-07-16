@@ -10,7 +10,7 @@ This guide provides instructions for setting up the RepairGPT-enhanced Claude Sm
 - A GitHub repository with Actions enabled
 - `gh` CLI installed and authenticated (`gh auth login`)
 - Basic knowledge of Git and GitHub Actions
-- **Anthropic API Key** for Claude Code integration
+- **Claude Code Max** (No API Key Required)
 - **GitHub Token** with repo and workflow permissions
 
 ## 🚀 Quick Setup (RepairGPT-Enhanced)
@@ -42,7 +42,7 @@ Select the tier that best fits your needs (see [Workflow Selection Guide](workfl
 
 ### Step 3: Interactive Setup
 The script will guide you through:
-- **API Key Configuration**: Set up Anthropic API key
+- **Claude Code Max Setup**: Configure for API-key-free operation
 - **GitHub Token Setup**: Configure repository access
 - **RepairGPT Label Creation**: 25+ specialized labels
 - **Workflow Deployment**: Multi-stage automation setup
@@ -128,9 +128,11 @@ Set up the required secrets in your repository (`Settings` > `Secrets and variab
 
 ```bash
 # Required secrets
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# ANTHROPIC_API_KEY=not_required_for_claude_code_max
 GITHUB_TOKEN=your_github_token_here  # Usually provided automatically
 ```
+
+**Note**: Claude Code Max users do not need to set `ANTHROPIC_API_KEY`.
 
 ### Step 4: Configure Repository Settings
 

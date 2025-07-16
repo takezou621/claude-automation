@@ -6,8 +6,8 @@
  */
 
 const { program } = require('commander');
-const chalk = require('chalk');
-const ora = require('ora');
+const chalk = require('chalk').default;
+const ora = require('ora').default;
 const inquirer = require('inquirer');
 require('dotenv').config();
 
@@ -22,7 +22,7 @@ function getConfig () {
       repo: process.env.GITHUB_REPO
     },
     claude: {
-      apiKey: process.env.CLAUDE_API_KEY,
+      // Claude Code Max doesn't require API keys
       model: process.env.CLAUDE_MODEL || 'claude-3-haiku-20240307'
     },
     automation: {
@@ -43,10 +43,8 @@ async function initializeSystem () {
     process.exit(1);
   }
 
-  if (!config.claude.apiKey) {
-    console.error(chalk.red('Error: CLAUDE_API_KEY is required'));
-    process.exit(1);
-  }
+  // Claude Code Max doesn't require API keys
+  // API key validation removed for Claude Code Max compatibility
 
   if (!config.github.owner || !config.github.repo) {
     console.error(chalk.red('Error: GITHUB_OWNER and GITHUB_REPO are required'));
@@ -259,7 +257,7 @@ program
     console.log(`GitHub Owner: ${config.github.owner}`);
     console.log(`GitHub Repo: ${config.github.repo}`);
     console.log(`GitHub Token: ${config.github.token ? '✓ Set' : '✗ Not set'}`);
-    console.log(`Claude API Key: ${config.claude.apiKey ? '✓ Set' : '✗ Not set'}`);
+    console.log(`Claude Mode: Claude Code Max (No API Key Required)`);
     console.log(`Claude Model: ${config.claude.model}`);
     console.log(`Auto Review: ${config.automation.autoReview ? '✓ Enabled' : '✗ Disabled'}`);
     console.log(`Auto Label: ${config.automation.autoLabel ? '✓ Enabled' : '✗ Disabled'}`);

@@ -101,11 +101,15 @@ jobs:
         with:
           node-version: '18'
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm install -g @anthropic-ai/claude-code
       - name: Run AI Analysis
         env:
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
         run: |
           echo "Running AI analysis on PR ${{ github.event.pull_request.number }}..."
-          npm run cli review ${{ github.event.pull_request.number }} || echo "AI review script failed, but we will not fail the workflow."
+          echo "Note: This workflow requires Claude Code Max for API-key-free operation"
+          npm run cli -- review ${{ github.event.pull_request.number }} || echo "AI review script failed, but we will not fail the workflow."

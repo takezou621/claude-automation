@@ -19,7 +19,6 @@ on:
     types: [opened, edited, labeled]
 
 env:
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
@@ -47,9 +46,8 @@ jobs:
     - name: Install Claude Code CLI
       run: |
         npm install -g @anthropic-ai/claude-code
-        echo "Claude Code version: $(claude-code --version)"
-        which claude-code
-        claude-code --help || echo "Claude Code CLI help not available"
+        echo "Claude Code version: $(npx @anthropic-ai/claude-code --version)"
+        npx @anthropic-ai/claude-code --help || echo "Claude Code CLI help not available"
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -349,17 +347,16 @@ jobs:
               
               // Check if Claude Code CLI is available
               try {
-                await execAsync('which claude-code', { timeout: 5000 });
+                await execAsync('npx @anthropic-ai/claude-code --version', { timeout: 10000 });
               } catch (cliError) {
                 console.log('⚠️ Claude Code CLI not found, using fallback implementation');
                 return await generateCodeFallback(issue, analysis, promptFile);
               }
               
               // Execute Claude Code CLI with optimized timeout for 3-minute target
-              const claudeCommand = 'claude-code --file ' + promptFile + ' --output-format json';
+              const claudeCommand = 'npx @anthropic-ai/claude-code --file ' + promptFile + ' --output-format json';
               const result = await execAsync(claudeCommand, { 
-                timeout: AUTOMATION_CONFIG.CLAUDE_TIMEOUT_MS,
-                env: { ...process.env, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
+                timeout: AUTOMATION_CONFIG.CLAUDE_TIMEOUT_MS
               });
               const stdout = result.stdout;
               const stderr = result.stderr;

@@ -10,7 +10,8 @@ const DEFAULT_TEMPERATURE = 0.1;
 
 class ClaudeAPIClient {
   constructor(apiKey, options = {}) {
-    this.apiKey = apiKey;
+    // Claude Code Max doesn't require API keys
+    this.apiKey = null;
     this.baseURL = options.baseURL || CLAUDE_API_BASE_URL;
     this.model = options.model || DEFAULT_MODEL;
     this.maxTokens = options.maxTokens || MAX_TOKENS;
@@ -63,7 +64,7 @@ class ClaudeAPIClient {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': this.apiKey,
+            // Claude Code Max authentication handled differently
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify(payload)

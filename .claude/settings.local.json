@@ -57,7 +57,17 @@
       "Bash(pip install:*)",
       "Bash(npm install:*)",
       "Bash(gh issue:*)",
-      "Bash(diff:*)"
+      "Bash(diff:*)",
+      "Bash(npm run:*)",
+      "Bash(GITHUB_TOKEN=test npm run automation:health)",
+      "Bash(GITHUB_TOKEN=test CLAUDE_API_KEY=test npm run automation:health)",
+      "Bash(GITHUB_TOKEN=test CLAUDE_API_KEY=test GITHUB_OWNER=test GITHUB_REPO=test npm run automation:health)",
+      "Bash(GITHUB_TOKEN=test CLAUDE_API_KEY=test GITHUB_OWNER=test GITHUB_REPO=test npm run automation:stats)",
+      "Bash(npx:*)",
+      "Bash(for f in .github/workflows/*.yml)",
+      "Bash(do echo \"=== Checking $f ===\")",
+      "Bash(done)",
+      "Bash(claude-code --version)"
     ],
     "deny": []
   }

@@ -84,7 +84,8 @@ Copy the workflow files from this repository's `.github/workflows` directory int
 Go to your repository's `Settings > Secrets and variables > Actions` and add the following secrets:
 
 -   `GITHUB_TOKEN`: A GitHub token with `repo` and `workflow` scopes. The default `secrets.GITHUB_TOKEN` should work for most operations.
--   `ANTHROPIC_API_KEY`: Your API key for the Claude AI model.
+
+**Note**: This system is designed for Claude Code Max users and does not require an `ANTHROPIC_API_KEY`.
 
 ### Step 3: See the Magic Happen!
 
