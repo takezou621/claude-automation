@@ -1,11 +1,71 @@
 const IntelligentScheduleManager = require('../src/intelligent-schedule-manager');
 const moment = require('moment-timezone');
 
+// Mock ConfigManager
+jest.mock('../src/config-manager', () => {
+    return jest.fn().mockImplementation(() => ({
+        get: jest.fn((path, defaultValue) => {
+            if (path === 'automation.resourceThresholds') {
+                return {};
+            }
+            return defaultValue;
+        }),
+        set: jest.fn(),
+        saveConfig: jest.fn()
+    }));
+});
+
 describe('IntelligentScheduleManager', () => {
     let scheduleManager;
+    let mockConfigManager;
 
     beforeEach(() => {
-        scheduleManager = new IntelligentScheduleManager({
+        mockConfigManager = {
+            get: jest.fn((path, defaultValue) => {
+                if (path === 'automation.resourceThresholds') {
+                    return {};
+                }
+                return defaultValue;
+            }),
+            set: jest.fn(),
+            saveConfig: jest.fn(),
+            getTierConfig: jest.fn((tier) => {
+                const tierConfigs = {
+                    ultimate: {
+                        enabled: true,
+                        schedule: '* * * * *',
+                        maxExecutionTime: 45000,
+                        priority: 100,
+                        fallbackTier: 'rapid',
+                        cooldownMinutes: 0
+                    },
+                    rapid: {
+                        enabled: true,
+                        schedule: '*/5 * * * *',
+                        maxExecutionTime: 240000,
+                        priority: 80,
+                        fallbackTier: 'smart',
+                        cooldownMinutes: 5
+                    },
+                    smart: {
+                        enabled: true,
+                        schedule: {
+                            weekdays: ['0 14 * * 1-5', '0 17 * * 1-5', '0 20 * * 1-5'],
+                            weekends: ['0 1 * * 0,6', '0 5 * * 0,6', '0 9 * * 0,6', '0 13 * * 0,6']
+                        },
+                        maxExecutionTime: 900000,
+                        priority: 60,
+                        fallbackTier: null,
+                        cooldownMinutes: 180
+                    }
+                };
+                return tierConfigs[tier] || null;
+            }),
+            getPerformanceMetrics: jest.fn(() => []),
+            storePerformanceMetrics: jest.fn()
+        };
+        
+        scheduleManager = new IntelligentScheduleManager(mockConfigManager, {
             timezone: 'UTC',
             activityAnalysisWindow: 30
         });
@@ -13,13 +73,13 @@ describe('IntelligentScheduleManager', () => {
 
     describe('constructor', () => {
         it('should initialize with default options', () => {
-            const manager = new IntelligentScheduleManager();
+            const manager = new IntelligentScheduleManager(mockConfigManager);
             expect(manager.timezone).toBe('UTC');
             expect(manager.activityAnalysisWindow).toBe(30);
         });
 
         it('should initialize with custom options', () => {
-            const manager = new IntelligentScheduleManager({
+            const manager = new IntelligentScheduleManager(mockConfigManager, {
                 timezone: 'America/New_York',
                 activityAnalysisWindow: 60
             });
