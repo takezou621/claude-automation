@@ -1,0 +1,410 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-07-17T21:48:55.702Z",
+  "ai": {
+    "model": "claude-3-sonnet-20240229",
+    "maxTokens": 4000,
+    "temperature": 0.1,
+    "rateLimits": {
+      "requestsPerMinute": 50,
+      "tokensPerMinute": 40000
+    }
+  },
+  "analysis": {
+    "cacheTimeout": 300000,
+    "supportedLanguages": [
+      "javascript",
+      "typescript",
+      "python",
+      "java",
+      "cpp",
+      "c",
+      "go",
+      "rust",
+      "php",
+      "ruby",
+      "swift",
+      "kotlin",
+      "scala",
+      "dart",
+      "yaml",
+      "json"
+    ],
+    "riskThresholds": {
+      "low": 10,
+      "medium": 25,
+      "high": 50
+    },
+    "qualityGates": {
+      "maxIssuesPerFile": 10,
+      "maxSecurityIssues": 5,
+      "maxPerformanceIssues": 8,
+      "requiredCoverage": 80
+    }
+  },
+  "automation": {
+    "enableSmartMerge": true,
+    "autoLabelPRs": true,
+    "createReviewComments": true,
+    "requireManualReviewForHighRisk": true,
+    "schedules": {
+      "healthCheck": "*/15 * * * *",
+      "performanceAnalysis": "0 */6 * * *",
+      "securityScan": "0 2 * * *",
+      "qualityReport": "0 8 * * 1"
+    },
+    "tiers": {
+      "ultimate": {
+        "enabled": true,
+        "schedule": "* * * * *",
+        "maxExecutionTime": 45000,
+        "priority": 100,
+        "fallbackTier": "rapid",
+        "cooldownMinutes": 0,
+        "resourceLimits": {
+          "cpu": 50,
+          "memory": 256,
+          "apiCalls": 30
+        },
+        "qualityGates": {
+          "securityCheck": "basic",
+          "syntaxValidation": true,
+          "performanceCheck": false
+        }
+      },
+      "rapid": {
+        "enabled": true,
+        "schedule": "*/5 * * * *",
+        "maxExecutionTime": 240000,
+        "priority": 80,
+        "fallbackTier": "smart",
+        "cooldownMinutes": 5,
+        "resourceLimits": {
+          "cpu": 70,
+          "memory": 512,
+          "apiCalls": 60
+        },
+        "qualityGates": {
+          "securityCheck": "standard",
+          "syntaxValidation": true,
+          "performanceCheck": true,
+          "testExecution": false
+        },
+        "branchPatterns": {
+          "enabled": true,
+          "defaultPattern": "rapid/issue-{number}",
+          "typeMapping": {
+            "bug": "fix/issue-{number}-rapid",
+            "enhancement": "feature/issue-{number}-rapid",
+            "security": "security/issue-{number}-rapid"
+          }
+        }
+      },
+      "smart": {
+        "enabled": true,
+        "schedule": {
+          "weekdays": [
+            "0 14 * * 1-5",
+            "0 17 * * 1-5",
+            "0 20 * * 1-5"
+          ],
+          "weekends": [
+            "0 1 * * 0,6",
+            "0 5 * * 0,6",
+            "0 9 * * 0,6",
+            "0 13 * * 0,6"
+          ]
+        },
+        "maxExecutionTime": 900000,
+        "priority": 60,
+        "fallbackTier": null,
+        "cooldownMinutes": 180,
+        "resourceLimits": {
+          "cpu": 90,
+          "memory": 1024,
+          "apiCalls": 120
+        },
+        "qualityGates": {
+          "securityCheck": "comprehensive",
+          "syntaxValidation": true,
+          "performanceCheck": true,
+          "testExecution": true,
+          "codeReview": true,
+          "documentationRequired": true
+        },
+        "branchPatterns": {
+          "enabled": true,
+          "intelligentSelection": true,
+          "patterns": [
+            "critical/issue-{number}-{type}",
+            "security/issue-{number}-{sanitized-title}",
+            "feature/issue-{number}-{sanitized-title}",
+            "fix/issue-{number}-{sanitized-title}",
+            "docs/issue-{number}-{sanitized-title}",
+            "perf/issue-{number}-{sanitized-title}",
+            "refactor/issue-{number}-{sanitized-title}",
+            "test/issue-{number}-{sanitized-title}",
+            "ci/issue-{number}-{sanitized-title}"
+          ]
+        },
+        "scheduleOptimization": {
+          "enabled": true,
+          "timezoneAware": true,
+          "activityBasedAdjustment": true,
+          "resourceContentionPrevention": true
+        }
+      }
+    },
+    "tierSelection": {
+      "defaultTier": "rapid",
+      "autoSelection": true,
+      "selectionCriteria": {
+        "issueComplexity": true,
+        "issuePriority": true,
+        "resourceAvailability": true,
+        "historicalPerformance": true
+      },
+      "fallbackChain": [
+        "ultimate",
+        "rapid",
+        "smart"
+      ]
+    },
+    "performanceTracking": {
+      "enabled": true,
+      "retentionDays": 30,
+      "anomalyDetection": true,
+      "anomalyThreshold": 2,
+      "alerting": true,
+      "metrics": {
+        "executionTime": true,
+        "successRate": true,
+        "resourceUsage": true,
+        "qualityScore": true,
+        "throughput": true
+      }
+    }
+  },
+  "repository": {
+    "mainBranch": "main",
+    "protectedBranches": [
+      "main",
+      "develop"
+    ],
+    "ignoredPaths": [
+      "node_modules",
+      "vendor",
+      ".git",
+      "dist",
+      "build",
+      "coverage",
+      "*.min.js",
+      "*.bundle.js"
+    ],
+    "autoDeleteBranches": true,
+    "squashMerge": true
+  },
+  "notifications": {
+    "slack": {
+      "enabled": false,
+      "webhook": null,
+      "channels": {
+        "general": "#claude-automation",
+        "security": "#security-alerts",
+        "performance": "#performance-alerts"
+      }
+    },
+    "email": {
+      "enabled": false,
+      "recipients": [],
+      "templates": {
+        "highRisk": "high-risk-pr-template",
+        "securityAlert": "security-alert-template",
+        "performanceAlert": "performance-alert-template"
+      }
+    }
+  },
+  "learning": {
+    "enableLearning": true,
+    "historySize": 1000,
+    "patterns": {},
+    "improvements": {},
+    "userFeedback": {}
+  },
+  "performance": {
+    "maxExecutionTime": 1800000,
+    "maxMemoryUsage": 512,
+    "enableProfiling": false,
+    "metrics": {
+      "requestCount": 0,
+      "averageResponseTime": 0,
+      "successRate": 100,
+      "errorRate": 0
+    },
+    "tierMetrics": {
+      "rapid": [
+        {
+          "executionTime": 30009,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:46:52.619Z"
+        },
+        {
+          "executionTime": 30016,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:46:52.629Z"
+        },
+        {
+          "executionTime": 30016,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:46:52.629Z"
+        },
+        {
+          "executionTime": 30016,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:46:52.630Z"
+        },
+        {
+          "executionTime": 30016,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:46:52.632Z"
+        },
+        {
+          "executionTime": 30004,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.639Z"
+        },
+        {
+          "executionTime": 30005,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.640Z"
+        },
+        {
+          "executionTime": 30005,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.641Z"
+        },
+        {
+          "executionTime": 30005,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.641Z"
+        },
+        {
+          "executionTime": 30005,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.642Z"
+        },
+        {
+          "executionTime": 30004,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.642Z"
+        },
+        {
+          "executionTime": 30013,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.652Z"
+        },
+        {
+          "executionTime": 30013,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:47:22.653Z"
+        },
+        {
+          "executionTime": 93032,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:25.670Z"
+        },
+        {
+          "executionTime": 93034,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:25.674Z"
+        },
+        {
+          "executionTime": 30003,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.695Z"
+        },
+        {
+          "executionTime": 30002,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.696Z"
+        }
+      ],
+      "ultimate": [
+        {
+          "executionTime": 30004,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.691Z"
+        },
+        {
+          "executionTime": 30003,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.694Z"
+        }
+      ],
+      "smart": [
+        {
+          "executionTime": 30002,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.699Z"
+        },
+        {
+          "executionTime": 30003,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.700Z"
+        },
+        {
+          "executionTime": 30004,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-17T21:48:55.702Z"
+        }
+      ]
+    }
+  },
+  "monitoring": {
+    "autoStart": false
+  }
+}

@@ -8,10 +8,16 @@
  */
 
 class PerformanceAnalyticsManager {
-  constructor (options = {}) {
-    this.retentionDays = options.retentionDays || 30;
-    this.anomalyThreshold = options.anomalyThreshold || 2.0; // Standard deviations
-    this.alertingEnabled = options.alertingEnabled !== false;
+  constructor (configManager, options = {}) {
+    this.configManager = configManager;
+    
+    // Get configuration from ConfigManager or use defaults
+    const performanceConfig = this.configManager ? 
+      this.configManager.getPerformanceTrackingConfig() : {};
+    
+    this.retentionDays = options.retentionDays || performanceConfig.retentionDays || 30;
+    this.anomalyThreshold = options.anomalyThreshold || performanceConfig.anomalyThreshold || 2.0;
+    this.alertingEnabled = options.alertingEnabled !== false && (performanceConfig.alerting !== false);
     this.metrics = new Map();
     this.alerts = [];
     this.baselines = this.initializeBaselines();
@@ -19,10 +25,10 @@ class PerformanceAnalyticsManager {
   }
 
   /**
-     * Initialize performance baselines for each tier
+     * Initialize performance baselines for each tier from ConfigManager
      */
   initializeBaselines () {
-    return {
+    const defaults = {
       ultimate: {
         executionTime: { mean: 35000, stdDev: 8000, target: 45000 },
         successRate: { mean: 0.92, stdDev: 0.05, target: 0.90 },
@@ -45,6 +51,45 @@ class PerformanceAnalyticsManager {
         throughput: { mean: 21, stdDev: 3, target: 18 }
       }
     };
+
+    if (!this.configManager) {
+      return defaults;
+    }
+
+    // Try to get baselines from ConfigManager's learning data or tier configs
+    const baselines = {};
+    for (const tier of ['ultimate', 'rapid', 'smart']) {
+      const tierConfig = this.configManager.getTierConfig(tier);
+      const configBaselines = this.configManager.get(`performance.baselines.${tier}`, {});
+      
+      baselines[tier] = {
+        executionTime: {
+          ...defaults[tier].executionTime,
+          target: tierConfig ? tierConfig.maxExecutionTime : defaults[tier].executionTime.target,
+          ...configBaselines.executionTime
+        },
+        successRate: {
+          ...defaults[tier].successRate,
+          ...configBaselines.successRate
+        },
+        resourceUsage: {
+          ...defaults[tier].resourceUsage,
+          target: tierConfig ? tierConfig.resourceLimits?.cpu || defaults[tier].resourceUsage.target : defaults[tier].resourceUsage.target,
+          ...configBaselines.resourceUsage
+        },
+        apiCalls: {
+          ...defaults[tier].apiCalls,
+          target: tierConfig ? tierConfig.resourceLimits?.apiCalls || defaults[tier].apiCalls.target : defaults[tier].apiCalls.target,
+          ...configBaselines.apiCalls
+        },
+        throughput: {
+          ...defaults[tier].throughput,
+          ...configBaselines.throughput
+        }
+      };
+    }
+
+    return baselines;
   }
 
   /**
@@ -120,8 +165,22 @@ class PerformanceAnalyticsManager {
 
     const tierMetrics = this.metrics.get(tierKey);
 
-    // Store raw metrics
+    // Store raw metrics locally
     tierMetrics.raw.push(metrics);
+
+    // Store metrics in ConfigManager for persistence and learning
+    if (this.configManager) {
+      this.configManager.storePerformanceMetrics(tierKey, {
+        executionTime: metrics.executionTime,
+        success: metrics.success,
+        cpu: metrics.resourceUsage?.cpu,
+        memory: metrics.resourceUsage?.memory,
+        apiCalls: metrics.apiCalls,
+        timestamp: metrics.timestamp
+      }).catch(error => {
+        console.warn(`Failed to store metrics in ConfigManager: ${error.message}`);
+      });
+    }
 
     // Cleanup old metrics
     this.cleanupOldMetrics(tierMetrics);
@@ -531,6 +590,70 @@ class PerformanceAnalyticsManager {
       throughput: this.calculateThroughput(metrics),
       errorRate: (metrics.length - successfulExecutions.length) / metrics.length
     };
+  }
+
+  /**
+   * Get tier performance summary (alias for analyzeTierPerformance)
+   * @param {string} tier - Automation tier
+   * @returns {Object} Performance summary
+   */
+  async getTierPerformanceSummary (tier) {
+    const metrics = this.getMetricsForTimeWindow(tier, '24h');
+    const summary = this.analyzeTierPerformance(tier, metrics);
+    
+    // Add tier-specific information
+    return {
+      tier,
+      ...summary,
+      successRate: summary.successRate * 100, // Convert to percentage
+      lastExecution: metrics.length > 0 ? metrics[0].timestamp : null,
+      resourceUsage: {
+        avgCpu: metrics.length > 0 ? metrics.reduce((sum, m) => sum + (m.resourceUsage?.cpu || 0), 0) / metrics.length : 0,
+        avgMemory: metrics.length > 0 ? metrics.reduce((sum, m) => sum + (m.resourceUsage?.memory || 0), 0) / metrics.length : 0,
+        avgApiCalls: metrics.length > 0 ? metrics.reduce((sum, m) => sum + (m.apiCalls || 0), 0) / metrics.length : 0
+      }
+    };
+  }
+
+  /**
+   * Record metrics for a tier execution (alias for recordExecution)
+   * @param {string} tier - Automation tier
+   * @param {Object} metrics - Execution metrics
+   * @returns {Object} Recording result with analysis
+   */
+  async recordMetrics (tier, metrics) {
+    return this.recordExecution(tier, metrics);
+  }
+
+  /**
+   * Generate comprehensive system report
+   * @returns {Object} System performance report
+   */
+  async generateSystemReport () {
+    const tiers = ['ultimate', 'rapid', 'smart'];
+    const report = {
+      timestamp: new Date().toISOString(),
+      tiers: {},
+      overall: {
+        totalExecutions: 0,
+        avgSuccessRate: 0,
+        avgExecutionTime: 0
+      }
+    };
+
+    for (const tier of tiers) {
+      report.tiers[tier] = await this.getTierPerformanceSummary(tier);
+      report.overall.totalExecutions += report.tiers[tier].executionCount;
+    }
+
+    // Calculate overall averages
+    const tierSummaries = Object.values(report.tiers);
+    if (tierSummaries.length > 0) {
+      report.overall.avgSuccessRate = tierSummaries.reduce((sum, t) => sum + t.successRate, 0) / tierSummaries.length;
+      report.overall.avgExecutionTime = tierSummaries.reduce((sum, t) => sum + t.averageExecutionTime, 0) / tierSummaries.length;
+    }
+
+    return report;
   }
 
   /**

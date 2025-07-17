@@ -8,13 +8,19 @@
  */
 
 class TierExecutionHandler {
-  constructor (options = {}) {
+  constructor (configManager, options = {}) {
+    this.configManager = configManager;
+    
+    // Get configuration from ConfigManager or use defaults
+    const tierSelectionConfig = this.configManager ? 
+      this.configManager.getTierSelectionConfig() : {};
+    
     this.maxRetries = options.maxRetries || 3;
     this.baseBackoffMs = options.baseBackoffMs || 1000;
     this.maxBackoffMs = options.maxBackoffMs || 30000;
     this.criticalErrorThreshold = options.criticalErrorThreshold || 3;
     this.adminNotificationEnabled = options.adminNotificationEnabled !== false;
-    this.fallbackChain = options.fallbackChain || ['ultimate', 'rapid', 'smart'];
+    this.fallbackChain = options.fallbackChain || tierSelectionConfig.fallbackChain || ['ultimate', 'rapid', 'smart'];
 
     this.executionHistory = new Map();
     this.errorCounts = new Map();
@@ -30,6 +36,20 @@ class TierExecutionHandler {
      * @returns {Object} Execution result with error handling metadata
      */
   async executeTierWithHandling (tier, context, executionFunction) {
+    // Check if tier is enabled before execution
+    if (!this.isTierEnabled(tier)) {
+      console.warn(`⚠️ ${tier} tier is disabled, skipping execution`);
+      return {
+        success: false,
+        error: new Error(`${tier} tier is disabled`),
+        execution: {
+          tier,
+          status: 'disabled',
+          error: `${tier} tier is disabled in configuration`
+        }
+      };
+    }
+
     const executionId = this.generateExecutionId(tier);
     const startTime = Date.now();
 
@@ -638,12 +658,36 @@ class TierExecutionHandler {
   }
 
   getTierTimeout (tier) {
-    const timeouts = {
+    // Default timeouts (fallback if ConfigManager not available)
+    const defaultTimeouts = {
       ultimate: 45000, // 45 seconds
       rapid: 240000, // 4 minutes
       smart: 900000 // 15 minutes
     };
-    return timeouts[tier] || 300000; // Default 5 minutes
+
+    if (!this.configManager) {
+      return defaultTimeouts[tier] || 300000; // Default 5 minutes
+    }
+
+    // Get timeout from ConfigManager tier configuration
+    const tierConfig = this.configManager.getTierConfig(tier);
+    if (tierConfig && tierConfig.maxExecutionTime) {
+      return tierConfig.maxExecutionTime;
+    }
+
+    return defaultTimeouts[tier] || 300000; // Default 5 minutes
+  }
+
+  /**
+   * Check if tier is enabled and available for execution
+   */
+  isTierEnabled (tier) {
+    if (!this.configManager) {
+      return true; // Default to enabled if no ConfigManager
+    }
+
+    const tierConfig = this.configManager.getTierConfig(tier);
+    return tierConfig ? tierConfig.enabled : false;
   }
 
   calculateBackoff (attempt) {

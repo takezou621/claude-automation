@@ -19,93 +19,110 @@ describe('BranchPatternManager', () => {
 
   describe('Pattern Selection', () => {
     test('selects bugfix pattern for bug issues', () => {
-      const pattern = manager.selectPattern('bug');
-      expect(pattern).toBe('bugfix');
+      const result = manager.selectPattern({ number: 123, title: 'Fix bug', labels: [{name: 'bug'}] });
+      expect(result.pattern).toBe('issue-fix');
+      expect(result.detectedType).toBe('bug');
     });
 
     test('selects feature pattern for feature requests', () => {
-      const pattern = manager.selectPattern('feature');
-      expect(pattern).toBe('feature');
+      const result = manager.selectPattern({ number: 124, title: 'Add feature', labels: [{name: 'feature'}] });
+      expect(result.pattern).toBe('issue-feature');
+      expect(result.detectedType).toBe('feature');
     });
 
     test('selects hotfix pattern for critical bug issues', () => {
-      const pattern = manager.selectPattern('bug', 'critical');
-      expect(pattern).toBe('hotfix');
+      const result = manager.selectPattern({ number: 125, title: 'Critical bug', labels: [{name: 'bug'}, {name: 'critical'}] });
+      expect(result.pattern).toBe('issue-hotfix');
+      expect(result.priority).toBe('critical');
     });
 
     test('selects enhancement pattern for enhancement issues', () => {
-      const pattern = manager.selectPattern('enhancement');
-      expect(pattern).toBe('enhancement');
+      const result = manager.selectPattern({ number: 126, title: 'Enhancement', labels: [{name: 'enhancement'}] });
+      expect(result.pattern).toBe('issue-enhancement');
+      expect(result.detectedType).toBe('enhancement');
     });
 
     test('selects docs pattern for documentation issues', () => {
-      const pattern = manager.selectPattern('documentation');
-      expect(pattern).toBe('docs');
+      const result = manager.selectPattern({ number: 127, title: 'Update docs', labels: [{name: 'documentation'}] });
+      expect(result.pattern).toBe('issue-docs');
+      expect(result.detectedType).toBe('docs');
     });
 
     test('selects refactor pattern for refactoring issues', () => {
-      const pattern = manager.selectPattern('refactor');
-      expect(pattern).toBe('refactor');
+      const result = manager.selectPattern({ number: 128, title: 'Refactor code', labels: [{name: 'refactor'}] });
+      expect(result.pattern).toBe('issue-refactor');
+      expect(result.detectedType).toBe('refactor');
     });
 
     test('selects test pattern for testing issues', () => {
-      const pattern = manager.selectPattern('test');
-      expect(pattern).toBe('test');
+      const result = manager.selectPattern({ number: 129, title: 'Add tests', labels: [{name: 'test'}] });
+      expect(result.pattern).toBe('issue-test');
+      expect(result.detectedType).toBe('test');
     });
 
     test('selects chore pattern for maintenance issues', () => {
-      const pattern = manager.selectPattern('chore');
-      expect(pattern).toBe('chore');
+      const result = manager.selectPattern({ number: 130, title: 'Chore task', labels: [{name: 'ci'}] });
+      expect(result.pattern).toBe('issue-ci');
+      expect(result.detectedType).toBe('ci');
     });
 
     test('selects release pattern for release issues', () => {
-      const pattern = manager.selectPattern('release');
-      expect(pattern).toBe('release');
+      const result = manager.selectPattern({ title: 'Release version', labels: [] }, { preferIssueNumber: false });
+      expect(result.pattern).toBe('feature');
+      expect(result.detectedType).toBe('feature');
     });
 
     test('defaults to feature pattern for unknown types', () => {
-      const pattern = manager.selectPattern('unknown');
-      expect(pattern).toBe('feature');
+      const result = manager.selectPattern({ number: 131, title: 'Unknown task', labels: [] });
+      expect(result.pattern).toBe('issue-feature');
+      expect(result.detectedType).toBe('feature');
     });
   });
 
   describe('Branch Name Generation', () => {
     test('generates feature branch name', () => {
-      const branchName = manager.generateBranchName('feature', { title: 'Add new authentication' });
-      expect(branchName).toBe('feature/add-new-authentication');
+      const result = manager.generateBranchName('feature', { title: 'Add new authentication' });
+      expect(result.name).toBe('feature/add-new-authentication');
+      expect(result.pattern).toBe('feature');
     });
 
     test('generates bugfix branch name', () => {
-      const branchName = manager.generateBranchName('bugfix', { title: 'Fix validation error' });
-      expect(branchName).toBe('bugfix/fix-validation-error');
+      const result = manager.generateBranchName('bugfix', { title: 'Fix validation error' });
+      expect(result.name).toBe('bugfix/fix-validation-error');
+      expect(result.pattern).toBe('bugfix');
     });
 
     test('generates hotfix branch name', () => {
-      const branchName = manager.generateBranchName('hotfix', { title: 'Critical security fix' });
-      expect(branchName).toBe('hotfix/critical-security-fix');
+      const result = manager.generateBranchName('hotfix', { title: 'Critical security fix' });
+      expect(result.name).toBe('hotfix/critical-security-fix');
+      expect(result.pattern).toBe('hotfix');
     });
 
     test('generates feature branch with scope', () => {
-      const branchName = manager.generateBranchName('feature-scoped', { 
+      const result = manager.generateBranchName('feature-scoped', { 
         title: 'Add user management', 
         scope: 'auth' 
       });
-      expect(branchName).toBe('feature/auth/add-user-management');
+      expect(result.name).toBe('feature/auth/add-user-management');
+      expect(result.pattern).toBe('feature-scoped');
     });
 
     test('generates release branch with version', () => {
-      const branchName = manager.generateBranchName('release', { version: '1.2.3' });
-      expect(branchName).toBe('release/1.2.3');
+      const result = manager.generateBranchName('release', { version: '1.2.3' });
+      expect(result.name).toBe('release/1.2.3');
+      expect(result.pattern).toBe('release');
     });
 
     test('adds priority prefix for high priority', () => {
-      const branchName = manager.generateBranchName('bugfix', { title: 'Important fix' }, 'high');
-      expect(branchName).toBe('high/bugfix/important-fix');
+      const result = manager.generateBranchName('bugfix', { title: 'Important fix' }, 'high');
+      expect(result.name).toBe('high/bugfix/important-fix');
+      expect(result.priority).toBe('high');
     });
 
     test('adds priority prefix for critical priority', () => {
-      const branchName = manager.generateBranchName('feature', { title: 'Critical feature' }, 'critical');
-      expect(branchName).toBe('critical/feature/critical-feature');
+      const result = manager.generateBranchName('feature', { title: 'Critical feature' }, 'critical');
+      expect(result.name).toBe('critical/feature/critical-feature');
+      expect(result.priority).toBe('critical');
     });
 
     test('throws error for unknown pattern', () => {
@@ -305,12 +322,12 @@ describe('BranchPatternManager', () => {
       expect(recommendations.mostUsed).toBeDefined();
       expect(recommendations.recommended).toBeDefined();
       expect(recommendations.usage).toBeDefined();
-      expect(recommendations.mostUsed[0][0]).toBe('feature'); // Most used pattern
+      expect(recommendations.mostUsed[0].pattern).toBe('feature'); // Most used pattern
     });
 
-    test('recommends feature pattern when no recent branches', () => {
+    test('recommends issue-feature pattern when no recent branches', () => {
       const recommendations = manager.getPatternRecommendations([]);
-      expect(recommendations.recommended).toBe('feature');
+      expect(recommendations.recommended).toBe('issue-feature');
     });
 
     test('returns usage statistics', () => {
@@ -356,39 +373,42 @@ describe('BranchPatternManager', () => {
   describe('Integration Tests', () => {
     test('complete workflow: select pattern, generate name, validate', () => {
       // Select pattern
-      const pattern = manager.selectPattern('feature', 'high');
-      expect(pattern).toBe('feature');
+      const selection = manager.selectPattern({ number: 123, title: 'Add user authentication system', labels: [{name: 'feature'}] });
+      expect(selection.pattern).toBe('issue-feature');
+      expect(selection.priority).toBe('medium');
 
       // Generate branch name
-      const branchName = manager.generateBranchName(pattern, { 
-        title: 'Add user authentication system' 
-      }, 'high');
-      expect(branchName).toBe('high/feature/add-user-authentication-system');
+      const result = manager.generateBranchName(selection.pattern, { 
+        title: 'Add user authentication system',
+        number: 123
+      }, selection.priority);
+      expect(result.name).toBe('feature/issue-123');
 
       // Validate branch name
-      const validation = manager.validateBranchName(branchName);
+      const validation = manager.validateBranchName(result.name);
       expect(validation.isValid).toBe(true);
     });
 
     test('complete workflow with special characters', () => {
-      const pattern = manager.selectPattern('bug');
-      const branchName = manager.generateBranchName(pattern, { 
-        title: 'Fix: Special @#$% Characters!' 
+      const selection = manager.selectPattern({ number: 456, title: 'Fix: Special @#$% Characters!', labels: [{name: 'bug'}] });
+      const result = manager.generateBranchName(selection.pattern, { 
+        title: 'Fix: Special @#$% Characters!',
+        number: 456
       });
       
-      expect(branchName).toBe('bugfix/fix-special-characters');
+      expect(result.name).toBe('fix/issue-456');
       
-      const validation = manager.validateBranchName(branchName);
+      const validation = manager.validateBranchName(result.name);
       expect(validation.isValid).toBe(true);
     });
 
     test('detect pattern from generated branch name', () => {
       const originalPattern = 'enhancement';
-      const branchName = manager.generateBranchName(originalPattern, { 
+      const result = manager.generateBranchName(originalPattern, { 
         title: 'Improve performance' 
       });
       
-      const detection = manager.detectPattern(branchName);
+      const detection = manager.detectPattern(result.name);
       expect(detection.pattern).toBe(originalPattern);
       expect(detection.matches).toBe(true);
     });

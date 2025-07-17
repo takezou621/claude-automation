@@ -10,20 +10,22 @@
 const moment = require('moment-timezone');
 
 class IntelligentScheduleManager {
-  constructor (options = {}) {
+  constructor (configManager, options = {}) {
+    this.configManager = configManager;
     this.timezone = options.timezone || 'UTC';
     this.activityAnalysisWindow = options.activityAnalysisWindow || 30; // days
     this.resourceThresholds = this.initializeResourceThresholds();
     this.scheduleCache = new Map();
     this.activityCache = new Map();
-    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+    this.cacheTimeout = options.cacheTimeout || 5 * 60 * 1000; // 5 minutes
   }
 
   /**
-     * Initialize resource threshold configurations
+     * Initialize resource threshold configurations from ConfigManager
      */
   initializeResourceThresholds () {
-    return {
+    // Get resource thresholds from ConfigManager or use defaults
+    const defaults = {
       github: {
         apiCalls: {
           hourly: 4000, // Conservative limit for GitHub API
@@ -38,6 +40,23 @@ class IntelligentScheduleManager {
         cpuThreshold: 80, // CPU usage percentage
         memoryThreshold: 85, // Memory usage percentage
         diskThreshold: 90 // Disk usage percentage
+      }
+    };
+
+    if (!this.configManager) {
+      return defaults;
+    }
+
+    // Try to get from ConfigManager, merge with defaults
+    const configThresholds = this.configManager.get('automation.resourceThresholds', {});
+    return {
+      github: {
+        ...defaults.github,
+        ...configThresholds.github
+      },
+      system: {
+        ...defaults.system,
+        ...configThresholds.system
       }
     };
   }
@@ -84,7 +103,8 @@ class IntelligentScheduleManager {
      * Get base schedules for each automation tier
      */
   getBaseSchedules () {
-    return {
+    // Default schedules (fallback if ConfigManager not available)
+    const defaults = {
       ultimate: {
         type: 'ultimate',
         cron: '* * * * *', // Every minute
@@ -121,6 +141,46 @@ class IntelligentScheduleManager {
         resourceRequirement: 'high'
       }
     };
+
+    if (!this.configManager) {
+      return defaults;
+    }
+
+    // Get tier configurations from ConfigManager
+    const schedules = {};
+    for (const tier of ['ultimate', 'rapid', 'smart']) {
+      const tierConfig = this.configManager.getTierConfig(tier);
+      if (tierConfig) {
+        schedules[tier] = {
+          type: tier,
+          cron: tierConfig.schedule,
+          maxExecutionTime: tierConfig.maxExecutionTime,
+          priority: tierConfig.priority,
+          description: defaults[tier].description,
+          fallbackTier: tierConfig.fallbackTier,
+          cooldownMinutes: tierConfig.cooldownMinutes,
+          resourceRequirement: this.getResourceRequirement(tierConfig.resourceLimits),
+          enabled: tierConfig.enabled
+        };
+      } else {
+        schedules[tier] = defaults[tier];
+      }
+    }
+
+    return schedules;
+  }
+
+  /**
+   * Map resource limits to requirement level
+   */
+  getResourceRequirement (resourceLimits) {
+    if (!resourceLimits) return 'minimal';
+    
+    const totalResources = (resourceLimits.cpu || 0) + (resourceLimits.memory || 0) + (resourceLimits.apiCalls || 0);
+    
+    if (totalResources <= 100) return 'minimal';
+    if (totalResources <= 300) return 'moderate';
+    return 'high';
   }
 
   /**
