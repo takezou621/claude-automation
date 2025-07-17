@@ -87,7 +87,12 @@ describe('TierExecutionHandler', () => {
                     smart: { enabled: true, maxExecutionTime: 900000, fallbackTier: null }
                 };
                 return configs[tier] || null;
-            })
+            }),
+            getTierSelectionConfig: jest.fn(() => ({
+                defaultTier: 'rapid',
+                autoSelection: true,
+                fallbackChain: ['ultimate', 'rapid', 'smart']
+            }))
         };
         
         handler = new TierExecutionHandler(mockConfigManager);
