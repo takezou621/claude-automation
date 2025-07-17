@@ -80,10 +80,17 @@ jobs:
             await execAsync('git config user.email "claude-ultimate@github.com"');
             await execAsync('git config user.name "Claude Ultimate Bot"');
             
-            // Create branch using intelligent pattern
+            // Create branch using intelligent pattern (secure execution)
             const branchName = branchInfo.name;
-            await execAsync(`git checkout -b ${branchName}`);
-            console.log(`🌿 Created branch: ${branchName}`);
+            
+            // Validate branch name to prevent injection
+            const sanitizedBranchName = branchName.replace(/[^a-zA-Z0-9\/\-_\.]/g, '');
+            if (sanitizedBranchName !== branchName) {
+              throw new Error(`Invalid branch name contains unsafe characters: ${branchName}`);
+            }
+            
+            await execAsync('git checkout -b ' + JSON.stringify(sanitizedBranchName));
+            console.log(`🌿 Created branch: ${sanitizedBranchName}`);
             
             // Create ultra-optimized fix with minimal processing
             const fixCode = `#!/usr/bin/env python3
@@ -104,13 +111,19 @@ if __name__ == "__main__":
             await execAsync('mkdir -p src/ultra-fixes');
             fs.writeFileSync(`src/ultra-fixes/ultra_fix_${issue.number}.py`, fixCode);
             
-            // Optimized commit strategy
+            // Optimized commit strategy (secure execution)
             await execAsync('git add .');
-            await execAsync(`git commit -m "⚡ ultra: Automated ultra fix for issue #${issue.number}
+            
+            // Sanitize commit message to prevent injection
+            const issueNumber = String(issue.number).replace(/[^0-9]/g, '');
+            const safePattern = String(branchInfo.pattern).replace(/[^a-zA-Z0-9\/\-_\.]/g, '');
+            const commitMessage = `⚡ ultra: Automated ultra fix for issue #${issueNumber}
 
-Pattern: ${branchInfo.pattern}
-Branch: ${branchName}
-Execution target: <45s"`);
+Pattern: ${safePattern}
+Branch: ${sanitizedBranchName}
+Execution target: <45s`;
+            
+            await execAsync('git commit -m ' + JSON.stringify(commitMessage));
             
             // Check execution time and fallback if needed
             const elapsedTime = Date.now() - startTime;
@@ -132,10 +145,10 @@ Execution target: <45s"`);
               return;
             }
             
-            // Fast push to the created branch
+            // Fast push to the created branch (secure execution)
             try {
-              await execAsync(`git push origin ${branchName}`);
-              console.log(`✅ Pushed to branch: ${branchName}`);
+              await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
+              console.log(`✅ Pushed to branch: ${sanitizedBranchName}`);
             } catch (pushError) {
               console.log('Push failed, triggering Rapid fallback');
               
