@@ -257,7 +257,7 @@ program
     console.log(`GitHub Owner: ${config.github.owner}`);
     console.log(`GitHub Repo: ${config.github.repo}`);
     console.log(`GitHub Token: ${config.github.token ? '✓ Set' : '✗ Not set'}`);
-    console.log(`Claude Mode: Claude Code Max (No API Key Required)`);
+    console.log('Claude Mode: Claude Code Max (No API Key Required)');
     console.log(`Claude Model: ${config.claude.model}`);
     console.log(`Auto Review: ${config.automation.autoReview ? '✓ Enabled' : '✗ Disabled'}`);
     console.log(`Auto Label: ${config.automation.autoLabel ? '✓ Enabled' : '✗ Disabled'}`);
@@ -293,17 +293,19 @@ program
       ]);
 
       switch (answers.action) {
-        case 'health':
+        case 'health': {
           const spinner = ora('Checking system health...').start();
           const health = await system.healthCheck();
           spinner.stop();
 
-          console.log(`\nSystem Status: ${health.status === 'healthy' ? chalk.green('Healthy') : chalk.red('Unhealthy')}`);
+          console.log(`
+System Status: ${health.status === 'healthy' ? chalk.green('Healthy') : chalk.red('Unhealthy')}`);
           console.log(`GitHub: ${health.github.status === 'healthy' ? chalk.green('Connected') : chalk.red('Failed')}`);
           console.log(`Claude: ${health.claude ? chalk.green('Connected') : chalk.red('Failed')}`);
           break;
+        }
 
-        case 'review':
+        case 'review': {
           const prAnswer = await inquirer.prompt([
             {
               type: 'input',
@@ -311,7 +313,7 @@ program
               message: 'Enter PR number:',
               validate: (input) => {
                 const num = parseInt(input);
-                return !isNaN(num) && num > 0 || 'Please enter a valid PR number';
+                return (!isNaN(num) && num > 0) || 'Please enter a valid PR number';
               }
             }
           ]);
@@ -328,8 +330,8 @@ program
             console.log(chalk.red('✗ Review failed:', reviewResult.error));
           }
           break;
-
-        case 'classify':
+        }
+        case 'classify': {
           const issueAnswer = await inquirer.prompt([
             {
               type: 'input',
@@ -337,7 +339,7 @@ program
               message: 'Enter issue number:',
               validate: (input) => {
                 const num = parseInt(input);
-                return !isNaN(num) && num > 0 || 'Please enter a valid issue number';
+                return (!isNaN(num) && num > 0) || 'Please enter a valid issue number';
               }
             }
           ]);
@@ -354,8 +356,8 @@ program
             console.log(chalk.red('✗ Classification failed:', classifyResult.error));
           }
           break;
-
-        case 'stats':
+        }
+        case 'stats': {
           const stats = system.getStats();
           console.log('\n' + chalk.bold('System Statistics:'));
           console.log(`PRs Processed: ${stats.processedPRs}`);
@@ -363,8 +365,8 @@ program
           console.log(`Errors: ${stats.errors}`);
           console.log(`Uptime: ${Math.floor(stats.uptime)}s`);
           break;
-
-        case 'batch':
+        }
+        case 'batch': {
           const batchSpinner = ora('Processing pending items...').start();
           const [prResult, issueResult] = await Promise.all([
             system.processPendingPRs(),
@@ -376,8 +378,8 @@ program
           console.log(`PRs: ${prResult.processed} processed`);
           console.log(`Issues: ${issueResult.processed} processed`);
           break;
-
-        case 'config':
+        }
+        case 'config': {
           const config = getConfig();
           console.log('\n' + chalk.bold('Current Configuration:'));
           console.log(`Repository: ${config.github.owner}/${config.github.repo}`);
@@ -385,10 +387,11 @@ program
           console.log(`Auto Review: ${config.automation.autoReview ? 'Enabled' : 'Disabled'}`);
           console.log(`Auto Label: ${config.automation.autoLabel ? 'Enabled' : 'Disabled'}`);
           break;
-
-        case 'exit':
+        }
+        case 'exit': {
           console.log(chalk.blue('Goodbye! 👋'));
           process.exit(0);
+        }
       }
 
       console.log('\n');

@@ -4,16 +4,15 @@
  */
 
 const ClaudeAPIClient = require('./claude-api-client');
-const fs = require('fs').promises;
 const path = require('path');
 
 class IntelligentCodeAnalyzer {
-  constructor(apiKey, options = {}) {
+  constructor (apiKey, options = {}) {
     this.claude = new ClaudeAPIClient(apiKey, options);
     this.analysisCache = new Map();
     this.cacheTimeout = options.cacheTimeout || 300000; // 5 minutes
     this.supportedLanguages = [
-      'javascript', 'typescript', 'python', 'java', 'cpp', 'c', 'go', 'rust', 
+      'javascript', 'typescript', 'python', 'java', 'cpp', 'c', 'go', 'rust',
       'php', 'ruby', 'swift', 'kotlin', 'scala', 'dart', 'yaml', 'json'
     ];
   }
@@ -21,12 +20,12 @@ class IntelligentCodeAnalyzer {
   /**
    * Analyze code changes in a pull request
    */
-  async analyzePullRequest(prData, options = {}) {
+  async analyzePullRequest (prData, options = {}) {
     const startTime = Date.now();
     const analysisId = `pr-${prData.number}-${Date.now()}`;
-    
+
     console.log(`🔍 Starting intelligent analysis for PR #${prData.number}`);
-    
+
     try {
       // Pre-analysis validation
       const validationResult = await this.validatePullRequest(prData);
@@ -44,11 +43,11 @@ class IntelligentCodeAnalyzer {
       const securityIssues = [];
       const performanceIssues = [];
       const qualityIssues = [];
-      
+
       for (const file of prData.files) {
         if (this.shouldAnalyzeFile(file.filename)) {
           console.log(`📄 Analyzing file: ${file.filename}`);
-          
+
           const fileAnalysis = await this.analyzeFile(file, {
             context: {
               prTitle: prData.title,
@@ -57,9 +56,9 @@ class IntelligentCodeAnalyzer {
             },
             ...options
           });
-          
+
           fileAnalyses.push(fileAnalysis);
-          
+
           // Categorize issues
           if (fileAnalysis.security) {
             securityIssues.push(...fileAnalysis.security);
@@ -75,13 +74,13 @@ class IntelligentCodeAnalyzer {
 
       // Overall PR analysis
       const overallAnalysis = await this.analyzeOverallPR(prData, fileAnalyses, options);
-      
+
       // Generate risk assessment
       const riskAssessment = this.calculateRiskAssessment(fileAnalyses, securityIssues, performanceIssues);
-      
+
       // Generate recommendations
       const recommendations = this.generateRecommendations(fileAnalyses, riskAssessment);
-      
+
       const result = {
         success: true,
         analysisId,
@@ -114,9 +113,8 @@ class IntelligentCodeAnalyzer {
 
       // Cache the result
       this.cacheResult(analysisId, result);
-      
-      return result;
 
+      return result;
     } catch (error) {
       console.error(`❌ Analysis failed for PR #${prData.number}:`, error);
       return {
@@ -131,10 +129,10 @@ class IntelligentCodeAnalyzer {
   /**
    * Analyze individual file
    */
-  async analyzeFile(file, options = {}) {
+  async analyzeFile (file, options = {}) {
     const language = this.detectLanguage(file.filename);
     const complexity = this.calculateComplexity(file);
-    
+
     // Check cache first
     const cacheKey = `file-${file.filename}-${this.hashContent(file.patch)}`;
     const cached = this.getCachedResult(cacheKey);
@@ -144,7 +142,7 @@ class IntelligentCodeAnalyzer {
     }
 
     const analysisPrompt = this.buildFileAnalysisPrompt(file, language, complexity, options);
-    
+
     const claudeResult = await this.claude.analyzeCode(file.patch, 'general', {
       systemPrompt: analysisPrompt.systemPrompt,
       maxTokens: 2000,
@@ -161,7 +159,7 @@ class IntelligentCodeAnalyzer {
 
     // Parse Claude's response
     const analysis = this.parseClaudeAnalysis(claudeResult.response);
-    
+
     const result = {
       filename: file.filename,
       language,
@@ -189,14 +187,14 @@ class IntelligentCodeAnalyzer {
 
     // Cache the result
     this.cacheResult(cacheKey, result);
-    
+
     return result;
   }
 
   /**
    * Analyze overall PR impact
    */
-  async analyzeOverallPR(prData, fileAnalyses, options = {}) {
+  async analyzeOverallPR (prData, fileAnalyses, _options = {}) {
     const overallPrompt = `Analyze this pull request holistically:
 
 **PR Title:** ${prData.title}
@@ -242,10 +240,10 @@ Please provide:
   /**
    * Calculate risk assessment
    */
-  calculateRiskAssessment(fileAnalyses, securityIssues, performanceIssues) {
+  calculateRiskAssessment (fileAnalyses, securityIssues, performanceIssues) {
     let riskScore = 0;
     let riskLevel = 'LOW';
-    
+
     // File-based risk calculation
     for (const analysis of fileAnalyses) {
       if (analysis.analysis) {
@@ -254,23 +252,23 @@ Please provide:
           case 'MEDIUM': riskScore += 5; break;
           case 'LOW': riskScore += 1; break;
         }
-        
+
         // Additional risk for issues
         riskScore += analysis.analysis.issues.length * 2;
       }
     }
-    
+
     // Security and performance risk
     riskScore += securityIssues.length * 8;
     riskScore += performanceIssues.length * 4;
-    
+
     // Determine overall risk level
     if (riskScore >= 30) {
       riskLevel = 'HIGH';
     } else if (riskScore >= 15) {
       riskLevel = 'MEDIUM';
     }
-    
+
     return {
       score: riskScore,
       level: riskLevel,
@@ -287,9 +285,9 @@ Please provide:
   /**
    * Generate recommendations
    */
-  generateRecommendations(fileAnalyses, riskAssessment) {
+  generateRecommendations (fileAnalyses, riskAssessment) {
     const recommendations = [];
-    
+
     // Risk-based recommendations
     if (riskAssessment.level === 'HIGH') {
       recommendations.push({
@@ -304,7 +302,7 @@ Please provide:
         ]
       });
     }
-    
+
     // Security recommendations
     if (riskAssessment.factors.securityIssues > 0) {
       recommendations.push({
@@ -319,7 +317,7 @@ Please provide:
         ]
       });
     }
-    
+
     // Performance recommendations
     if (riskAssessment.factors.performanceIssues > 0) {
       recommendations.push({
@@ -334,7 +332,7 @@ Please provide:
         ]
       });
     }
-    
+
     // Quality recommendations
     const qualityIssues = fileAnalyses.reduce((acc, fa) => acc + (fa.analysis ? fa.analysis.issues.length : 0), 0);
     if (qualityIssues > 5) {
@@ -350,38 +348,38 @@ Please provide:
         ]
       });
     }
-    
+
     return recommendations;
   }
 
   /**
    * Helper methods
    */
-  
-  validatePullRequest(prData) {
+
+  validatePullRequest (prData) {
     if (!prData.files || prData.files.length === 0) {
       return { valid: false, error: 'No files to analyze' };
     }
-    
+
     if (prData.files.length > 50) {
       return { valid: false, error: 'Too many files to analyze efficiently' };
     }
-    
+
     return { valid: true };
   }
 
-  shouldAnalyzeFile(filename) {
+  shouldAnalyzeFile (filename) {
     // Skip non-code files
     const skipExtensions = ['.md', '.txt', '.png', '.jpg', '.gif', '.pdf', '.zip'];
     const skipPatterns = ['/node_modules/', '/vendor/', '/.git/', '/dist/', '/build/'];
-    
+
     const ext = path.extname(filename).toLowerCase();
     if (skipExtensions.includes(ext)) return false;
-    
+
     return !skipPatterns.some(pattern => filename.includes(pattern));
   }
 
-  detectLanguage(filename) {
+  detectLanguage (filename) {
     const ext = path.extname(filename).toLowerCase();
     const languageMap = {
       '.js': 'javascript',
@@ -404,24 +402,24 @@ Please provide:
       '.yaml': 'yaml',
       '.json': 'json'
     };
-    
+
     return languageMap[ext] || 'unknown';
   }
 
-  calculateComplexity(file) {
+  calculateComplexity (file) {
     if (!file.patch) return 'LOW';
-    
+
     const lines = file.patch.split('\n');
     const addedLines = lines.filter(line => line.startsWith('+')).length;
     const deletedLines = lines.filter(line => line.startsWith('-')).length;
     const totalChanges = addedLines + deletedLines;
-    
+
     if (totalChanges > 100) return 'HIGH';
     if (totalChanges > 50) return 'MEDIUM';
     return 'LOW';
   }
 
-  buildFileAnalysisPrompt(file, language, complexity, options) {
+  buildFileAnalysisPrompt (file, language, _complexity, _options) {
     return {
       systemPrompt: `You are an expert code reviewer analyzing ${language} code. 
       
@@ -436,12 +434,12 @@ Please provide:
     };
   }
 
-  parseClaudeAnalysis(response) {
+  parseClaudeAnalysis (response) {
     // Parse structured response from Claude
     // This is a simplified parser - in production, you'd want more robust parsing
-    
+
     const sections = response.split('\n\n');
-    
+
     return {
       summary: sections[0] || 'No summary available',
       riskLevel: this.extractRiskLevel(response),
@@ -453,74 +451,74 @@ Please provide:
     };
   }
 
-  extractRiskLevel(response) {
+  extractRiskLevel (response) {
     const riskRegex = /risk.*?level.*?:?\s*(high|medium|low)/i;
     const match = response.match(riskRegex);
     return match ? match[1].toUpperCase() : 'MEDIUM';
   }
 
-  extractIssues(response) {
+  extractIssues (response) {
     // Extract issues from response
     const issueRegex = /(?:issue|problem|concern).*?:?\s*(.+?)(?:\n|$)/gi;
     const issues = [];
     let match;
-    
+
     while ((match = issueRegex.exec(response)) !== null) {
       issues.push(match[1].trim());
     }
-    
+
     return issues;
   }
 
-  extractSuggestions(response) {
+  extractSuggestions (response) {
     const suggestionRegex = /(?:suggest|recommend|should).*?:?\s*(.+?)(?:\n|$)/gi;
     const suggestions = [];
     let match;
-    
+
     while ((match = suggestionRegex.exec(response)) !== null) {
       suggestions.push(match[1].trim());
     }
-    
+
     return suggestions;
   }
 
-  extractSecurityIssues(response) {
+  extractSecurityIssues (response) {
     const securityRegex = /(?:security|vulnerability|exploit).*?:?\s*(.+?)(?:\n|$)/gi;
     const issues = [];
     let match;
-    
+
     while ((match = securityRegex.exec(response)) !== null) {
       issues.push(match[1].trim());
     }
-    
+
     return issues;
   }
 
-  extractPerformanceIssues(response) {
+  extractPerformanceIssues (response) {
     const performanceRegex = /(?:performance|slow|inefficient|optimization).*?:?\s*(.+?)(?:\n|$)/gi;
     const issues = [];
     let match;
-    
+
     while ((match = performanceRegex.exec(response)) !== null) {
       issues.push(match[1].trim());
     }
-    
+
     return issues;
   }
 
-  extractQualityIssues(response) {
+  extractQualityIssues (response) {
     const qualityRegex = /(?:quality|maintainability|readability|documentation).*?:?\s*(.+?)(?:\n|$)/gi;
     const issues = [];
     let match;
-    
+
     while ((match = qualityRegex.exec(response)) !== null) {
       issues.push(match[1].trim());
     }
-    
+
     return issues;
   }
 
-  getRiskRecommendation(riskLevel) {
+  getRiskRecommendation (riskLevel) {
     switch (riskLevel) {
       case 'HIGH':
         return 'Manual review required. Consider breaking into smaller changes.';
@@ -533,33 +531,33 @@ Please provide:
     }
   }
 
-  hashContent(content) {
+  hashContent (content) {
     // Simple hash function for caching
     let hash = 0;
     if (!content) return hash;
-    
+
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     return hash.toString();
   }
 
-  cacheResult(key, result) {
+  cacheResult (key, result) {
     this.analysisCache.set(key, {
       result,
       timestamp: Date.now()
     });
   }
 
-  getCachedResult(key) {
+  getCachedResult (key) {
     const cached = this.analysisCache.get(key);
     if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
       return cached.result;
     }
-    
+
     this.analysisCache.delete(key);
     return null;
   }
@@ -567,7 +565,7 @@ Please provide:
   /**
    * Get analysis statistics
    */
-  getAnalysisStats() {
+  getAnalysisStats () {
     return {
       cacheSize: this.analysisCache.size,
       supportedLanguages: this.supportedLanguages.length,
@@ -578,7 +576,7 @@ Please provide:
   /**
    * Clear analysis cache
    */
-  clearCache() {
+  clearCache () {
     this.analysisCache.clear();
   }
 }

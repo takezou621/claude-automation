@@ -1,0 +1,49 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "disabled": true,
+      "autoApprove": []
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT_HERE"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "create_issue"
+      ]
+    },
+    "claude_code": {
+      "command": "/Users/msduser/.claude/local/claude",
+      "args": [
+        "mcp",
+        "serve"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    },
+    "browser-tools": {
+      "command": "npx",
+      "args": [
+        "@agentdeskai/browser-tools-mcp@1.1.0"
+      ],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
