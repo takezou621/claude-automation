@@ -261,18 +261,47 @@ jobs:
         
         echo "🌿 Creating smart branch for issue #$ISSUE_NUMBER..."
         
-        # Determine optimal branch pattern based on issue analysis
-        if echo "$ISSUE_TITLE" | grep -iE "(security|vulnerability)" > /dev/null; then
-          BRANCH_NAME="security/issue-$ISSUE_NUMBER"
-        elif echo "$ISSUE_TITLE" | grep -iE "(hotfix|critical|urgent)" > /dev/null; then
-          BRANCH_NAME="hotfix/issue-$ISSUE_NUMBER"
-        elif echo "$ISSUE_TITLE" | grep -iE "(feature|enhancement|add)" > /dev/null; then
-          BRANCH_NAME="feature/issue-$ISSUE_NUMBER"
-        elif echo "$ISSUE_TITLE" | grep -iE "(fix|bug|error)" > /dev/null; then
-          BRANCH_NAME="fix/issue-$ISSUE_NUMBER"
-        else
-          BRANCH_NAME="claude/issue-$ISSUE_NUMBER"
-        fi
+        # Use enhanced Branch Pattern Manager through Node.js
+        BRANCH_INFO=$(node -e "
+        const BranchPatternManager = require('./src/branch-pattern-manager.js');
+        const branchManager = new BranchPatternManager();
+        
+        const issueData = {
+          number: $ISSUE_NUMBER,
+          title: '$ISSUE_TITLE',
+          labels: [] // Will be populated by the actual issue data
+        };
+        
+        try {
+          const patternResult = branchManager.selectPattern(issueData, { 
+            tier: 'smart',
+            preferSecurity: true,
+            allowIntelligentSelection: true,
+            complexityLevel: '$COMPLEXITY'
+          });
+          
+          const branchInfo = branchManager.generateBranchName(patternResult.pattern, issueData);
+          
+          console.log(JSON.stringify({
+            name: branchInfo.name,
+            pattern: branchInfo.pattern,
+            type: patternResult.type,
+            confidence: patternResult.confidence
+          }));
+        } catch (error) {
+          console.error('Branch pattern selection failed:', error.message);
+          process.exit(1);
+        }
+        ")
+        
+        BRANCH_NAME=$(echo "$BRANCH_INFO" | jq -r '.name')
+        PATTERN_TYPE=$(echo "$BRANCH_INFO" | jq -r '.type')
+        PATTERN_CONFIDENCE=$(echo "$BRANCH_INFO" | jq -r '.confidence')
+        
+        echo "🎯 Smart pattern selection results:"
+        echo "  - Branch name: $BRANCH_NAME"
+        echo "  - Pattern type: $PATTERN_TYPE"
+        echo "  - Confidence: $PATTERN_CONFIDENCE"
         
         # Check if branch already exists
         if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
@@ -286,6 +315,8 @@ jobs:
         echo "✅ Created branch: $BRANCH_NAME"
         
         echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        echo "pattern_type=$PATTERN_TYPE" >> $GITHUB_OUTPUT
+        echo "pattern_confidence=$PATTERN_CONFIDENCE" >> $GITHUB_OUTPUT
 
     - name: Smart Code Implementation
       if: steps.issue-selection.outputs.should_process == 'true'
@@ -495,6 +526,27 @@ jobs:
           echo "✅ Execution time within Smart tier target"
         else
           echo "⚠️ Execution time exceeded Smart tier target"
+        fi
+        
+        # Record performance metrics using Performance Analytics Manager
+        if [ "${{ steps.issue-selection.outputs.should_process }}" = "true" ]; then
+          node -e "
+          const PerformanceAnalyticsManager = require('./src/performance-analytics-manager.js');
+          const analyticsManager = new PerformanceAnalyticsManager();
+          
+          analyticsManager.recordTierExecution('smart', {
+            executionTime: $EXECUTION_TIME * 1000,
+            success: '${{ job.status }}' === 'success',
+            issueNumber: ${{ steps.analysis.outputs.issue_number || 'null' }},
+            branchName: '${{ steps.branch-creation.outputs.branch_name || '' }}',
+            patternType: '${{ steps.branch-creation.outputs.pattern_type || '' }}',
+            patternConfidence: ${{ steps.branch-creation.outputs.pattern_confidence || 0 }},
+            complexity: '${{ steps.analysis.outputs.complexity || '' }}',
+            activityScore: ${{ steps.activity-analysis.outputs.activity_score || 0 }},
+            prCreated: '${{ steps.create-pr.outputs.pr_created }}' === 'true',
+            withinTarget: $EXECUTION_TIME < 3600
+          }).catch(console.error);
+          "
         fi
         
         # Log metrics for analytics

@@ -52,6 +52,15 @@ jobs:
           
           console.log('🏎️ Claude Rapid Automation Starting');
           
+          // Load new components
+          const BranchPatternManager = require('./src/branch-pattern-manager.js');
+          const PerformanceAnalyticsManager = require('./src/performance-analytics-manager.js');
+          const TierExecutionHandler = require('./src/tier-execution-handler.js');
+          
+          const branchManager = new BranchPatternManager();
+          const analyticsManager = new PerformanceAnalyticsManager();
+          const executionHandler = new TierExecutionHandler();
+          
           // Enhanced issue detection with branch pattern analysis
           let targetIssue = null;
           
@@ -101,53 +110,19 @@ jobs:
             await execAsync('git config user.email "claude-rapid@github.com"');
             await execAsync('git config user.name "Claude Rapid Bot"');
             
-            // Enhanced branch pattern detection (9+ patterns as per requirements)
-            const branchPatterns = {
-              'bug': `fix/issue-${targetIssue.number}`,
-              'bugfix': `fix/issue-${targetIssue.number}`,
-              'enhancement': `feature/issue-${targetIssue.number}`,
-              'feature': `feature/issue-${targetIssue.number}`,
-              'documentation': `docs/issue-${targetIssue.number}`,
-              'security': `security/issue-${targetIssue.number}`,
-              'performance': `perf/issue-${targetIssue.number}`,
-              'refactor': `refactor/issue-${targetIssue.number}`,
-              'test': `test/issue-${targetIssue.number}`,
-              'ci': `ci/issue-${targetIssue.number}`,
-              'hotfix': `hotfix/issue-${targetIssue.number}`,
-              'claude': `claude/issue-${targetIssue.number}`,
-              'automation': `automation-${targetIssue.number}`,
-              'default': `issue-${targetIssue.number}`
-            };
+            // Use enhanced Branch Pattern Manager
+            const patternResult = branchManager.selectPattern(targetIssue, { 
+              tier: 'rapid',
+              preferSecurity: false,
+              allowIntelligentSelection: true 
+            });
             
-            // Detect issue type from labels and title with priority-based selection
-            let issueType = 'default';
-            const labels = targetIssue.labels.map(label => label.name.toLowerCase());
-            const title = targetIssue.title.toLowerCase();
+            const branchInfo = branchManager.generateBranchName(patternResult.pattern, targetIssue);
+            const branchName = branchInfo.name;
+            const issueType = patternResult.type;
             
-            // Priority-based pattern selection (higher priority patterns checked first)
-            const priorityOrder = ['hotfix', 'security', 'bugfix', 'bug', 'feature', 'enhancement', 'claude', 'automation'];
-            
-            for (const type of priorityOrder) {
-              if (labels.includes(type) || title.includes(type) || 
-                  (type === 'bug' && (labels.includes('bugfix') || title.includes('fix'))) ||
-                  (type === 'feature' && labels.includes('enhancement'))) {
-                issueType = type;
-                break;
-              }
-            }
-            
-            // Fallback to checking all patterns if no priority match
-            if (issueType === 'default') {
-              for (const [type, pattern] of Object.entries(branchPatterns)) {
-                if (labels.includes(type) || title.includes(type)) {
-                  issueType = type;
-                  break;
-                }
-              }
-            }
-            
-            const branchName = branchPatterns[issueType];
             console.log(`🌿 Creating branch: ${branchName} (detected type: ${issueType})`);
+            console.log(`📋 Pattern details: ${JSON.stringify(patternResult, null, 2)}`);
             
             // Create and switch to feature branch
             await execAsync(`git checkout -b ${branchName}`);
@@ -372,6 +347,18 @@ Closes #${targetIssue.number}`;
               head: branchName,
               base: 'main',
               body: prBody
+            });
+            
+            // Record performance metrics
+            await analyticsManager.recordTierExecution('rapid', {
+              executionTime: Date.now() - startTime,
+              success: true,
+              issueNumber: targetIssue.number,
+              branchPattern: branchInfo.pattern,
+              branchName: branchName,
+              prNumber: prResponse.data.number,
+              issueType: issueType,
+              fallbackFrom: context.payload.inputs?.fallback_from || null
             });
             
             // Add appropriate labels
