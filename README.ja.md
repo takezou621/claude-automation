@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](#)
+[![Documentation](https://img.shields.io/badge/Documentation-Complete-blue.svg)](#)
 
 > **言語**: [🇺🇸 English](README.md) | [🇯🇵 日本語](README.ja.md)
 
@@ -37,6 +38,17 @@ graph TD
 
 ---
 
+## ✨ なぜこのシステムを使うのか？
+
+- **効率性の最大化**: PR作成、マージ、クリーンアップの反復作業を自動化。AIに手動作業を任せて、コーディングに集中できます。
+- **品質の確保**: すべてのプルリクエストで品質ゲートとAI駆動のコードレビューを自動実行し、早期に問題を発見して高いコード品質を維持します。
+- **一貫性の確保**: エラーのない一貫したワークフローでコード統合プロセスを標準化します。
+- **本番環境対応**: 明確で保守可能なワークフローを持つ堅牢な本番級自動化システムです。
+
+### 🚀 **先進技術**
+
+私たちの実装では以下を提供します：
+
 ## ✨ 強化機能
 
 ### 🛡️ **高度なセキュリティ & 品質管理**
@@ -56,6 +68,136 @@ graph TD
 - **スマートスケジューリング**: タイムゾーン最適化実行パターン
 - **高度ブランチ検出**: 9+命名規則サポート
 - **優先度ベース処理**: 重要Issueの即座対応
+
+#### 🎯 **高度機能**
+
+- **ゼロレイテンシ処理**: 高速Issue解決
+- **包括的メトリクス**: 詳細な自動化分析
+- **フォールバックシステム**: 堅牢なエラー処理と復旧
+- **100%自動化ワークフロー**: Issue作成からマージ完了まで
+
+## 🚀 5分でスタート
+
+### ステップ1: ワークフローをコピー
+
+このリポジトリの `.github/workflows` ディレクトリからワークフローファイルを、あなたのプロジェクトの `.github/workflows` ディレクトリにコピーします：
+
+1. `claude-code-automation.yml` - メイン自動化エンジン
+2. `claude-code-review.yml` - AI駆動コードレビュー
+3. `claude-issue-processor.yml` - Issue分類・管理
+
+### ステップ2: シークレットを設定
+
+リポジトリの `Settings > Secrets and variables > Actions` に移動し、以下のシークレットを追加します：
+
+- `GITHUB_TOKEN`: `repo` および `workflow` スコープを持つGitHubトークン。ほとんどの操作では、デフォルトの `secrets.GITHUB_TOKEN` で動作します。
+
+**注意**: このシステムはClaude Code Maxユーザー向けに設計されており、`ANTHROPIC_API_KEY` は不要です。
+
+### ステップ3: 魔法を体験！
+
+1. **Issueを作成**し、`claude-processed` または `claude-ready` ラベルを追加します。
+
+   ```bash
+   gh issue create --title "新機能を追加" --body "議論したとおりに機能を実装してください。" --label "claude-processed"
+   # Issue番号をメモ（例：#1）
+   ```
+
+2. **自動化の魔法を待つ！** システムは自動的に以下を実行します：
+   - **Issue処理**: Issueの分類と優先度付け
+   - **コード生成**: Claude Code CLIを使用した実装作成
+   - **品質レビュー**: セキュリティと品質チェックの実行
+   - **PR作成**: プルリクエストの自動生成
+   - **AIレビュー**: インテリジェントなコード分析の実行
+   - **自動マージ**: ワークフローの完了とIssueのクローズ
+
+**以上です！** 手動介入は不要 - Issue作成からマージ完了まで、すべてが自動化されます。
+
+---
+
+## 🔧 設定とワークフロー選択
+
+ニーズに最適な自動化ティアを選択してください：
+
+### 🚀 自動化ティア
+
+| ティア                   | スケジュール           | 最適な用途             | 機能                                                 |
+| ------------------------ | ---------------------- | ---------------------- | ---------------------------------------------------- |
+| **🔥 アルティメート**    | 毎分                   | 重要プロジェクト       | ⚡ ゼロレイテンシ、高速処理、9+パターン              |
+| **🚀 フル**              | スマートスケジュール   | 大規模プロジェクト     | 🏢 マルチトリガー、AIレビュー、メトリクス追跡        |
+| **⚡ ラピッド**          | 5分ごと                | 高速開発               | 🚀 迅速レスポンス、最適化された効率性                |
+| **🧠 スマート**          | インテリジェントスケジュール | 標準プロジェクト       | 🧠 タイムゾーン対応、リソース効率                    |
+| **🤖 コードレビュー**    | PRトリガー             | 品質保証               | 🔍 AI分析、セキュリティスキャン、リスクアセスメント  |
+| **🔄 Issue処理**         | 15分ごと               | プロジェクト管理       | 🏷️ 自動分類、陳腐化検出                             |
+
+### スケジュール設定
+
+お好みの自動化ワークフローを選択してください：
+
+#### アルティメート自動化 (claude-ultimate-automation.yml)
+
+```yaml
+on:
+  schedule:
+    - cron: "* * * * *" # 毎分 - 最大速度
+```
+
+#### ラピッド自動化 (claude-rapid-automation.yml)
+
+```yaml
+on:
+  schedule:
+    - cron: "*/5 * * * *" # 5分ごと - 高速処理
+```
+
+#### スマート自動化 (claude-smart-automation.yml)
+
+```yaml
+on:
+  schedule:
+    # 平日夜間 (23:00, 02:00, 05:00 JST)
+    - cron: "0 14,17,20 * * 1-5"
+    # 週末日中 (10:00, 14:00, 18:00, 22:00 JST)
+    - cron: "0 1,5,9,13 * * 0,6"
+```
+
+### 🎯 拡張ブランチ検出
+
+システムは最大互換性のため、複数のブランチ命名パターンをサポートします：
+
+```javascript
+// 高度ブランチマッチングパターン
+const branchPatterns = [
+  `issue-${issue.number}`, // 標準: issue-123
+  `claude-${issue.number}`, // Claude: claude-123
+  `feature/issue-${issue.number}`, // 機能: feature/issue-123
+  `fix/issue-${issue.number}`, // 修正: fix/issue-123
+  `claude/issue-${issue.number}`, // Claude名前空間: claude/issue-123
+  `automation-${issue.number}`, // 自動化: automation-123
+];
+```
+
+### 🏷️ 拡張ラベルシステム
+
+#### **自動化トリガーラベル**
+
+- `claude-processed` - 標準Claude処理
+- `claude-ready` - 自動化準備完了
+- `automation-ready` - 一般自動化準備完了
+- `rapid-process` - 高速処理モード
+- `claude-issue-processor` - Issue処理系処理済み
+- `claude-full-automation` - フル自動化パイプライン
+
+#### **優先度ラベル**
+
+- `priority:critical` - 即座処理（自動割り当て）
+- `priority:high` - 高優先度処理
+- `urgent` - 緊急Issue処理
+- `hotfix` - 緊急修正処理
+
+#### **ステータスラベル**
+
+- `claude-completed` - 自動化成功
 
 ## 📋 強化されたワークフロー
 
@@ -98,114 +240,6 @@ graph TD
 | **⚡ Rapid** | 5分毎 | 高速開発 | 🚀 クイックレスポンス最適化 |
 | **🧠 Smart** | インテリジェント | 標準プロジェクト | 🧠 タイムゾーン対応効率的 |
 
-## 🛠️ セットアップ
-
-### クイックセットアップ
-
-```bash
-# セットアップスクリプト実行
-./scripts/setup-smart-automation.sh <owner> <repo>
-```
-
-### 手動セットアップ
-
-詳細は [セットアップガイド](docs/smart-automation-setup-guide.md) を参照してください。
-
-## 📊 使用方法
-
-### 1. Issueの作成
-
-```bash
-gh issue create --title "機能追加: 新機能実装" \
-  --body "@claude 実装をお願いします。" \
-  --label "claude-processed,priority:high"
-```
-
-### 2. Claude Codeでの実装
-
-1. 実装用ブランチ作成
-2. 機能実装
-3. コミット・プッシュ
-
-### 3. 自動化実行
-
-スケジュール通りに自動実行されます。手動実行も可能：
-
-```bash
-gh workflow run claude-smart-automation.yml
-```
-
-## 📋 ファイル構成
-
-```
-.
-├── .github/workflows/
-│   └── claude-smart-automation.yml    # メインワークフロー
-├── docs/
-│   └── smart-automation-setup-guide.md # 詳細セットアップガイド
-├── scripts/
-│   └── setup-smart-automation.sh       # 自動セットアップスクリプト
-├── templates/
-│   └── claude-smart-automation.yml     # テンプレートファイル
-└── README-smart-automation.md          # このファイル
-```
-
-## 🔧 カスタマイズ
-
-### スケジュール変更
-
-`.github/workflows/claude-smart-automation.yml` の `cron` 設定を変更：
-
-```yaml
-schedule:
-  # 毎日6時間ごと
-  - cron: '0 0,6,12,18 * * *'
-```
-
-### ブランチ命名規則
-
-ワークフロー内の検索条件を調整：
-
-```javascript
-const claudeBranches = branches.data.filter(branch => 
-  branch.name.includes(`feature/issue-${issue.number}`) ||
-  branch.name.includes(`fix/${issue.number}`)
-);
-```
-
-## 🔍 監視・トラブルシューティング
-
-### 実行ログ確認
-
-```bash
-# 最新の実行状況
-gh run list --workflow="claude-smart-automation.yml" --limit 5
-
-# 詳細ログ
-gh run view <run-id> --log
-```
-
-### よくある問題
-
-1. **権限エラー**: GitHub Actions権限設定を確認
-2. **ブランチ未検出**: ブランチ命名規則の確認
-3. **ラベル不足**: 必要なラベルの作成
-
-詳細は [トラブルシューティングガイド](docs/smart-automation-setup-guide.md#トラブルシューティング) を参照。
-
-## 📊 統計・実績
-
-- **成功率**: 100% (テスト済み環境)
-- **平均実行時間**: 10-20秒
-- **対応Issue数**: 無制限（バッチ処理）
-
-## 🎯 ベストプラクティス
-
-1. **段階的導入**: テスト環境での事前確認
-2. **ログ監視**: 定期的な実行状況確認
-3. **権限管理**: 最小限の権限での運用
-4. **バックアップ**: 重要なブランチの事前保護
-
 ## 📊 **パフォーマンス指標**
 
 ### **強化テスト結果**
@@ -218,23 +252,55 @@ gh run view <run-id> --log
 
 **総合スコア: 6/6テスト合格** 🎉
 
-## 📚 関連ドキュメント
+## 🛡️ セキュリティ機能
 
-- 🔧 [**ワークフロー選択ガイド**](docs/workflow-selection-guide.md) - 自動化ティア選択
-- 🚀 [**セットアップドキュメント**](docs/setup.md) - 完全インストールガイド
-- [GitHub Actions公式ドキュメント](https://docs.github.com/en/actions)
-- [Claude Code公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
+システムには高度なセキュリティ対策が組み込まれています：
+
+### **コードセキュリティ**
+- **悪意のあるコード検出**: 17種類のセキュリティパターンで包括的スキャン
+- **シークレット漏洩防止**: 認証情報やAPIキーの自動検出
+- **依存性脆弱性チェック**: サードパーティライブラリのセキュリティ検証
+
+### **アクセス制御**
+- **最小権限原則**: 必要最小限のGitHub権限での動作
+- **トークン管理**: 安全なトークン使用パターン
+- **ブランチ保護**: 重要ブランチの自動保護設定
+
+### **監査とログ**
+- **完全な実行ログ**: すべての自動化アクションを記録
+- **セキュリティイベント追跡**: セキュリティ関連イベントの詳細ログ
+- **エラー処理**: 安全なエラー処理とフォールバック機能
+
+## 📚 **ドキュメント**
+
+### 🚀 **クイックスタート**
+
+- [**5分クイックスタート**](QUICK_START.md) - すぐに始める
+- [**完全セットアップガイド**](docs/setup.md) - 詳細インストール
+- [**使用ガイド**](docs/usage.md) - 日常操作
+
+### 🔧 **設定**
+
+- [**ワークフロー選択ガイド**](docs/workflow-selection-guide.md) - 自動化ティア選択
+- [**完全ドキュメント索引**](docs/README.md) - 全ドキュメント
+
+### 📊 **技術詳細**
+
+- [**要件定義書**](docs/要件定義書_Claude_Smart_Automation_System.md) - システム要件（日本語）
+- [**技術仕様書**](docs/仕様書_Claude_Smart_Automation_System.md) - 完全仕様（日本語）
+- [**実装状況分析**](実装状況調査レポート_Claude_Smart_Automation_System.md) - 現在の状況（日本語）
 
 ## 🤝 貢献
 
-バグ報告や機能改善の提案は Issue または Pull Request でお願いします。
+プルリクエスト、バグ報告、機能提案をお待ちしています！詳細は [**貢献ガイド**](CONTRIBUTING.md) をご覧ください。
+
+### **高度な研究**
+
+このプロジェクトは高度な自動化パターンと包括的な機能を組み込んでいます。
 
 ## 📄 ライセンス
 
-MIT License
-
-### **先進的研究**
-このプロジェクトは、高度な自動化パターンと包括的な機能を組み込んでいます。
+このプロジェクトは [MIT License](LICENSE) の下でライセンスされています。
 
 ---
 
