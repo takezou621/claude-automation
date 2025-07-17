@@ -424,23 +424,23 @@ class ConfigManager {
   async storePerformanceMetrics (tier, metrics) {
     const key = `performance.tierMetrics.${tier}`;
     const currentMetrics = this.get(key, []);
-    
+
     // Add new metrics with timestamp
     const newMetric = {
       ...metrics,
       timestamp: new Date().toISOString()
     };
-    
+
     currentMetrics.push(newMetric);
-    
+
     // Keep only recent metrics based on retention policy
     const retentionDays = this.getPerformanceTrackingConfig().retentionDays;
     const cutoffDate = new Date(Date.now() - (retentionDays * 24 * 60 * 60 * 1000));
-    
-    const filteredMetrics = currentMetrics.filter(metric => 
+
+    const filteredMetrics = currentMetrics.filter(metric =>
       new Date(metric.timestamp) > cutoffDate
     );
-    
+
     await this.set(key, filteredMetrics);
   }
 
@@ -449,12 +449,12 @@ class ConfigManager {
    */
   getPerformanceMetrics (tier, timeWindow = '24h') {
     const metrics = this.get(`performance.tierMetrics.${tier}`, []);
-    
+
     // Parse time window
     const windowMs = this.parseTimeWindow(timeWindow);
     const cutoffDate = new Date(Date.now() - windowMs);
-    
-    return metrics.filter(metric => 
+
+    return metrics.filter(metric =>
       new Date(metric.timestamp) > cutoffDate
     );
   }
@@ -464,10 +464,10 @@ class ConfigManager {
    */
   getTierPerformanceSummary (tier) {
     const metrics = this.getPerformanceMetrics(tier, '24h');
-    
+
     if (metrics.length === 0) {
       return {
-        tier: tier,
+        tier,
         executionCount: 0,
         averageExecutionTime: 0,
         successRate: 0,
@@ -480,7 +480,7 @@ class ConfigManager {
     const latestMetric = metrics.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
 
     return {
-      tier: tier,
+      tier,
       executionCount: metrics.length,
       averageExecutionTime: totalExecutionTime / metrics.length,
       successRate: (successfulExecutions / metrics.length) * 100,
@@ -498,7 +498,7 @@ class ConfigManager {
    */
   getOptimalTierRecommendation (issueData) {
     const selectionConfig = this.getTierSelectionConfig();
-    
+
     if (!selectionConfig.autoSelection) {
       return {
         recommendedTier: selectionConfig.defaultTier,
@@ -509,25 +509,25 @@ class ConfigManager {
 
     // Analyze issue characteristics
     const analysis = this.analyzeIssueForTierSelection(issueData);
-    
+
     // Score each tier based on suitability
     const tierScores = {};
     const enabledTiers = this.getEnabledTiers();
-    
+
     for (const tier of enabledTiers) {
       tierScores[tier] = this.calculateTierSuitabilityScore(tier, analysis);
     }
 
     // Find best tier
     const bestTier = Object.entries(tierScores)
-      .sort(([,a], [,b]) => b - a)[0];
+      .sort(([, a], [, b]) => b - a)[0];
 
     return {
       recommendedTier: bestTier[0],
       confidence: bestTier[1],
       reasoning: this.generateTierRecommendationReasoning(bestTier[0], analysis),
       alternativeTiers: Object.entries(tierScores)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(1, 3)
         .map(([tier, score]) => ({ tier, score }))
     };
@@ -539,7 +539,7 @@ class ConfigManager {
   analyzeIssueForTierSelection (issueData) {
     const title = (issueData.title || '').toLowerCase();
     const body = (issueData.body || '').toLowerCase();
-    const labels = (issueData.labels || []).map(l => 
+    const labels = (issueData.labels || []).map(l =>
       typeof l === 'string' ? l.toLowerCase() : l.name.toLowerCase()
     );
 
@@ -582,9 +582,9 @@ class ConfigManager {
 
     // Type-specific scoring
     const typeScoring = {
-      'ultimate': { 'bug': 10, 'hotfix': 15, 'critical': 20 },
-      'rapid': { 'enhancement': 15, 'feature': 10, 'bug': 15 },
-      'smart': { 'refactor': 20, 'documentation': 15, 'security': 25 }
+      ultimate: { bug: 10, hotfix: 15, critical: 20 },
+      rapid: { enhancement: 15, feature: 10, bug: 15 },
+      smart: { refactor: 20, documentation: 15, security: 25 }
     };
 
     if (typeScoring[tier] && typeScoring[tier][analysis.type]) {
@@ -655,7 +655,7 @@ class ConfigManager {
   detectIssueUrgency (labels, title) {
     const urgencyKeywords = ['urgent', 'asap', 'immediately', 'hotfix', 'critical'];
     const content = `${title} ${labels.join(' ')}`;
-    
+
     if (urgencyKeywords.some(keyword => content.includes(keyword))) {
       return 'high';
     }
@@ -708,17 +708,17 @@ class ConfigManager {
   parseTimeWindow (timeWindow) {
     const match = timeWindow.match(/^(\d+)([hmsd])$/);
     if (!match) return 24 * 60 * 60 * 1000; // Default 24 hours
-    
+
     const value = parseInt(match[1]);
     const unit = match[2];
-    
+
     const multipliers = {
-      's': 1000,
-      'm': 60 * 1000,
-      'h': 60 * 60 * 1000,
-      'd': 24 * 60 * 60 * 1000
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000
     };
-    
+
     return value * (multipliers[unit] || multipliers.h);
   }
 
