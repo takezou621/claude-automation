@@ -31,7 +31,7 @@ class WebhookServer {
 
     this.app = express();
     this.logger = winston.createLogger({
-      level: 'info',
+      level: 'debug',
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json()
@@ -57,11 +57,27 @@ class WebhookServer {
    * Middleware setup
    */
   setupMiddleware () {
-    // Raw body parser for webhook signature verification
-    this.app.use('/webhook', express.raw({ type: 'application/json' }));
+    // Custom middleware to capture raw body for webhooks
+    this.app.use('/webhook', (req, res, next) => {
+      let body = '';
+      req.setEncoding('utf8');
+      req.on('data', chunk => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        req.rawBody = body;
+        req.body = body;
+        next();
+      });
+    });
 
     // JSON parser for other routes
-    this.app.use(express.json());
+    this.app.use((req, res, next) => {
+      if (req.path === '/webhook') {
+        return next();
+      }
+      return express.json()(req, res, next);
+    });
 
     // Request logging
     this.app.use((req, res, next) => {
@@ -155,12 +171,12 @@ class WebhookServer {
         const event = req.get('X-GitHub-Event');
         const body = req.body;
 
-        // Verify webhook signature
+        // Verify webhook signature using raw body
         if (!this.verifySignature(signature, body)) {
           return res.status(401).json({ error: 'Invalid signature' });
         }
 
-        // Parse JSON body
+        // Parse JSON body (body should be Buffer from express.raw)
         const payload = JSON.parse(body.toString());
 
         this.logger.info(`Received GitHub webhook: ${event}`, {
@@ -291,8 +307,26 @@ class WebhookServer {
 
     const expectedSignatureWithPrefix = `sha256=${expectedSignature}`;
 
+    // Debug logging for signature verification
+    this.logger.debug('Signature verification debug', {
+      receivedSignature: signature,
+      expectedSignature: expectedSignatureWithPrefix,
+      secret: this.config.secret,
+      bodyType: typeof body,
+      bodyLength: bodyData.length
+    });
+
     // Use constant-time comparison to prevent timing attacks
-    return this.constantTimeCompare(signature, expectedSignatureWithPrefix);
+    const isValid = this.constantTimeCompare(signature, expectedSignatureWithPrefix);
+    
+    if (!isValid) {
+      this.logger.error('Signature verification failed', {
+        received: signature,
+        expected: expectedSignatureWithPrefix
+      });
+    }
+    
+    return isValid;
   }
 
   /**

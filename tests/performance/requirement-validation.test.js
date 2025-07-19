@@ -331,7 +331,8 @@ describe('Performance Requirement Validation', () => {
       expect(compliancePercentage).toBeGreaterThanOrEqual(82); // Target compliance
     });
 
-    async runComplianceTest(testName) {
+    // Helper function for compliance testing
+    const runComplianceTest = async (testName) => {
       // Simulate compliance testing
       switch (testName) {
         case 'Tier execution time compliance':
@@ -351,7 +352,7 @@ describe('Performance Requirement Validation', () => {
         default:
           return false;
       }
-    }
+    };
   });
 
   describe('Performance Analytics Requirements', () => {

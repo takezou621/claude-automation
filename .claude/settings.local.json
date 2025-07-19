@@ -74,7 +74,8 @@
       "Bash(git remote set-url:*)",
       "Bash(python:*)",
       "Bash(pip3 install:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm:*)"
     ],
     "deny": []
   }
