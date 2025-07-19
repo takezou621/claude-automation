@@ -328,31 +328,42 @@ jobs:
         echo "⚙️ Implementing smart code solution for issue #$ISSUE_NUMBER..."
         echo "📊 Complexity level: $COMPLEXITY"
         
-        # Run the main automation system with smart tier configuration
-        node -e "
-        const SimpleAutomationSystem = require('./src/simple-automation-system.js');
+        echo "Preparing to run Smart Automation with GitHub context..."
         
-        async function runSmartAutomation() {
+    - name: Run Smart Automation
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const SimpleAutomationSystem = require('./src/simple-automation-system.js');
+          
+          console.log('⚙️ Running Smart Automation for issue #${{ steps.analysis.outputs.issue_number }}...');
+          console.log('📊 Complexity level: ${{ steps.analysis.outputs.complexity }}');
+          
+          const config = {
+            tier: 'smart',
+            maxExecutionTime: 3600000, // 1 hour
+            comprehensiveAnalysis: true,
+            qualityChecks: {
+              security: true,
+              performance: true,
+              syntax: true,
+              testing: true,
+              documentation: true,
+              accessibility: true,
+              compatibility: true,
+              maintainability: true
+            },
+            branchStrategy: 'intelligent',
+            createPR: true,
+            autoMerge: false,
+            github: {
+              token: process.env.GITHUB_TOKEN,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            }
+          };
+          
           try {
-            const config = {
-              tier: 'smart',
-              maxExecutionTime: 3600000, // 1 hour
-              comprehensiveAnalysis: true,
-              qualityChecks: {
-                security: true,
-                performance: true,
-                syntax: true,
-                testing: true,
-                documentation: true,
-                accessibility: true,
-                compatibility: true,
-                maintainability: true
-              },
-              branchStrategy: 'intelligent',
-              createPR: true,
-              autoMerge: false
-            };
-            
             // Create an instance of the automation system
             const automationSystem = new SimpleAutomationSystem(config);
             
@@ -365,18 +376,14 @@ jobs:
             
             if (result.error) {
               console.error('❌ Implementation error:', result.error);
-              process.exit(1);
+              throw new Error(result.error);
             }
             
             return result;
           } catch (error) {
             console.error('❌ Smart automation failed:', error.message);
-            process.exit(1);
+            throw error;
           }
-        }
-        
-        runSmartAutomation().then(() => process.exit(0)).catch(() => process.exit(1));
-        "
 
     - name: Comprehensive Quality Checks
       if: steps.issue-selection.outputs.should_process == 'true'
