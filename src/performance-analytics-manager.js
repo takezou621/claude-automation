@@ -358,7 +358,7 @@ class PerformanceAnalyticsManager {
   /**
      * Analyze trend compared to recent executions
      */
-  analyzeTrend (tier, currentMetrics) {
+  analyzeTrend (tier, _currentMetrics) {
     const recentMetrics = this.getRecentMetrics(tier, 10); // Last 10 executions
 
     if (recentMetrics.length < 3) {
@@ -456,7 +456,7 @@ class PerformanceAnalyticsManager {
   /**
      * Detect pattern-based anomalies
      */
-  detectPatternAnomalies (tier, metrics) {
+  detectPatternAnomalies (tier, _metrics) {
     const anomalies = [];
     const recentMetrics = this.getRecentMetrics(tier, 20);
 
@@ -523,7 +523,7 @@ class PerformanceAnalyticsManager {
   /**
      * Attempt automatic remediation
      */
-  attemptAutoRemediation (tier, anomaly, metrics) {
+  attemptAutoRemediation (tier, anomaly, _metrics) {
     const remediations = {
       execution_time: () => {
         if (anomaly.severity === 'critical' && tier === 'ultimate') {
@@ -753,7 +753,7 @@ class PerformanceAnalyticsManager {
 
     for (const metric of metrics) {
       const sorted = Object.entries(tierData)
-        .filter(([tier, data]) => data.executionCount > 0)
+        .filter(([_tier, data]) => data.executionCount > 0)
         .sort(([, a], [, b]) => b[metric] - a[metric])
         .map(([tier]) => tier);
 
@@ -912,12 +912,7 @@ class PerformanceAnalyticsManager {
   }
 
   // Additional helper methods...
-  cleanupOldMetrics (tierMetrics) {
-    const cutoffTime = Date.now() - (this.retentionDays * 24 * 60 * 60 * 1000);
-    tierMetrics.raw = tierMetrics.raw.filter(m => m.timestamp > cutoffTime);
-  }
-
-  updateAggregatedMetrics (tier, metrics) {
+  updateAggregatedMetrics (_tier, _metrics) {
     // Implementation for aggregated metrics updates
     // This would aggregate metrics by different time intervals
   }

@@ -330,7 +330,7 @@ class SecurityAnalyzer {
    * Generate security report
    */
   async generateSecurityReport (combinedResults, context) {
-    const { vulnerabilities, warnings, summary } = combinedResults;
+    const { vulnerabilities, summary } = combinedResults;
 
     const reportPrompt = `Generate a comprehensive security report based on the following analysis:
 
@@ -374,14 +374,11 @@ Please provide:
   calculateRiskScore (combinedResults) {
     const { vulnerabilities } = combinedResults;
 
-    let totalScore = 0;
     let weightedScore = 0;
 
     for (const vuln of vulnerabilities) {
       const baseScore = this.riskLevels[vuln.severity] || 1;
       const multiplier = vuln.matches || 1;
-
-      totalScore += baseScore * multiplier;
 
       // Apply weighting based on vulnerability type
       if (vuln.type === 'SECRET_EXPOSURE') {

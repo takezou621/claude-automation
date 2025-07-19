@@ -100,10 +100,15 @@ class AutomationTierOrchestrator {
       throw new Error('Orchestrator not initialized. Call initialize() first.');
     }
 
+    // Initialize variables outside try block for proper scope
+    let recommendation = null;
+    let selectedTier = null;
+    let startTime = Date.now();
+
     try {
       // Get optimal tier recommendation from ConfigManager
-      const recommendation = this.configManager.getOptimalTierRecommendation(issueData);
-      const selectedTier = options.forceTier || recommendation.recommendedTier;
+      recommendation = this.configManager.getOptimalTierRecommendation(issueData);
+      selectedTier = options.forceTier || recommendation.recommendedTier;
 
       console.log(`🎯 Selected ${selectedTier} tier for issue #${issueData.number} (confidence: ${recommendation.confidence})`);
       console.log(`💡 Reasoning: ${recommendation.reasoning}`);
@@ -136,8 +141,6 @@ class AutomationTierOrchestrator {
         schedule,
         options
       };
-
-      const startTime = Date.now();
       const result = await this.executionHandler.executeTierWithHandling(
         selectedTier,
         executionContext,

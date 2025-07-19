@@ -186,19 +186,21 @@ class TierExecutionHandler {
      * Execute with timeout protection
      */
   async executeWithTimeout (tier, context, executionFunction, timeoutMs) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`${tier} tier execution timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
-      try {
-        const result = await executionFunction(context);
-        clearTimeout(timeout);
-        resolve(result);
-      } catch (error) {
-        clearTimeout(timeout);
-        reject(error);
-      }
+      // Execute the async function and handle the promise
+      executionFunction(context)
+        .then(result => {
+          clearTimeout(timeout);
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeout);
+          reject(error);
+        });
     });
   }
 
@@ -550,7 +552,7 @@ class TierExecutionHandler {
   /**
      * Generate admin recommendations
      */
-  generateAdminRecommendations (tier, error, execution) {
+  generateAdminRecommendations (tier, error, _execution) {
     const recommendations = [];
     const errorAnalysis = this.analyzeError(error);
 
@@ -579,7 +581,7 @@ class TierExecutionHandler {
   /**
      * Dispatch workflow for fallback tier
      */
-  async dispatchWorkflow (tier, context) {
+  async dispatchWorkflow (tier, _context) {
     // This would integrate with GitHub Actions workflow dispatch
     // For now, simulate the dispatch
     console.log(`🚀 Dispatching ${tier} tier workflow with fallback context`);

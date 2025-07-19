@@ -608,12 +608,12 @@ class MonitoringAlertingSystem extends EventEmitter {
     }
   }
 
-  async checkTierResources (tier) {
+  async checkTierResources (_tier) {
     // Simulate resource check (CPU, memory, etc.)
     return Math.random() > 0.1; // 90% chance of resources being available
   }
 
-  async checkTierWorkflows (tier) {
+  async checkTierWorkflows (_tier) {
     // Simulate workflow accessibility check
     return Math.random() > 0.05; // 95% chance of workflows being accessible
   }
@@ -659,7 +659,7 @@ class MonitoringAlertingSystem extends EventEmitter {
     this.performanceMetrics.set(tier, current);
   }
 
-  updateQuotaUsage (apiCallData) {
+  updateQuotaUsage (_apiCallData) {
     // Track API usage for quota monitoring
     // This would be called whenever GitHub API calls are made
   }

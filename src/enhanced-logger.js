@@ -140,7 +140,7 @@ class EnhancedLogger {
    * Format log entry for file output
    */
   formatLogEntry (info) {
-    const { timestamp, level, message, service, environment, metadata } = info;
+    const { timestamp, level, message, service, metadata } = info;
 
     let entry = `[${timestamp}] [${level.toUpperCase()}] [${service}] ${message}`;
 
@@ -156,7 +156,7 @@ class EnhancedLogger {
    * Format console entry with colors and better readability
    */
   formatConsoleEntry (info) {
-    const { timestamp, level, message, service, metadata } = info;
+    const { timestamp, level, message, metadata } = info;
 
     let entry = `🤖 [${timestamp}] ${level}: ${message}`;
 

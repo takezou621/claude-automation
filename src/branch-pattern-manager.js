@@ -153,17 +153,14 @@ class BranchPatternManager {
     // Security preference override
     if (preferSecurity && (detectedType === 'security' || this.isSecurityRelated(issueTitle, issueLabels))) {
       selectedPattern = 'issue-security';
-    }
-    // Critical issues get hotfix pattern
-    else if (priority === 'critical' && detectedType === 'bug') {
+    } else if (priority === 'critical' && detectedType === 'bug') {
+      // Critical issues get hotfix pattern
       selectedPattern = 'issue-hotfix';
-    }
-    // Use issue-number based patterns by default
-    else if (preferIssueNumber && issueNumber) {
+    } else if (preferIssueNumber && issueNumber) {
+      // Use issue-number based patterns by default
       selectedPattern = this.mapTypeToIssuePattern(detectedType);
-    }
-    // Fallback to title-based patterns
-    else {
+    } else {
+      // Fallback to title-based patterns
       selectedPattern = this.mapTypeToTitlePattern(detectedType);
     }
 
