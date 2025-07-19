@@ -1,9 +1,9 @@
 /**
  * Automation Tier Orchestrator
- * 
+ *
  * Central integration layer that coordinates all automation tier components
  * with ConfigManager for comprehensive automation system.
- * 
+ *
  * Demonstrates proper integration of:
  * - ConfigManager
  * - IntelligentScheduleManager
@@ -23,20 +23,20 @@ class AutomationTierOrchestrator {
   constructor (configPath = './config/claude-automation.json', githubClient = null) {
     // Initialize ConfigManager first
     this.configManager = new ConfigManager(configPath);
-    
+
     // Initialize all components with ConfigManager integration
     this.scheduleManager = new IntelligentScheduleManager(this.configManager);
     this.performanceManager = new PerformanceAnalyticsManager(this.configManager);
     this.executionHandler = new TierExecutionHandler(this.configManager);
     this.branchPatternManager = new BranchPatternManager();
-    
+
     // Initialize monitoring system
     this.monitoringSystem = new MonitoringAlertingSystem(
       this.configManager,
       githubClient,
       this.performanceManager
     );
-    
+
     // Orchestrator state
     this.isInitialized = false;
     this.activeExecutions = new Map();
@@ -50,16 +50,16 @@ class AutomationTierOrchestrator {
   async initialize () {
     try {
       console.log('🚀 Initializing Automation Tier Orchestrator...');
-      
+
       // Ensure ConfigManager is loaded
       await this.configManager.loadConfig();
-      
+
       // Validate configuration
       const validation = this.configManager.validateConfig();
       if (!validation.valid) {
         throw new Error(`Configuration validation failed: ${validation.errors.join(', ')}`);
       }
-      
+
       // Initialize tier status tracking
       const enabledTiers = this.configManager.getEnabledTiers();
       for (const tier of enabledTiers) {
@@ -70,16 +70,16 @@ class AutomationTierOrchestrator {
           performance: await this.performanceManager.getTierPerformanceSummary(tier)
         });
       }
-      
+
       // Optionally start monitoring
       const monitoringConfig = this.configManager.get('monitoring.autoStart', true);
       if (monitoringConfig) {
         await this.startMonitoring();
       }
-      
+
       this.isInitialized = true;
       console.log(`✅ Orchestrator initialized with ${enabledTiers.length} enabled tiers`);
-      
+
       return {
         success: true,
         enabledTiers,
@@ -104,7 +104,7 @@ class AutomationTierOrchestrator {
       // Get optimal tier recommendation from ConfigManager
       const recommendation = this.configManager.getOptimalTierRecommendation(issueData);
       const selectedTier = options.forceTier || recommendation.recommendedTier;
-      
+
       console.log(`🎯 Selected ${selectedTier} tier for issue #${issueData.number} (confidence: ${recommendation.confidence})`);
       console.log(`💡 Reasoning: ${recommendation.reasoning}`);
 
@@ -116,8 +116,8 @@ class AutomationTierOrchestrator {
       // Generate branch pattern using BranchPatternManager
       const patternSelection = this.branchPatternManager.selectPattern(issueData);
       const branchInfo = this.branchPatternManager.generateBranchName(
-        patternSelection.pattern, 
-        issueData, 
+        patternSelection.pattern,
+        issueData,
         patternSelection.priority
       );
 
@@ -161,9 +161,9 @@ class AutomationTierOrchestrator {
         },
         apiCalls: Math.floor(Math.random() * 50) + 10
       };
-      
+
       await this.performanceManager.recordMetrics(selectedTier, performanceMetrics);
-      
+
       // Emit monitoring event if monitoring is enabled
       if (this.monitoringEnabled) {
         this.monitoringSystem.emit('tierExecution', {
@@ -187,14 +187,13 @@ class AutomationTierOrchestrator {
           tierPerformance: await this.performanceManager.getTierPerformanceSummary(selectedTier)
         }
       };
-
     } catch (error) {
       console.error(`❌ Automation execution failed: ${error.message}`);
-      
+
       // Record failure metrics if we have a selected tier
       const tierForMetrics = selectedTier || recommendation?.recommendedTier || 'unknown';
       const executionTime = Date.now() - startTime;
-      
+
       try {
         await this.performanceManager.recordMetrics(tierForMetrics, {
           executionTime,
@@ -220,7 +219,7 @@ class AutomationTierOrchestrator {
 
     const enabledTiers = this.configManager.getEnabledTiers();
     const tierPerformance = {};
-    
+
     for (const tier of enabledTiers) {
       tierPerformance[tier] = await this.performanceManager.getTierPerformanceSummary(tier);
     }
@@ -241,7 +240,7 @@ class AutomationTierOrchestrator {
    */
   async updateTierConfiguration (tier, config) {
     await this.configManager.updateTierConfig(tier, config);
-    
+
     // Update tier status
     if (this.tierStatus.has(tier)) {
       const status = this.tierStatus.get(tier);
@@ -257,7 +256,7 @@ class AutomationTierOrchestrator {
    */
   async getTierRecommendations (recentIssues = []) {
     const recommendations = [];
-    
+
     for (const issue of recentIssues) {
       const recommendation = this.configManager.getOptimalTierRecommendation(issue);
       recommendations.push({
@@ -325,7 +324,7 @@ class AutomationTierOrchestrator {
    */
   generateSystemRecommendations () {
     const recommendations = [];
-    
+
     // Check tier performance
     for (const [tier, status] of this.tierStatus) {
       if (status.performance?.successRate < 80) {
@@ -421,7 +420,7 @@ class AutomationTierOrchestrator {
 
     const alerts = this.monitoringSystem.alerts;
     const alert = alerts.find(a => a.id === alertId);
-    
+
     if (alert) {
       alert.acknowledged = true;
       alert.acknowledgedAt = new Date().toISOString();
@@ -437,12 +436,12 @@ class AutomationTierOrchestrator {
    */
   async shutdown () {
     console.log('🛑 Shutting down Automation Tier Orchestrator...');
-    
+
     // Stop monitoring if enabled
     if (this.monitoringEnabled) {
       await this.stopMonitoring();
     }
-    
+
     // Wait for active executions to complete
     const activeExecutions = Array.from(this.activeExecutions.values());
     if (activeExecutions.length > 0) {
@@ -452,7 +451,7 @@ class AutomationTierOrchestrator {
 
     // Save final configuration state
     await this.configManager.saveConfig();
-    
+
     this.isInitialized = false;
     console.log('✅ Orchestrator shutdown complete');
   }

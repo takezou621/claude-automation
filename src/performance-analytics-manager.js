@@ -10,11 +10,12 @@
 class PerformanceAnalyticsManager {
   constructor (configManager, options = {}) {
     this.configManager = configManager;
-    
+
     // Get configuration from ConfigManager or use defaults
-    const performanceConfig = this.configManager ? 
-      this.configManager.getPerformanceTrackingConfig() : {};
-    
+    const performanceConfig = this.configManager
+      ? this.configManager.getPerformanceTrackingConfig()
+      : {};
+
     this.retentionDays = options.retentionDays || performanceConfig.retentionDays || 30;
     this.anomalyThreshold = options.anomalyThreshold || performanceConfig.anomalyThreshold || 2.0;
     this.alertingEnabled = options.alertingEnabled !== false && (performanceConfig.alerting !== false);
@@ -24,7 +25,7 @@ class PerformanceAnalyticsManager {
     this.maxAlertsCount = options.maxAlertsCount || 1000;
     this.baselines = this.initializeBaselines();
     this.aggregationIntervals = ['1m', '5m', '15m', '1h', '1d'];
-    
+
     // Start automatic cleanup intervals
     this.startCleanupIntervals();
   }
@@ -32,7 +33,7 @@ class PerformanceAnalyticsManager {
   /**
    * Start automatic cleanup intervals to prevent memory leaks
    */
-  startCleanupIntervals() {
+  startCleanupIntervals () {
     // Cleanup old metrics every hour
     this.metricsCleanupInterval = setInterval(() => {
       this.cleanupOldMetrics();
@@ -47,19 +48,19 @@ class PerformanceAnalyticsManager {
   /**
    * Clean up old metrics based on retention policy and size limits
    */
-  cleanupOldMetrics() {
+  cleanupOldMetrics () {
     const cutoffTime = Date.now() - (this.retentionDays * 24 * 60 * 60 * 1000);
-    
+
     for (const [tier, tierMetrics] of this.metrics.entries()) {
       if (tierMetrics.raw) {
         // Remove old metrics based on time
         tierMetrics.raw = tierMetrics.raw.filter(metric => metric.timestamp > cutoffTime);
-        
+
         // Also enforce size limits to prevent unbounded growth
         if (tierMetrics.raw.length > this.maxMetricsPerTier) {
           tierMetrics.raw = tierMetrics.raw.slice(-this.maxMetricsPerTier);
         }
-        
+
         console.log(`🧹 Cleaned up ${tier} tier metrics. Remaining: ${tierMetrics.raw.length}`);
       }
     }
@@ -68,7 +69,7 @@ class PerformanceAnalyticsManager {
   /**
    * Clean up old alerts to prevent memory leaks
    */
-  cleanupOldAlerts() {
+  cleanupOldAlerts () {
     if (this.alerts.length > this.maxAlertsCount) {
       const removedCount = this.alerts.length - this.maxAlertsCount;
       this.alerts = this.alerts.slice(-this.maxAlertsCount);
@@ -79,7 +80,7 @@ class PerformanceAnalyticsManager {
   /**
    * Cleanup intervals when shutting down
    */
-  shutdown() {
+  shutdown () {
     if (this.metricsCleanupInterval) {
       clearInterval(this.metricsCleanupInterval);
     }
@@ -125,7 +126,7 @@ class PerformanceAnalyticsManager {
     for (const tier of ['ultimate', 'rapid', 'smart']) {
       const tierConfig = this.configManager.getTierConfig(tier);
       const configBaselines = this.configManager.get(`performance.baselines.${tier}`, {});
-      
+
       baselines[tier] = {
         executionTime: {
           ...defaults[tier].executionTime,
@@ -167,19 +168,19 @@ class PerformanceAnalyticsManager {
     if (!tier || typeof tier !== 'string') {
       throw new Error('Invalid tier parameter: must be a non-empty string');
     }
-    
+
     if (!metrics || typeof metrics !== 'object') {
       throw new Error('Invalid metrics parameter: must be an object');
     }
-    
+
     if (typeof metrics.executionTime !== 'number' || metrics.executionTime < 0) {
       throw new Error('Invalid executionTime: must be a non-negative number');
     }
-    
+
     if (typeof metrics.success !== 'boolean') {
       throw new Error('Invalid success parameter: must be a boolean');
     }
-    
+
     // Validate tier is one of the expected values
     const validTiers = ['ultimate', 'rapid', 'smart'];
     if (!validTiers.includes(tier)) {
@@ -687,7 +688,7 @@ class PerformanceAnalyticsManager {
   async getTierPerformanceSummary (tier) {
     const metrics = this.getMetricsForTimeWindow(tier, '24h');
     const summary = this.analyzeTierPerformance(tier, metrics);
-    
+
     // Add tier-specific information
     return {
       tier,

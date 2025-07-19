@@ -1,6 +1,6 @@
 /**
  * Enhanced Logger System
- * 
+ *
  * Provides comprehensive logging with structured formats, multiple transports,
  * and integration with performance monitoring and error tracking.
  */
@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 
 class EnhancedLogger {
-  constructor(options = {}) {
+  constructor (options = {}) {
     this.serviceName = options.serviceName || 'claude-automation';
     this.environment = options.environment || process.env.NODE_ENV || 'development';
     this.logLevel = options.logLevel || process.env.LOG_LEVEL || 'info';
@@ -21,13 +21,13 @@ class EnhancedLogger {
     this.maxFileSize = options.maxFileSize || '10m';
     this.maxFiles = options.maxFiles || 5;
     this.enableErrorTracking = options.enableErrorTracking !== false;
-    
+
     // Ensure logs directory exists
     this.ensureLogDirectory();
-    
+
     // Initialize winston logger
     this.logger = this.createLogger();
-    
+
     // Initialize error tracking
     this.errorTracker = {
       errors: [],
@@ -35,7 +35,7 @@ class EnhancedLogger {
       errorsByType: new Map(),
       errorsByService: new Map()
     };
-    
+
     // Set up periodic cleanup
     this.setupCleanup();
   }
@@ -43,7 +43,7 @@ class EnhancedLogger {
   /**
    * Ensure log directory exists
    */
-  ensureLogDirectory() {
+  ensureLogDirectory () {
     if (!fs.existsSync(this.logDirectory)) {
       fs.mkdirSync(this.logDirectory, { recursive: true });
     }
@@ -52,7 +52,7 @@ class EnhancedLogger {
   /**
    * Create winston logger with enhanced configuration
    */
-  createLogger() {
+  createLogger () {
     const formats = [
       winston.format.timestamp({
         format: 'YYYY-MM-DD HH:mm:ss.SSS'
@@ -139,27 +139,27 @@ class EnhancedLogger {
   /**
    * Format log entry for file output
    */
-  formatLogEntry(info) {
+  formatLogEntry (info) {
     const { timestamp, level, message, service, environment, metadata } = info;
-    
+
     let entry = `[${timestamp}] [${level.toUpperCase()}] [${service}] ${message}`;
-    
+
     // Add metadata if present
     if (metadata && Object.keys(metadata).length > 0) {
       entry += ` | ${JSON.stringify(metadata)}`;
     }
-    
+
     return entry;
   }
 
   /**
    * Format console entry with colors and better readability
    */
-  formatConsoleEntry(info) {
+  formatConsoleEntry (info) {
     const { timestamp, level, message, service, metadata } = info;
-    
+
     let entry = `🤖 [${timestamp}] ${level}: ${message}`;
-    
+
     // Add context information
     if (metadata && Object.keys(metadata).length > 0) {
       // Filter out common fields for console readability
@@ -167,33 +167,33 @@ class EnhancedLogger {
       delete filteredMetadata.duration;
       delete filteredMetadata.pid;
       delete filteredMetadata.hostname;
-      
+
       if (Object.keys(filteredMetadata).length > 0) {
         entry += ` | ${JSON.stringify(filteredMetadata)}`;
       }
     }
-    
+
     return entry;
   }
 
   /**
    * Enhanced logging methods with context support
    */
-  debug(message, context = {}) {
+  debug (message, context = {}) {
     this.logger.debug(message, this.enrichContext(context));
   }
 
-  info(message, context = {}) {
+  info (message, context = {}) {
     this.logger.info(message, this.enrichContext(context));
   }
 
-  warn(message, context = {}) {
+  warn (message, context = {}) {
     this.logger.warn(message, this.enrichContext(context));
   }
 
-  error(message, error = null, context = {}) {
+  error (message, error = null, context = {}) {
     const enrichedContext = this.enrichContext(context);
-    
+
     if (error) {
       enrichedContext.error = {
         message: error.message,
@@ -202,9 +202,9 @@ class EnhancedLogger {
         code: error.code
       };
     }
-    
+
     this.logger.error(message, enrichedContext);
-    
+
     // Track error for analytics
     if (this.enableErrorTracking) {
       this.trackError(message, error, enrichedContext);
@@ -214,7 +214,7 @@ class EnhancedLogger {
   /**
    * Performance logging methods
    */
-  performance(operation, duration, context = {}) {
+  performance (operation, duration, context = {}) {
     this.logger.info(`Performance: ${operation} completed in ${duration}ms`, {
       ...this.enrichContext(context),
       operation,
@@ -226,10 +226,10 @@ class EnhancedLogger {
   /**
    * Tier-specific logging methods
    */
-  logTierExecution(tier, operation, status, context = {}) {
+  logTierExecution (tier, operation, status, context = {}) {
     const level = status === 'success' ? 'info' : 'error';
     const message = `${tier.toUpperCase()} tier: ${operation} ${status}`;
-    
+
     this.logger[level](message, {
       ...this.enrichContext(context),
       tier,
@@ -242,10 +242,10 @@ class EnhancedLogger {
   /**
    * Security logging methods
    */
-  security(event, severity, context = {}) {
+  security (event, severity, context = {}) {
     const level = severity === 'critical' ? 'error' : severity === 'warning' ? 'warn' : 'info';
     const message = `Security: ${event}`;
-    
+
     this.logger[level](message, {
       ...this.enrichContext(context),
       event,
@@ -257,10 +257,10 @@ class EnhancedLogger {
   /**
    * Automation workflow logging
    */
-  workflow(stage, status, context = {}) {
+  workflow (stage, status, context = {}) {
     const level = status === 'success' ? 'info' : status === 'error' ? 'error' : 'warn';
     const message = `Workflow: ${stage} ${status}`;
-    
+
     this.logger[level](message, {
       ...this.enrichContext(context),
       stage,
@@ -272,10 +272,10 @@ class EnhancedLogger {
   /**
    * GitHub API interaction logging
    */
-  githubApi(action, endpoint, status, context = {}) {
+  githubApi (action, endpoint, status, context = {}) {
     const level = status >= 200 && status < 400 ? 'info' : 'error';
     const message = `GitHub API: ${action} ${endpoint} [${status}]`;
-    
+
     this.logger[level](message, {
       ...this.enrichContext(context),
       action,
@@ -288,7 +288,7 @@ class EnhancedLogger {
   /**
    * Claude API interaction logging
    */
-  claudeApi(action, model, tokens, context = {}) {
+  claudeApi (action, model, tokens, context = {}) {
     this.logger.info(`Claude API: ${action} using ${model} (${tokens} tokens)`, {
       ...this.enrichContext(context),
       action,
@@ -301,7 +301,7 @@ class EnhancedLogger {
   /**
    * Enrich context with common fields
    */
-  enrichContext(context = {}) {
+  enrichContext (context = {}) {
     return {
       ...context,
       timestamp: new Date().toISOString(),
@@ -315,52 +315,54 @@ class EnhancedLogger {
   /**
    * Track errors for analytics
    */
-  trackError(message, error, context) {
+  trackError (message, error, context) {
     const errorEntry = {
       timestamp: Date.now(),
       message,
-      error: error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        code: error.code
-      } : null,
+      error: error
+        ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            code: error.code
+          }
+        : null,
       context,
       id: this.generateErrorId()
     };
 
     // Add to error tracker
     this.errorTracker.errors.push(errorEntry);
-    
+
     // Maintain max errors limit
     if (this.errorTracker.errors.length > this.errorTracker.maxErrors) {
       this.errorTracker.errors.shift();
     }
-    
+
     // Update error statistics
     const errorType = error?.name || 'UnknownError';
     const service = context.service || this.serviceName;
-    
-    this.errorTracker.errorsByType.set(errorType, 
+
+    this.errorTracker.errorsByType.set(errorType,
       (this.errorTracker.errorsByType.get(errorType) || 0) + 1);
-    this.errorTracker.errorsByService.set(service, 
+    this.errorTracker.errorsByService.set(service,
       (this.errorTracker.errorsByService.get(service) || 0) + 1);
   }
 
   /**
    * Generate unique error ID
    */
-  generateErrorId() {
+  generateErrorId () {
     return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
    * Get error analytics
    */
-  getErrorAnalytics(timeWindow = 3600000) { // 1 hour default
+  getErrorAnalytics (timeWindow = 3600000) { // 1 hour default
     const cutoffTime = Date.now() - timeWindow;
     const recentErrors = this.errorTracker.errors.filter(e => e.timestamp > cutoffTime);
-    
+
     return {
       totalErrors: recentErrors.length,
       uniqueErrors: new Set(recentErrors.map(e => e.error?.name || 'UnknownError')).size,
@@ -373,22 +375,22 @@ class EnhancedLogger {
       recentErrors: recentErrors.slice(-10), // Last 10 errors
       errorRate: recentErrors.length / (timeWindow / 1000 / 60), // Errors per minute
       topErrors: this.getTopErrors(recentErrors),
-      timeWindow: timeWindow
+      timeWindow
     };
   }
 
   /**
    * Get top errors by frequency
    */
-  getTopErrors(errors) {
+  getTopErrors (errors) {
     const errorCounts = {};
-    
+
     errors.forEach(error => {
       const errorType = error.error?.name || 'UnknownError';
       const key = `${errorType}: ${error.message}`;
       errorCounts[key] = (errorCounts[key] || 0) + 1;
     });
-    
+
     return Object.entries(errorCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
@@ -398,27 +400,27 @@ class EnhancedLogger {
   /**
    * Create timing decorator for performance logging
    */
-  createTimer(operation, context = {}) {
+  createTimer (operation, context = {}) {
     const startTime = Date.now();
-    
+
     return {
       end: (additionalContext = {}) => {
         const duration = Date.now() - startTime;
         this.performance(operation, duration, { ...context, ...additionalContext });
         return duration;
       },
-      
+
       endWithResult: (result, additionalContext = {}) => {
         const duration = Date.now() - startTime;
         const success = result && !result.error;
-        
-        this.performance(operation, duration, { 
-          ...context, 
+
+        this.performance(operation, duration, {
+          ...context,
           ...additionalContext,
           success,
           result: result ? { success, error: result.error } : null
         });
-        
+
         return { duration, result };
       }
     };
@@ -427,13 +429,13 @@ class EnhancedLogger {
   /**
    * Log structured event with schema validation
    */
-  logEvent(eventType, data, schema = null) {
+  logEvent (eventType, data, schema = null) {
     // Basic schema validation if provided
     if (schema && !this.validateEventSchema(data, schema)) {
       this.warn(`Invalid event schema for ${eventType}`, { data, schema });
       return;
     }
-    
+
     this.info(`Event: ${eventType}`, {
       eventType,
       data,
@@ -444,7 +446,7 @@ class EnhancedLogger {
   /**
    * Basic schema validation
    */
-  validateEventSchema(data, schema) {
+  validateEventSchema (data, schema) {
     for (const field of schema.required || []) {
       if (!(field in data)) {
         return false;
@@ -456,7 +458,7 @@ class EnhancedLogger {
   /**
    * Setup periodic cleanup
    */
-  setupCleanup() {
+  setupCleanup () {
     // Clean up old error tracking data every hour
     setInterval(() => {
       const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
@@ -467,10 +469,10 @@ class EnhancedLogger {
   /**
    * Graceful shutdown
    */
-  async shutdown() {
+  async shutdown () {
     return new Promise((resolve) => {
       this.logger.info('Enhanced logger shutting down...');
-      
+
       // Close all transports
       this.logger.close(() => {
         this.info('Enhanced logger shutdown complete');
@@ -482,14 +484,14 @@ class EnhancedLogger {
   /**
    * Get current log level
    */
-  getLogLevel() {
+  getLogLevel () {
     return this.logLevel;
   }
 
   /**
    * Set log level dynamically
    */
-  setLogLevel(level) {
+  setLogLevel (level) {
     this.logLevel = level;
     this.logger.level = level;
     this.info(`Log level changed to: ${level}`);
@@ -498,7 +500,7 @@ class EnhancedLogger {
   /**
    * Get logger instance (for direct winston access if needed)
    */
-  getLogger() {
+  getLogger () {
     return this.logger;
   }
 }

@@ -175,9 +175,9 @@ class IntelligentScheduleManager {
    */
   getResourceRequirement (resourceLimits) {
     if (!resourceLimits) return 'minimal';
-    
+
     const totalResources = (resourceLimits.cpu || 0) + (resourceLimits.memory || 0) + (resourceLimits.apiCalls || 0);
-    
+
     if (totalResources <= 100) return 'minimal';
     if (totalResources <= 300) return 'moderate';
     return 'high';

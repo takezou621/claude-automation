@@ -10,11 +10,12 @@
 class TierExecutionHandler {
   constructor (configManager, options = {}) {
     this.configManager = configManager;
-    
+
     // Get configuration from ConfigManager or use defaults
-    const tierSelectionConfig = this.configManager ? 
-      this.configManager.getTierSelectionConfig() : {};
-    
+    const tierSelectionConfig = this.configManager
+      ? this.configManager.getTierSelectionConfig()
+      : {};
+
     this.maxRetries = options.maxRetries || 3;
     this.baseBackoffMs = options.baseBackoffMs || 1000;
     this.maxBackoffMs = options.maxBackoffMs || 30000;

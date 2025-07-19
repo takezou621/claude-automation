@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-07-17T22:01:28.720Z",
+  "lastUpdated": "2025-07-19T11:43:46.656Z",
   "ai": {
     "model": "claude-3-sonnet-20240229",
     "maxTokens": 4000,
@@ -244,22 +244,32 @@
     "tierMetrics": {
       "ultimate": [
         {
-          "executionTime": 32000,
+          "executionTime": 30026,
           "success": true,
           "cpu": 0,
           "memory": 0,
-          "timestamp": "2025-07-17T22:00:58.591Z"
+          "timestamp": "2025-07-19T11:42:46.638Z"
         }
       ],
       "rapid": [
         {
-          "executionTime": 180000,
+          "executionTime": 30004,
           "success": true,
           "cpu": 0,
           "memory": 0,
-          "timestamp": "2025-07-17T22:00:58.592Z"
+          "timestamp": "2025-07-19T11:43:16.641Z"
+        },
+        {
+          "executionTime": 30018,
+          "success": true,
+          "cpu": 0,
+          "memory": 0,
+          "timestamp": "2025-07-19T11:43:46.656Z"
         }
       ]
     }
+  },
+  "monitoring": {
+    "autoStart": false
   }
 }

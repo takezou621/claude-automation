@@ -318,14 +318,14 @@ class WebhookServer {
 
     // Use constant-time comparison to prevent timing attacks
     const isValid = this.constantTimeCompare(signature, expectedSignatureWithPrefix);
-    
+
     if (!isValid) {
       this.logger.error('Signature verification failed', {
         received: signature,
         expected: expectedSignatureWithPrefix
       });
     }
-    
+
     return isValid;
   }
 

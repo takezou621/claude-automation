@@ -11,7 +11,7 @@ class BranchPatternManager {
       'issue-basic': 'issue-{number}',
       'claude-basic': 'claude-{number}',
       'automation-basic': 'automation-{number}',
-      
+
       // Categorized issue patterns
       'issue-feature': 'feature/issue-{number}',
       'issue-fix': 'fix/issue-{number}',
@@ -137,19 +137,19 @@ class BranchPatternManager {
    */
   selectPattern (issue, options = {}) {
     const { preferSecurity = false, preferIssueNumber = true } = options;
-    
+
     // Extract issue information
     const issueNumber = issue.number || issue.issue_number;
     const issueTitle = issue.title || '';
     const issueLabels = issue.labels || [];
     const issueBody = issue.body || '';
-    
+
     // Determine issue type from labels and title
     const detectedType = this.detectIssueType(issueTitle, issueLabels, issueBody);
     const priority = this.detectPriority(issueLabels, issueTitle);
-    
+
     let selectedPattern;
-    
+
     // Security preference override
     if (preferSecurity && (detectedType === 'security' || this.isSecurityRelated(issueTitle, issueLabels))) {
       selectedPattern = 'issue-security';
@@ -166,7 +166,7 @@ class BranchPatternManager {
     else {
       selectedPattern = this.mapTypeToTitlePattern(detectedType);
     }
-    
+
     return {
       pattern: selectedPattern,
       detectedType,
@@ -186,10 +186,10 @@ class BranchPatternManager {
   detectIssueType (title, labels, body) {
     const titleLower = title.toLowerCase();
     const bodyLower = body.toLowerCase();
-    const labelNames = labels.map(label => 
+    const labelNames = labels.map(label =>
       (typeof label === 'string' ? label : label.name || '').toLowerCase()
     );
-    
+
     // Check labels first (most reliable)
     if (labelNames.includes('security') || labelNames.includes('vulnerability')) return 'security';
     if (labelNames.includes('hotfix') || labelNames.includes('critical')) return 'hotfix';
@@ -201,7 +201,7 @@ class BranchPatternManager {
     if (labelNames.includes('refactor') || labelNames.includes('refactoring')) return 'refactor';
     if (labelNames.includes('performance') || labelNames.includes('optimization')) return 'performance';
     if (labelNames.includes('ci') || labelNames.includes('continuous-integration')) return 'ci';
-    
+
     // Check title keywords
     if (titleLower.includes('security') || titleLower.includes('vulnerability')) return 'security';
     if (titleLower.includes('hotfix') || titleLower.includes('urgent')) return 'hotfix';
@@ -212,11 +212,11 @@ class BranchPatternManager {
     if (titleLower.includes('refactor') || titleLower.includes('restructure')) return 'refactor';
     if (titleLower.includes('performance') || titleLower.includes('optimize')) return 'performance';
     if (titleLower.includes('ci') || titleLower.includes('workflow')) return 'ci';
-    
+
     // Check body keywords
     if (bodyLower.includes('security') || bodyLower.includes('vulnerability')) return 'security';
     if (bodyLower.includes('enhancement') || bodyLower.includes('improve')) return 'feature';
-    
+
     // Default to feature
     return 'feature';
   }
@@ -228,22 +228,22 @@ class BranchPatternManager {
    * @returns {string} Priority level
    */
   detectPriority (labels, title) {
-    const labelNames = labels.map(label => 
+    const labelNames = labels.map(label =>
       (typeof label === 'string' ? label : label.name || '').toLowerCase()
     );
     const titleLower = title.toLowerCase();
-    
+
     // Check priority labels
     if (labelNames.includes('priority:critical') || labelNames.includes('critical')) return 'critical';
     if (labelNames.includes('priority:high') || labelNames.includes('high')) return 'high';
     if (labelNames.includes('priority:medium') || labelNames.includes('medium')) return 'medium';
     if (labelNames.includes('priority:low') || labelNames.includes('low')) return 'low';
-    
+
     // Check urgency indicators
     if (labelNames.includes('urgent') || labelNames.includes('hotfix')) return 'critical';
     if (titleLower.includes('urgent') || titleLower.includes('critical')) return 'critical';
     if (titleLower.includes('important') || titleLower.includes('high')) return 'high';
-    
+
     return 'medium';
   }
 
@@ -255,16 +255,16 @@ class BranchPatternManager {
    */
   isSecurityRelated (title, labels) {
     const titleLower = title.toLowerCase();
-    const labelNames = labels.map(label => 
+    const labelNames = labels.map(label =>
       (typeof label === 'string' ? label : label.name || '').toLowerCase()
     );
-    
+
     const securityKeywords = [
       'security', 'vulnerability', 'exploit', 'attack', 'injection',
       'xss', 'csrf', 'authentication', 'authorization', 'privilege'
     ];
-    
-    return securityKeywords.some(keyword => 
+
+    return securityKeywords.some(keyword =>
       titleLower.includes(keyword) || labelNames.includes(keyword)
     );
   }
@@ -276,18 +276,18 @@ class BranchPatternManager {
    */
   mapTypeToIssuePattern (type) {
     const mapping = {
-      'security': 'issue-security',
-      'hotfix': 'issue-hotfix',
-      'bug': 'issue-fix',
-      'feature': 'issue-feature',
-      'enhancement': 'issue-enhancement',
-      'docs': 'issue-docs',
-      'test': 'issue-test',
-      'refactor': 'issue-refactor',
-      'performance': 'issue-performance',
-      'ci': 'issue-ci'
+      security: 'issue-security',
+      hotfix: 'issue-hotfix',
+      bug: 'issue-fix',
+      feature: 'issue-feature',
+      enhancement: 'issue-enhancement',
+      docs: 'issue-docs',
+      test: 'issue-test',
+      refactor: 'issue-refactor',
+      performance: 'issue-performance',
+      ci: 'issue-ci'
     };
-    
+
     return mapping[type] || 'issue-basic';
   }
 
@@ -298,18 +298,18 @@ class BranchPatternManager {
    */
   mapTypeToTitlePattern (type) {
     const mapping = {
-      'security': 'security',
-      'hotfix': 'hotfix',
-      'bug': 'fix',
-      'feature': 'feature',
-      'enhancement': 'enhancement',
-      'docs': 'docs',
-      'test': 'test',
-      'refactor': 'refactor',
-      'performance': 'performance',
-      'ci': 'chore'
+      security: 'security',
+      hotfix: 'hotfix',
+      bug: 'fix',
+      feature: 'feature',
+      enhancement: 'enhancement',
+      docs: 'docs',
+      test: 'test',
+      refactor: 'refactor',
+      performance: 'performance',
+      ci: 'chore'
     };
-    
+
     return mapping[type] || 'feature';
   }
 
@@ -323,21 +323,21 @@ class BranchPatternManager {
    */
   calculateSelectionConfidence (type, priority, title, labels) {
     let confidence = 0.5; // Base confidence
-    
+
     // Increase confidence if we have explicit labels
-    const labelNames = labels.map(label => 
+    const labelNames = labels.map(label =>
       (typeof label === 'string' ? label : label.name || '').toLowerCase()
     );
-    
+
     if (labelNames.includes(type) || labelNames.includes(`priority:${priority}`)) {
       confidence += 0.3;
     }
-    
+
     // Increase confidence if title contains type keywords
     if (title.toLowerCase().includes(type)) {
       confidence += 0.2;
     }
-    
+
     return Math.min(confidence, 1.0);
   }
 
@@ -381,7 +381,7 @@ class BranchPatternManager {
     }
 
     const sanitizedName = this.sanitizeBranchName(branchName);
-    
+
     // Return object with both name and pattern (workflow compatibility)
     return {
       name: sanitizedName,
@@ -438,25 +438,25 @@ class BranchPatternManager {
    */
   sanitizeBranchName (branchName, options = {}) {
     const { preserveCase = false, maxLength = 100 } = options;
-    
+
     let sanitized = branchName;
-    
+
     // Convert to lowercase unless preserving case
     if (!preserveCase) {
       sanitized = sanitized.toLowerCase();
     }
-    
+
     // Remove invalid characters
     sanitized = sanitized.replace(/[^a-zA-Z0-9\-/.]/g, '');
-    
+
     // Fix consecutive separators
     sanitized = sanitized.replace(/\/+/g, '/');
     sanitized = sanitized.replace(/-+/g, '-');
-    
+
     // Remove leading/trailing separators
     sanitized = sanitized.replace(/^\/|\/$/g, '');
     sanitized = sanitized.replace(/^-|-$/g, '');
-    
+
     // Truncate to max length
     if (sanitized.length > maxLength) {
       sanitized = sanitized.substring(0, maxLength);
@@ -469,7 +469,7 @@ class BranchPatternManager {
         sanitized = sanitized.substring(0, lastSeparator);
       }
     }
-    
+
     return sanitized;
   }
 
@@ -504,7 +504,7 @@ class BranchPatternManager {
     if (branchName.startsWith('/') || branchName.endsWith('/')) {
       errors.push('Branch name cannot start or end with slash');
     }
-    
+
     if (branchName.startsWith('-') || branchName.endsWith('-')) {
       warnings.push('Branch name starts or ends with dash');
     }
@@ -539,7 +539,7 @@ class BranchPatternManager {
       if (branchName.includes('_')) {
         errors.push('Branch name contains underscore (use dash instead)');
       }
-      
+
       // Check for proper separator usage
       if (branchName.includes('/') && !branchName.includes('/')) {
         warnings.push('Consider using category/name pattern');
@@ -684,7 +684,7 @@ class BranchPatternManager {
       const detection = this.detectPattern(branch);
       if (detection.matches) {
         patternUsage[detection.pattern] = (patternUsage[detection.pattern] || 0) + 1;
-        patternConfidence[detection.pattern] = 
+        patternConfidence[detection.pattern] =
           (patternConfidence[detection.pattern] || 0) + detection.confidence;
       }
     });

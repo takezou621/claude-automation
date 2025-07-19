@@ -1,6 +1,6 @@
 /**
  * Monitoring and Alerting System
- * 
+ *
  * Comprehensive monitoring system for automation tiers with:
  * - GitHub Actions quota monitoring and alerts
  * - Performance threshold monitoring for each tier
@@ -13,18 +13,18 @@ const EventEmitter = require('events');
 class MonitoringAlertingSystem extends EventEmitter {
   constructor (configManager, githubClient, performanceManager) {
     super();
-    
+
     this.configManager = configManager;
     this.githubClient = githubClient;
     this.performanceManager = performanceManager;
-    
+
     // Monitoring state
     this.monitoringActive = false;
     this.alerts = [];
     this.healthChecks = new Map();
     this.quotaData = new Map();
     this.performanceMetrics = new Map();
-    
+
     // Monitoring intervals
     this.intervals = {
       healthCheck: null,
@@ -32,10 +32,10 @@ class MonitoringAlertingSystem extends EventEmitter {
       performanceCheck: null,
       recommendationUpdate: null
     };
-    
+
     // Alert thresholds
     this.thresholds = this.initializeThresholds();
-    
+
     // Event listeners for real-time monitoring
     this.setupEventListeners();
   }
@@ -115,25 +115,24 @@ class MonitoringAlertingSystem extends EventEmitter {
     }
 
     console.log('🔍 Starting comprehensive monitoring system...');
-    
+
     try {
       // Initialize monitoring data
       await this.initializeMonitoringData();
-      
+
       // Start periodic checks
       this.startHealthChecks();
       this.startQuotaMonitoring();
       this.startPerformanceMonitoring();
       this.startRecommendationUpdates();
-      
+
       this.monitoringActive = true;
       console.log('✅ Monitoring system started successfully');
-      
+
       this.emit('monitoringStarted', {
         timestamp: new Date().toISOString(),
         intervals: Object.keys(this.intervals)
       });
-      
     } catch (error) {
       console.error('❌ Failed to start monitoring:', error.message);
       throw error;
@@ -145,20 +144,20 @@ class MonitoringAlertingSystem extends EventEmitter {
    */
   async stopMonitoring () {
     console.log('🛑 Stopping monitoring system...');
-    
+
     // Clear all intervals
     Object.values(this.intervals).forEach(interval => {
       if (interval) clearInterval(interval);
     });
-    
+
     // Reset intervals
     Object.keys(this.intervals).forEach(key => {
       this.intervals[key] = null;
     });
-    
+
     this.monitoringActive = false;
     console.log('✅ Monitoring system stopped');
-    
+
     this.emit('monitoringStopped', {
       timestamp: new Date().toISOString()
     });
@@ -168,9 +167,10 @@ class MonitoringAlertingSystem extends EventEmitter {
    * Initialize monitoring data structures
    */
   async initializeMonitoringData () {
-    const enabledTiers = this.configManager ? 
-      this.configManager.getEnabledTiers() : ['ultimate', 'rapid', 'smart'];
-    
+    const enabledTiers = this.configManager
+      ? this.configManager.getEnabledTiers()
+      : ['ultimate', 'rapid', 'smart'];
+
     // Initialize health check data
     for (const tier of enabledTiers) {
       this.healthChecks.set(tier, {
@@ -180,7 +180,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         uptime: 0,
         responseTime: 0
       });
-      
+
       this.performanceMetrics.set(tier, {
         executionTimes: [],
         successRate: 0,
@@ -188,7 +188,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         lastUpdate: null
       });
     }
-    
+
     // Initialize quota data
     this.quotaData.set('actions', {
       totalMinutes: 0,
@@ -204,11 +204,11 @@ class MonitoringAlertingSystem extends EventEmitter {
    */
   startHealthChecks () {
     const interval = this.thresholds.health.healthCheckInterval;
-    
+
     this.intervals.healthCheck = setInterval(async () => {
       await this.performHealthChecks();
     }, interval);
-    
+
     console.log(`🏥 Health checks started (interval: ${interval}ms)`);
   }
 
@@ -220,7 +220,7 @@ class MonitoringAlertingSystem extends EventEmitter {
     this.intervals.quotaCheck = setInterval(async () => {
       await this.checkGitHubActionsQuota();
     }, 15 * 60 * 1000);
-    
+
     // Initial check
     this.checkGitHubActionsQuota();
     console.log('📊 GitHub Actions quota monitoring started');
@@ -234,7 +234,7 @@ class MonitoringAlertingSystem extends EventEmitter {
     this.intervals.performanceCheck = setInterval(async () => {
       await this.checkAllTierPerformance();
     }, 5 * 60 * 1000);
-    
+
     console.log('⚡ Performance monitoring started');
   }
 
@@ -246,7 +246,7 @@ class MonitoringAlertingSystem extends EventEmitter {
     this.intervals.recommendationUpdate = setInterval(async () => {
       await this.updateAutomatedRecommendations();
     }, 60 * 60 * 1000);
-    
+
     console.log('🎯 Automated recommendation updates started');
   }
 
@@ -254,20 +254,20 @@ class MonitoringAlertingSystem extends EventEmitter {
    * Perform health checks for all enabled tiers
    */
   async performHealthChecks () {
-    const enabledTiers = this.configManager ? 
-      this.configManager.getEnabledTiers() : ['ultimate', 'rapid', 'smart'];
-    
+    const enabledTiers = this.configManager
+      ? this.configManager.getEnabledTiers()
+      : ['ultimate', 'rapid', 'smart'];
+
     for (const tier of enabledTiers) {
       try {
         const healthResult = await this.checkTierHealth(tier);
         this.updateHealthStatus(tier, healthResult);
-        
+
         this.emit('healthCheckComplete', {
           tier,
           result: healthResult,
           timestamp: new Date().toISOString()
         });
-        
       } catch (error) {
         console.error(`❌ Health check failed for ${tier} tier:`, error.message);
         this.updateHealthStatus(tier, { status: 'error', error: error.message });
@@ -280,12 +280,13 @@ class MonitoringAlertingSystem extends EventEmitter {
    */
   async checkTierHealth (tier) {
     const startTime = Date.now();
-    
+
     try {
       // Check if tier is enabled
-      const isEnabled = this.configManager ? 
-        this.configManager.getTierConfig(tier)?.enabled : true;
-      
+      const isEnabled = this.configManager
+        ? this.configManager.getTierConfig(tier)?.enabled
+        : true;
+
       if (!isEnabled) {
         return {
           status: 'disabled',
@@ -293,7 +294,7 @@ class MonitoringAlertingSystem extends EventEmitter {
           checks: { enabled: false }
         };
       }
-      
+
       // Perform basic health checks
       const checks = {
         enabled: true,
@@ -301,16 +302,15 @@ class MonitoringAlertingSystem extends EventEmitter {
         resourcesAvailable: await this.checkTierResources(tier),
         workflowsAccessible: await this.checkTierWorkflows(tier)
       };
-      
+
       const responseTime = Date.now() - startTime;
       const allHealthy = Object.values(checks).every(check => check === true);
-      
+
       return {
         status: allHealthy ? 'healthy' : 'unhealthy',
         responseTime,
         checks
       };
-      
     } catch (error) {
       return {
         status: 'error',
@@ -334,7 +334,7 @@ class MonitoringAlertingSystem extends EventEmitter {
       // Get billing information (requires appropriate permissions)
       const billing = await this.githubClient.getBilling();
       const actions = billing.actions || {};
-      
+
       const quotaData = {
         totalMinutes: actions.total_minutes_used || 0,
         usedMinutes: actions.total_minutes_used || 0,
@@ -342,22 +342,21 @@ class MonitoringAlertingSystem extends EventEmitter {
         resetDate: new Date().toISOString(), // Approximation
         lastUpdate: new Date().toISOString()
       };
-      
+
       this.quotaData.set('actions', quotaData);
-      
+
       // Check thresholds and generate alerts
       const usageRatio = quotaData.usedMinutes / (quotaData.usedMinutes + quotaData.remainingMinutes);
-      
+
       if (usageRatio >= this.thresholds.githubActions.quotaCritical) {
-        this.generateAlert('critical', 'github_quota', 
+        this.generateAlert('critical', 'github_quota',
           `GitHub Actions quota critical: ${(usageRatio * 100).toFixed(1)}% used`);
       } else if (usageRatio >= this.thresholds.githubActions.quotaWarning) {
-        this.generateAlert('warning', 'github_quota', 
+        this.generateAlert('warning', 'github_quota',
           `GitHub Actions quota warning: ${(usageRatio * 100).toFixed(1)}% used`);
       }
-      
+
       this.emit('quotaUpdated', { quotaData, usageRatio });
-      
     } catch (error) {
       console.error('❌ Failed to check GitHub Actions quota:', error.message);
       this.generateAlert('error', 'quota_check', `Quota monitoring failed: ${error.message}`);
@@ -368,18 +367,19 @@ class MonitoringAlertingSystem extends EventEmitter {
    * Check performance for all tiers
    */
   async checkAllTierPerformance () {
-    const enabledTiers = this.configManager ? 
-      this.configManager.getEnabledTiers() : ['ultimate', 'rapid', 'smart'];
-    
+    const enabledTiers = this.configManager
+      ? this.configManager.getEnabledTiers()
+      : ['ultimate', 'rapid', 'smart'];
+
     for (const tier of enabledTiers) {
       try {
-        const performance = this.performanceManager ? 
-          await this.performanceManager.getTierPerformanceSummary(tier) : null;
-        
+        const performance = this.performanceManager
+          ? await this.performanceManager.getTierPerformanceSummary(tier)
+          : null;
+
         if (performance) {
           this.checkPerformanceThresholds(tier, performance);
         }
-        
       } catch (error) {
         console.error(`❌ Performance check failed for ${tier} tier:`, error.message);
       }
@@ -392,9 +392,9 @@ class MonitoringAlertingSystem extends EventEmitter {
   checkPerformanceThresholds (tier, metrics) {
     const thresholds = this.thresholds.performance[tier];
     if (!thresholds) return;
-    
+
     const alerts = [];
-    
+
     // Check execution time
     if (metrics.averageExecutionTime > thresholds.executionTime) {
       alerts.push({
@@ -403,7 +403,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         message: `${tier} tier execution time above threshold: ${metrics.averageExecutionTime}ms > ${thresholds.executionTime}ms`
       });
     }
-    
+
     // Check success rate
     if (metrics.successRate < thresholds.successRate * 100) {
       alerts.push({
@@ -412,7 +412,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         message: `${tier} tier success rate below threshold: ${metrics.successRate}% < ${thresholds.successRate * 100}%`
       });
     }
-    
+
     // Generate alerts
     alerts.forEach(alert => {
       this.generateAlert(alert.severity, alert.type, alert.message, { tier, metrics });
@@ -425,23 +425,22 @@ class MonitoringAlertingSystem extends EventEmitter {
   async updateAutomatedRecommendations () {
     try {
       if (!this.configManager) return;
-      
+
       // Analyze repository patterns
       const repoAnalysis = await this.analyzeRepositoryPatterns();
-      
+
       // Generate recommendations based on analysis
       const recommendations = this.generateTierRecommendations(repoAnalysis);
-      
+
       // Store recommendations
       await this.configManager.set('monitoring.recommendations', {
         timestamp: new Date().toISOString(),
         analysis: repoAnalysis,
         recommendations
       });
-      
+
       this.emit('recommendationsUpdated', { repoAnalysis, recommendations });
       console.log(`🎯 Updated automated recommendations (${recommendations.length} recommendations)`);
-      
     } catch (error) {
       console.error('❌ Failed to update recommendations:', error.message);
     }
@@ -483,7 +482,7 @@ class MonitoringAlertingSystem extends EventEmitter {
    */
   generateTierRecommendations (analysis) {
     const recommendations = [];
-    
+
     // Analyze issue types for tier optimization
     if (analysis.issueTypes.security > 0.15) {
       recommendations.push({
@@ -494,7 +493,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         action: 'update_tier_selection_rules'
       });
     }
-    
+
     // Analyze performance patterns
     Object.entries(analysis.performanceHistory).forEach(([tier, perf]) => {
       const thresholds = this.thresholds.performance[tier];
@@ -508,7 +507,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         });
       }
     });
-    
+
     // Analyze workflow patterns
     if (analysis.workflowPatterns.activityLevel === 'high') {
       recommendations.push({
@@ -518,7 +517,7 @@ class MonitoringAlertingSystem extends EventEmitter {
         action: 'scale_automation_capacity'
       });
     }
-    
+
     return recommendations;
   }
 
@@ -536,23 +535,23 @@ class MonitoringAlertingSystem extends EventEmitter {
       acknowledged: false,
       resolved: false
     };
-    
+
     this.alerts.push(alert);
-    
+
     // Keep only recent alerts (last 1000)
     if (this.alerts.length > 1000) {
       this.alerts = this.alerts.slice(-1000);
     }
-    
+
     console.log(`🚨 ${severity.toUpperCase()} Alert: ${message}`);
-    
+
     this.emit('alertGenerated', alert);
-    
+
     // Auto-notify based on severity
     if (severity === 'critical') {
       this.notifyAdministrators(alert);
     }
-    
+
     return alert;
   }
 
@@ -560,9 +559,10 @@ class MonitoringAlertingSystem extends EventEmitter {
    * Get comprehensive monitoring status
    */
   getMonitoringStatus () {
-    const enabledTiers = this.configManager ? 
-      this.configManager.getEnabledTiers() : ['ultimate', 'rapid', 'smart'];
-    
+    const enabledTiers = this.configManager
+      ? this.configManager.getEnabledTiers()
+      : ['ultimate', 'rapid', 'smart'];
+
     const status = {
       monitoring: {
         active: this.monitoringActive,
@@ -579,10 +579,11 @@ class MonitoringAlertingSystem extends EventEmitter {
         critical: this.alerts.filter(a => a.severity === 'critical').length,
         recent: this.alerts.slice(-10)
       },
-      recommendations: this.configManager ? 
-        this.configManager.get('monitoring.recommendations', {}) : {}
+      recommendations: this.configManager
+        ? this.configManager.get('monitoring.recommendations', {})
+        : {}
     };
-    
+
     // Add tier-specific status
     for (const tier of enabledTiers) {
       status.tiers[tier] = {
@@ -590,14 +591,14 @@ class MonitoringAlertingSystem extends EventEmitter {
         performance: this.performanceMetrics.get(tier) || {}
       };
     }
-    
+
     return status;
   }
 
   /**
    * Helper methods
    */
-  
+
   async checkTierConfiguration (tier) {
     try {
       const config = this.configManager ? this.configManager.getTierConfig(tier) : null;
@@ -606,26 +607,26 @@ class MonitoringAlertingSystem extends EventEmitter {
       return false;
     }
   }
-  
+
   async checkTierResources (tier) {
     // Simulate resource check (CPU, memory, etc.)
     return Math.random() > 0.1; // 90% chance of resources being available
   }
-  
+
   async checkTierWorkflows (tier) {
     // Simulate workflow accessibility check
     return Math.random() > 0.05; // 95% chance of workflows being accessible
   }
-  
+
   updateHealthStatus (tier, result) {
     const current = this.healthChecks.get(tier) || {};
-    
+
     if (result.status === 'healthy') {
       current.consecutiveFailures = 0;
     } else {
       current.consecutiveFailures = (current.consecutiveFailures || 0) + 1;
     }
-    
+
     const updated = {
       ...current,
       status: result.status,
@@ -633,19 +634,19 @@ class MonitoringAlertingSystem extends EventEmitter {
       responseTime: result.responseTime || 0,
       uptime: result.status === 'healthy' ? (current.uptime || 0) + 1 : 0
     };
-    
+
     this.healthChecks.set(tier, updated);
-    
+
     // Generate alert for consecutive failures
     if (updated.consecutiveFailures >= this.thresholds.health.consecutiveFailures) {
-      this.generateAlert('critical', 'health', 
+      this.generateAlert('critical', 'health',
         `${tier} tier has ${updated.consecutiveFailures} consecutive health check failures`);
     }
   }
-  
+
   updatePerformanceMetrics (tier, metrics) {
     const current = this.performanceMetrics.get(tier) || { executionTimes: [] };
-    
+
     if (metrics.executionTime) {
       current.executionTimes.push(metrics.executionTime);
       // Keep only last 100 execution times
@@ -653,20 +654,20 @@ class MonitoringAlertingSystem extends EventEmitter {
         current.executionTimes = current.executionTimes.slice(-100);
       }
     }
-    
+
     current.lastUpdate = new Date().toISOString();
     this.performanceMetrics.set(tier, current);
   }
-  
+
   updateQuotaUsage (apiCallData) {
     // Track API usage for quota monitoring
     // This would be called whenever GitHub API calls are made
   }
-  
+
   generateAlertId () {
     return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
-  
+
   mergeThresholds (defaults, config) {
     // Deep merge threshold configurations
     const merged = { ...defaults };
@@ -679,19 +680,20 @@ class MonitoringAlertingSystem extends EventEmitter {
     }
     return merged;
   }
-  
+
   async notifyAdministrators (alert) {
     // Implement administrator notification (email, Slack, etc.)
     console.log(`📧 Notifying administrators about critical alert: ${alert.message}`);
-    
+
     // This would integrate with notification systems configured in ConfigManager
-    const notificationConfig = this.configManager ? 
-      this.configManager.get('notifications', {}) : {};
-    
+    const notificationConfig = this.configManager
+      ? this.configManager.get('notifications', {})
+      : {};
+
     if (notificationConfig.slack?.enabled) {
       // Send Slack notification
     }
-    
+
     if (notificationConfig.email?.enabled) {
       // Send email notification
     }
