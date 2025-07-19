@@ -39,7 +39,7 @@ jobs:
         
     - name: Rapid Automation
       uses: actions/github-script@v7
-      timeout-minutes: 4
+      timeout-minutes: 5
       with:
         script: |
           const fs = require('fs');
@@ -48,7 +48,7 @@ jobs:
           const execAsync = util.promisify(childProcessExec);
           
           const startTime = Date.now();
-          const TARGET_EXECUTION_TIME = 240000; // 4 minutes max
+          const TARGET_EXECUTION_TIME = 300000; // 5 minutes max
           
           console.log('Claude Rapid Automation Starting');
           
@@ -258,19 +258,52 @@ jobs:
             await execAsync('git add .');
             await execAsync('git commit -m ' + JSON.stringify(commitMessage));
             
-            // Smart push strategy with conflict resolution (secure execution)
-            try {
-              await execAsync('git pull --rebase origin main');
-              await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
-            } catch (pushError) {
-              console.log('Conflict detected, using smart resolution');
+            // Enhanced push strategy with branch conflict resolution
+            let pushSuccess = false;
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while (!pushSuccess && attempts < maxAttempts) {
+              attempts++;
               try {
-                await execAsync('git rebase --abort');
-              } catch (abortError) {
-                console.log('No rebase in progress, skipping abort');
+                console.log('Push attempt ' + attempts + ' for branch: ' + sanitizedBranchName);
+                
+                // Check if remote branch exists
+                try {
+                  await execAsync('git ls-remote --heads origin ' + JSON.stringify(sanitizedBranchName));
+                  console.log('Remote branch exists, creating unique branch name');
+                  
+                  // Create unique branch name with timestamp
+                  const timestamp = Date.now();
+                  const uniqueBranchName = sanitizedBranchName + '-' + timestamp;
+                  await execAsync('git checkout -b ' + JSON.stringify(uniqueBranchName));
+                  sanitizedBranchName = uniqueBranchName;
+                  console.log('Created unique branch: ' + sanitizedBranchName);
+                } catch (lsError) {
+                  console.log('Remote branch does not exist, proceeding with original name');
+                }
+                
+                await execAsync('git pull --rebase origin main');
+                await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
+                pushSuccess = true;
+                console.log('Successfully pushed to: ' + sanitizedBranchName);
+                
+              } catch (pushError) {
+                console.log('Push attempt ' + attempts + ' failed: ' + pushError.message);
+                
+                if (attempts < maxAttempts) {
+                  console.log('Retrying with conflict resolution...');
+                  try {
+                    await execAsync('git rebase --abort');
+                  } catch (abortError) {
+                    console.log('No rebase in progress');
+                  }
+                  await execAsync('git reset --hard HEAD');
+                  await execAsync('git pull origin main');
+                } else {
+                  throw new Error('Failed to push after ' + maxAttempts + ' attempts: ' + pushError.message);
+                }
               }
-              await execAsync('git pull origin main');
-              await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
             }
             
             // Create pull request for review
@@ -296,22 +329,23 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: 'Rapid Fix: ' + targetIssue.title,
-              head: branchName,
+              head: sanitizedBranchName,  // Use the final branch name (may include timestamp)
               base: 'main',
               body: prBody
             });
             
-            // Record performance metrics
-            await analyticsManager.recordTierExecution('rapid', {
-              executionTime: Date.now() - startTime,
-              success: true,
-              issueNumber: targetIssue.number,
-              branchPattern: branchInfo.pattern,
-              branchName: branchName,
-              prNumber: prResponse.data.number,
-              issueType: issueType,
-              fallbackFrom: context.payload.inputs?.fallback_from || null
-            });
+            // Record performance metrics (simplified for reliability)
+            console.log('Performance metrics: execution=' + (Date.now() - startTime) + 'ms, branch=' + sanitizedBranchName + ', type=' + issueType);
+            // await analyticsManager.recordTierExecution('rapid', {
+            //   executionTime: Date.now() - startTime,
+            //   success: true,
+            //   issueNumber: targetIssue.number,
+            //   branchPattern: branchInfo.pattern,
+            //   branchName: sanitizedBranchName,
+            //   prNumber: prResponse.data.number,
+            //   issueType: issueType,
+            //   fallbackFrom: context.payload.inputs?.fallback_from || null
+            // });
             
             // Add appropriate labels
             const prLabels = ['rapid-automation', 'type-' + issueType, 'automated-pr'];
@@ -329,7 +363,7 @@ jobs:
             // Update original issue
             const commentBody = '**Rapid Automation Applied!**\n\n' +
                 'Created PR ' + prResponse.data.number + ' with rapid fix.\n\n' +
-                '**Branch:** ' + branchName + '\n' +
+                '**Branch:** ' + sanitizedBranchName + '\n' +
                 '**Type:** ' + issueType + '\n' +
                 '**Strategy:** ' + strategy + '\n' +
                 '**Execution Time:** ' + (Date.now() - startTime) + 'ms\n\n' +
