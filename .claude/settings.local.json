@@ -80,7 +80,8 @@
       "Bash(./scripts/verify-production.sh:*)",
       "Bash(./scripts/monitor-system.sh:*)",
       "Bash(./scripts/start-production.sh:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }
