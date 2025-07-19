@@ -157,7 +157,7 @@ import sys
 
 def rapid_bug_fix_${issue.number}():
     # Defensive fix implementation for bug
-    logging.info("Applying rapid bug fix for issue #${issue.number}")
+    logging.info("Applying rapid bug fix for issue " + str(${issue.number}))
     
     try:
         # Defensive implementation
