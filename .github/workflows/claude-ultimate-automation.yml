@@ -218,7 +218,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: prResponse.data.number,
-                  commit_title: ' Ultra Fix: ' + issue.title + ' (#' + issue.number + '),';
+                  commit_title: ' Ultra Fix: ' + issue.title + ' (#' + issue.number + ')',
                   commit_message: 'Automated ultra fix completed in ' + (Date.now() - startTime) + 'ms',
                   merge_method: 'squash'
                 });
