@@ -180,7 +180,7 @@ jobs:
             const prResponse = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: ' Ultra Fix: ' + issue.title + ' (#' + issue.number + '),
+              title: ' Ultra Fix: ' + issue.title + ' (#' + issue.number + ')',
               head: branchName,
               base: 'main',
               body: '##  Ultra-Fast Automated Fix\n\n' +
