@@ -182,7 +182,8 @@ class GitHubClient {
    */
   async getRecentIssues (count = 10) {
     try {
-      const response = await this.octokit.issues.list({
+      this.logger.info(`Getting recent issues for ${this.config.owner}/${this.config.repo}`);
+      const response = await this.octokit.issues.listForRepo({
         owner: this.config.owner,
         repo: this.config.repo,
         state: 'open',
