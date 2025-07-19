@@ -264,7 +264,11 @@ jobs:
               await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
             } catch (pushError) {
               console.log('Conflict detected, using smart resolution');
-              await execAsync('git rebase --abort');
+              try {
+                await execAsync('git rebase --abort');
+              } catch (abortError) {
+                console.log('No rebase in progress, skipping abort');
+              }
               await execAsync('git pull origin main');
               await execAsync('git push origin ' + JSON.stringify(sanitizedBranchName));
             }
@@ -351,16 +355,15 @@ jobs:
           } catch (error) {
             console.log('Rapid automation failed: ' + error.message);
             
-            // Fallback to Smart automation
+            // Fallback to Smart automation with correct inputs
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'claude-smart-automation.yml',
               ref: 'main',
               inputs: {
-                issue_number: targetIssue.number.toString(),
-                fallback_from: 'rapid',
-                error_reason: error.message
+                force_execution: 'true',
+                target_issue: targetIssue.number.toString()
               }
             });
             
