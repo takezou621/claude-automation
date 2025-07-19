@@ -330,7 +330,7 @@ jobs:
         
         # Run the main automation system with smart tier configuration
         node -e "
-        const automationSystem = require('./src/simple-automation-system.js');
+        const SimpleAutomationSystem = require('./src/simple-automation-system.js');
         
         async function runSmartAutomation() {
           try {
@@ -353,10 +353,13 @@ jobs:
               autoMerge: false
             };
             
+            // Create an instance of the automation system
+            const automationSystem = new SimpleAutomationSystem(config);
+            
             // Initialize the automation system
             await automationSystem.initialize();
             
-            // Process pending issues since processIssue method doesn't exist
+            // Process pending issues
             const result = await automationSystem.processPendingIssues();
             console.log('🎯 Smart automation completed:', result.success ? '✅ Success' : '❌ Failed');
             
