@@ -103,7 +103,7 @@ class AutomationTierOrchestrator {
     // Initialize variables outside try block for proper scope
     let recommendation = null;
     let selectedTier = null;
-    let startTime = Date.now();
+    const startTime = Date.now();
 
     try {
       // Get optimal tier recommendation from ConfigManager
