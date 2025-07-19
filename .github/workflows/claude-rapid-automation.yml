@@ -74,9 +74,9 @@ jobs:
             targetIssue = issueResponse.data;
             
             if (context.payload.inputs?.fallback_from) {
-              console.log(`Processing fallback from ${context.payload.inputs.fallback_from} tier`);
+              console.log('Processing fallback from ' + context.payload.inputs.fallback_from + ' tier');
               if (context.payload.inputs?.error_reason) {
-                console.log(`Fallback reason: ${context.payload.inputs.error_reason}`);
+                console.log('Fallback reason: ' + context.payload.inputs.error_reason);
               }
             }
           } else {
@@ -103,7 +103,7 @@ jobs:
             targetIssue = rapidIssues[0];
           }
           
-          console.log(`Processing Rapid Issue number ${targetIssue.number}: ${targetIssue.title}`);
+          console.log('Processing Rapid Issue number ' + targetIssue.number + ': ' + targetIssue.title);
           
           try {
             // Configure git with rapid settings
@@ -121,14 +121,14 @@ jobs:
             const branchName = branchInfo.name;
             const issueType = patternResult.type;
             
-            console.log(`Creating branch: ${branchName} (detected type: ${issueType})`);
-            console.log(`Pattern details: ${JSON.stringify(patternResult, null, 2)}`);
+            console.log('Creating branch: ' + branchName + ' (detected type: ' + issueType + ')');
+            console.log('Pattern details: ' + JSON.stringify(patternResult, null, 2));
             
             // Create and switch to feature branch (secure execution)
             // Validate branch name to prevent injection
             const sanitizedBranchName = branchName.replace(/[^a-zA-Z0-9\/\-_\.]/g, '');
             if (sanitizedBranchName !== branchName) {
-              throw new Error(`Invalid branch name contains unsafe characters: ${branchName}`);
+              throw new Error('Invalid branch name contains unsafe characters: ' + branchName);
             }
             
             await execAsync('git checkout -b ' + JSON.stringify(sanitizedBranchName));
@@ -147,10 +147,10 @@ jobs:
             // Generate simple fix content without complex templates
             const createFixContent = function(issueNum, type, strategy) {
               const header = '#!/usr/bin/env python3\n';
-              const comment = `# Rapid ${type} fix for issue ${issueNum}\n# Strategy: ${strategy}\n\n`;
-              const funcName = `rapid_${type}_fix_${issueNum}`;
-              const funcDef = `def ${funcName}():\n    print("Applied ${type} fix for issue ${issueNum}")\n    return True\n\n`;
-              const main = `if __name__ == "__main__":\n    ${funcName}()\n`;
+              const comment = '# Rapid ' + type + ' fix for issue ' + issueNum + '\n# Strategy: ' + strategy + '\n\n';
+              const funcName = 'rapid_' + type + '_fix_' + issueNum;
+              const funcDef = 'def ' + funcName + '():\n    print("Applied ' + type + ' fix for issue ' + issueNum + '")\n    return True\n\n';
+              const main = 'if __name__ == "__main__":\n    ' + funcName + '()\n';
               return header + comment + funcDef + main;
             };
             
@@ -172,8 +172,8 @@ jobs:
             
             // Determine appropriate file location
             const fileExtension = detectLanguage(targetIssue);
-            const fileName = `rapid_fix_${targetIssue.number}.${fileExtension}`;
-            const filePath = `src/rapid-fixes/${fileName}`;
+            const fileName = 'rapid_fix_' + targetIssue.number + '.' + fileExtension;
+            const filePath = 'src/rapid-fixes/' + fileName;
             
             await execAsync('mkdir -p src/rapid-fixes');
             fs.writeFileSync(filePath, fixContent);
@@ -204,12 +204,12 @@ jobs:
             // 2. Syntax Validation
             if (filePath.endsWith('.py')) {
               try {
-                await execAsync(`python3 -m py_compile ${filePath}`);
+                await execAsync('python3 -m py_compile ' + filePath);
                 checks.syntax = true;
                 console.log('Python syntax validation passed');
               } catch (e) {
                 console.log('Python syntax validation failed:', e.message);
-                throw new Error(`Syntax validation failed: ${e.message}`);
+                throw new Error('Syntax validation failed: ' + e.message);
               }
             } else if (filePath.endsWith('.js')) {
               // Basic JS syntax check
@@ -219,7 +219,7 @@ jobs:
                 console.log('JavaScript syntax validation passed');
               } catch (e) {
                 console.log('JavaScript syntax validation failed:', e.message);
-                throw new Error(`JS syntax validation failed: ${e.message}`);
+                throw new Error('JS syntax validation failed: ' + e.message);
               }
             } else {
               checks.syntax = true; // Skip syntax check for other file types
@@ -242,7 +242,7 @@ jobs:
             
             // Summary
             const passedChecks = Object.values(checks).filter(Boolean).length;
-            console.log(`Streamlined quality checks completed: ${passedChecks}/3 passed`);
+            console.log('Streamlined quality checks completed: ' + passedChecks + '/3 passed');
             
             // Commit with enhanced message (secure execution)
             const safeIssueNumber = String(targetIssue.number).replace(/[^0-9]/g, '');
@@ -270,34 +270,28 @@ jobs:
             }
             
             // Create pull request for review
-            const prBody = `## Rapid Automation Fix
-
-**Issue:** #${targetIssue.number}
-**Type:** ${issueType}
-**Strategy:** ${strategy}
-**Branch Pattern:** ${branchName}
-
-### Changes Made
-- Implemented rapid fix using ${strategy} approach
-- Added comprehensive error handling
-- Included basic quality checks
-
-### Quality Checks Performed
--  Security scan (basic)
--  Syntax validation
--  Performance considerations
-
-**Execution Time:** ${Date.now() - startTime}ms
-
----
-**Generated by Claude Rapid Automation**
-
-Closes #${targetIssue.number}`;
+            const prBody = '## Rapid Automation Fix\\n\\n' +
+                '**Issue:** ' + targetIssue.number + '\\n' +
+                '**Type:** ' + issueType + '\\n' +
+                '**Strategy:** ' + strategy + '\\n' +
+                '**Branch Pattern:** ' + branchName + '\\n\\n' +
+                '### Changes Made\\n' +
+                '- Implemented rapid fix using ' + strategy + ' approach\\n' +
+                '- Added comprehensive error handling\\n' +
+                '- Included basic quality checks\\n\\n' +
+                '### Quality Checks Performed\\n' +
+                '- Security scan (basic)\\n' +
+                '- Syntax validation\\n' +
+                '- Performance considerations\\n\\n' +
+                '**Execution Time:** ' + (Date.now() - startTime) + 'ms\\n\\n' +
+                '---\\n' +
+                '**Generated by Claude Rapid Automation**\\n\\n' +
+                'Closes ' + targetIssue.number;
             
             const prResponse = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: ` Rapid Fix: ${targetIssue.title}`,
+              title: 'Rapid Fix: ' + targetIssue.title,
               head: branchName,
               base: 'main',
               body: prBody
@@ -316,9 +310,9 @@ Closes #${targetIssue.number}`;
             });
             
             // Add appropriate labels
-            const prLabels = ['rapid-automation', `type-${issueType}`, 'automated-pr'];
+            const prLabels = ['rapid-automation', 'type-' + issueType, 'automated-pr'];
             if (context.payload.inputs?.fallback_from) {
-              prLabels.push(`fallback-from-${context.payload.inputs.fallback_from}`);
+              prLabels.push('fallback-from-' + context.payload.inputs.fallback_from);
             }
             
             await github.rest.issues.addLabels({
@@ -329,17 +323,14 @@ Closes #${targetIssue.number}`;
             });
             
             // Update original issue
-            const commentBody = ` **Rapid Automation Applied!**
-
-Created PR #${prResponse.data.number} with rapid fix.
-
-**Branch:** \`${branchName}\`
-**Type:** ${issueType}
-**Strategy:** ${strategy}
-**Execution Time:** ${Date.now() - startTime}ms
-
----
-**Claude Rapid Automation**`;
+            const commentBody = '**Rapid Automation Applied!**\n\n' +
+                'Created PR ' + prResponse.data.number + ' with rapid fix.\n\n' +
+                '**Branch:** ' + branchName + '\n' +
+                '**Type:** ' + issueType + '\n' +
+                '**Strategy:** ' + strategy + '\n' +
+                '**Execution Time:** ' + (Date.now() - startTime) + 'ms\n\n' +
+                '---\n' +
+                '**Claude Rapid Automation**';
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -352,13 +343,13 @@ Created PR #${prResponse.data.number} with rapid fix.
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: targetIssue.number,
-              labels: ['rapid-automation-processing', `branch-${issueType}`]
+              labels: ['rapid-automation-processing', 'branch-' + issueType]
             });
             
-            console.log(` Rapid Issue #${targetIssue.number} processed successfully in ${Date.now() - startTime}ms!`);
+            console.log('Rapid Issue ' + targetIssue.number + ' processed successfully in ' + (Date.now() - startTime) + 'ms!');
             
           } catch (error) {
-            console.log(` Rapid automation failed: ${error.message}`);
+            console.log('Rapid automation failed: ' + error.message);
             
             // Fallback to Smart automation
             await github.rest.actions.createWorkflowDispatch({
@@ -373,14 +364,11 @@ Created PR #${prResponse.data.number} with rapid fix.
               }
             });
             
-            const errorCommentBody = ` **Rapid Automation Failed**
-
-Error: ${error.message}
-
-Falling back to Smart Automation tier.
-
----
-**Claude Rapid Automation**`;
+            const errorCommentBody = '**Rapid Automation Failed**\n\n' +
+                'Error: ' + error.message + '\n\n' +
+                'Falling back to Smart Automation tier.\n\n' +
+                '---\n' +
+                '**Claude Rapid Automation**';
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -391,4 +379,4 @@ Falling back to Smart Automation tier.
           }
           
           const totalTime = Date.now() - startTime;
-          console.log(` Claude Rapid Automation Complete (${totalTime}ms)`);
+          console.log('Claude Rapid Automation Complete (' + totalTime + 'ms)');
