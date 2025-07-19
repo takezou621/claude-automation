@@ -6,6 +6,11 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  issues: write
+  contents: write
+  pull-requests: write
+
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
@@ -61,15 +66,7 @@ jobs:
             core.setOutput('complexity', complexity);
             core.setOutput('component', component);
             
-            // Add status label if automation triggered
-            if (shouldAutomate) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                labels: ['status:planning']
-              });
-            }
+            // Status will be updated in analysis step
 
   analyze-issue:
     name: Analyze Issue with Claude
