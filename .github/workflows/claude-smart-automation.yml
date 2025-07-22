@@ -419,6 +419,10 @@ jobs:
       if: steps.issue-selection.outputs.should_process == 'true'
       id: create-pr
       run: |
+        # Configure Git identity
+        git config --global user.name "Claude Smart Automation"
+        git config --global user.email "claude-automation@noreply.github.com"
+        
         ISSUE_NUMBER=${{ steps.analysis.outputs.issue_number }}
         BRANCH_NAME=${{ steps.branch-creation.outputs.branch_name }}
         ISSUE_TITLE="${{ steps.analysis.outputs.issue_title }}"
