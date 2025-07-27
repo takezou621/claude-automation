@@ -1,12 +1,13 @@
 name: Claude Smart Automation
 
 on:
-  schedule:
-    # Smart Automation - 4 times daily schedule
-    - cron: '0 6 * * *'   # 6AM UTC daily
-    - cron: '0 12 * * *'  # 12PM UTC daily
-    - cron: '0 18 * * *'  # 6PM UTC daily
-    - cron: '0 0 * * *'   # 12AM UTC daily
+  # Schedule is disabled - uncomment the lines below to re-enable scheduled execution
+  # schedule:
+  #   # Smart Automation - 4 times daily schedule
+  #   - cron: '0 6 * * *'   # 6AM UTC daily
+  #   - cron: '0 12 * * *'  # 12PM UTC daily
+  #   - cron: '0 18 * * *'  # 6PM UTC daily
+  #   - cron: '0 0 * * *'   # 12AM UTC daily
   workflow_dispatch:
     inputs:
       force_execution:
