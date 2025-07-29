@@ -1,8 +1,9 @@
 name: Claude Tier - Ultimate (45s)
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'  # Every 5 minutes (minimum allowed)
+  # Schedule is disabled - uncomment the line below to re-enable scheduled execution
+  # schedule:
+  #   - cron: '*/5 * * * *'  # Every 5 minutes (minimum allowed)
   workflow_dispatch:
     inputs:
       issue_number:
